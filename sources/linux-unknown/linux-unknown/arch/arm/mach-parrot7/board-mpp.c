@@ -471,7 +471,7 @@ static void __init mpp_init_mach(void)
 	/* Init FAN */
 	drone_common_init_fan(85);
 
-
+	p7brd_export_gpio(P7_GPIO_NR(124), GPIOF_OUT_INIT_LOW, "POWER_KEEP");
 	p7brd_export_gpio(9, GPIOF_OUT_INIT_LOW, "RESET_WIFI");
 	/* End of initialization */
 	pr_info("Mpp board : init done\n");
