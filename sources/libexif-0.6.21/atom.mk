@@ -1,5 +1,6 @@
 ifneq ($(TARGET_PRODUCT),sfx1) # libexif already exists in SFX1 project
 ifneq ($(TARGET_PRODUCT),thermoMAP) # libexif already exists in thermoMAP project
+ifneq ($(TARGET_PRODUCT),galilei) # libexif already exists in Galilei project
 
 LOCAL_PATH := $(call my-dir)
 
@@ -36,5 +37,6 @@ LOCAL_EXPORT_LDLIBS := -lexif
 
 include $(BUILD_AUTOTOOLS)
 
+endif
 endif
 endif

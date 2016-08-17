@@ -26,8 +26,10 @@ static struct acs3_plat_data wl18xx_sdhci_wlan_pdata = {
 	.mmc_caps2  = MMC_CAP2_BROKEN_VOLTAGE,          /* sdio bus voltage is fixed in hardware */
 };
 
+static char *acs3_sdhci_wlan_vmmc2_supply_dev_name = "acs3-sdhci.0";
+
 static struct regulator_consumer_supply acs3_sdhci_wlan_vmmc2_supply =
-	REGULATOR_SUPPLY("vmmc", "acs3-sdhci.0");
+	REGULATOR_SUPPLY("vmmc", NULL);
 
 /* VMMC2 for driving the wl18xx module */
 static struct regulator_init_data acs3_sdhci_wlan_vmmc2 = {
@@ -108,6 +110,8 @@ void __init init_wl18xx(struct wl18xx_resources* res,
 		pr_err("wl18xx: error setting wl12xx data: %d\n", err);
 
 	BUG_ON(res->wl_sdhci_slot < 0 || res->wl_sdhci_slot > 2);
+	acs3_sdhci_wlan_vmmc2_supply.dev_name = acs3_sdhci_wlan_vmmc2_supply_dev_name;
+	acs3_sdhci_wlan_vmmc2_supply_dev_name[11] = '0' + res->wl_sdhci_slot;
 	p7brd_init_sdhci(res->wl_sdhci_slot, &wl18xx_sdhci_wlan_pdata,
 			 &acs3_sdhci_wlan_regulator,
 			 NULL, NULL, pins, pins_cnt);

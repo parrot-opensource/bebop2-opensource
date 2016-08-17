@@ -4,7 +4,6 @@
 #include <linux/init.h>
 #include <linux/module.h>
 
-#define CREATE_TRACE_POINTS
 #include <trace/events/parrot_trace.h>
 
 struct lttng_debugfs {

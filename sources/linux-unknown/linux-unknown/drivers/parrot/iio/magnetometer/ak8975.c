@@ -40,6 +40,9 @@
 #include <linux/iio/trigger_consumer.h>
 #include <linux/iio/buffer.h>
 #include <linux/iio/triggered_buffer.h>
+#ifdef CONFIG_PARROT_AK8963_NOTRIGGER
+#include <linux/iio/kfifo_buf.h>
+#endif
 
 #include <iio/platform_data/ak8975.h>
 #include "ak8975_regs.h"
@@ -108,9 +111,20 @@ static int ak8975_write_data(struct i2c_client *client,
 	return 0;
 }
 
+#ifdef CONFIG_PARROT_AK8963_NOTRIGGER
 /*
  * Handle data ready irq
  */
+static irqreturn_t ak8975_irq_handler(int irq, void *data)
+{
+	struct ak8975_data *ak8975 = data;
+
+	set_bit(0, &ak8975->flags);
+	ak8975->timestamps[TS_data_ready] = iio_get_time_ns();
+
+	return IRQ_HANDLED;
+}
+#else
 static irqreturn_t ak8975_irq_handler(int irq, void *data)
 {
 	struct ak8975_data *ak8975 = data;
@@ -120,6 +134,8 @@ static irqreturn_t ak8975_irq_handler(int irq, void *data)
 
 	return IRQ_HANDLED;
 }
+
+#endif
 
 /*
  * Install data ready interrupt handler
@@ -135,9 +151,10 @@ static int ak8975_setup_irq(struct ak8975_data *data)
 	else
 		irq = gpio_to_irq(data->drdy_gpio);
 
-	rc = devm_request_irq(&client->dev, irq, ak8975_irq_handler,
-			 IRQF_TRIGGER_RISING | IRQF_ONESHOT,
-			 data->name, data);
+	rc = devm_request_irq(&client->dev, irq,
+			      ak8975_irq_handler,
+			      IRQF_TRIGGER_RISING | IRQF_ONESHOT,
+			      data->name, data);
 	if (rc < 0) {
 		dev_err(&client->dev,
 			"irq %d request failed: %d\n",
@@ -173,6 +190,7 @@ static int ak8975_check_id(struct i2c_client *client)
 	}
 	return 0;
 }
+
 /*
  * Perform some start-of-day setup, including reading the asa calibration
  * values and caching them.
@@ -511,6 +529,70 @@ static int wait_conversion_complete_interrupt(struct ak8975_data *data)
 	return ret > 0 ? 0 : -ETIME;
 }
 
+#ifdef CONFIG_PARROT_AK8963_NOTRIGGER
+static int ak8975_request_data(struct iio_dev *indio_dev)
+{
+	int ret = 0;
+	struct ak8975_data *data = iio_priv(indio_dev);
+	struct i2c_client *client = data->client;
+
+	data->timestamps[TS_request] = iio_get_time_ns();
+	dev_dbg(&client->dev, "%s\n", __func__);
+
+	/* Set up the device for taking a sample. */
+	ret = ak8975_write_data(client,
+				AK8975_REG_CNTL,
+				AK8975_REG_CNTL_MODE_ONCE,
+				AK8975_REG_CNTL_MODE_MASK,
+				AK8975_REG_CNTL_MODE_SHIFT);
+	if (ret < 0) {
+		dev_err(&client->dev,
+			"%s: Error in setting operating mode\n", __func__);
+		goto exit;
+	}
+
+	dev_dbg(&client->dev, "%s: Single measurement mode\n", __func__);
+
+exit:
+	return ret;
+}
+
+static int ak8975_fetch_data(struct iio_dev *indio_dev)
+{
+	int ret = 0;
+	struct ak8975_data *data = iio_priv(indio_dev);
+	struct i2c_client *client = data->client;
+	u8 buffer[16];
+
+	if (test_bit(0, &data->flags)) {
+		clear_bit(0, &data->flags);
+	} else {
+		ret = -EAGAIN;
+		goto exit;
+	}
+
+	ret = i2c_smbus_read_byte_data(client, AK8975_REG_ST1);
+	if (ret < 0) {
+		dev_err(&client->dev, "%s: Error in reading ST1\n", __func__);
+		goto exit;
+	}
+
+	ret = i2c_smbus_read_i2c_block_data(data->client,
+					    AK8975_REG_HXL,
+					    3 * sizeof(u16),
+					    buffer);
+	if (ret < 0)
+		goto exit;
+
+	data->timestamps[TS_push] = iio_get_time_ns();
+	iio_push_to_buffers_with_timestamp(indio_dev, buffer,
+					   data->timestamps[TS_push]);
+
+exit:
+	return ret;
+}
+#endif
+
 /* trigger single measurement */
 static int ak8975_request_single(struct ak8975_data *data)
 {
@@ -532,7 +614,6 @@ static int ak8975_request_single(struct ak8975_data *data)
 	}
 
 	dev_dbg(&client->dev, "%s: Single measurement mode\n", __func__);
-
 
 	/* Wait for the conversion to complete. */
 	if (data->drdy_irq >=0 ) {
@@ -638,6 +719,7 @@ static int ak8975_read_raw(struct iio_dev *indio_dev,
 	return -EINVAL;
 }
 
+#ifndef CONFIG_PARROT_AK8963_NOTRIGGER
 static int ak8975_read(struct ak8975_data *data, u16 buf[3])
 {
   int ret;
@@ -677,6 +759,7 @@ done:
 	iio_trigger_notify_done(indio_dev->trig);
 	return IRQ_HANDLED;
 }
+#endif
 
 enum ak8975_channel_index {
       CHAN_MAGN_X=0,
@@ -743,6 +826,63 @@ static const struct iio_info ak8975_info = {
 
 static const unsigned long ak8975_scan_masks[] = {0x7, 0}; /* 3 channels X Y Z */
 
+#ifdef CONFIG_PARROT_AK8963_NOTRIGGER
+static const struct iio_buffer_setup_ops ak8975_iio_buffer_setup_ops = {
+};
+
+struct iio_mykonos3_ops	ak8975_iio_mykonos3_ops = {
+	.request_data = ak8975_request_data,
+	.fetch_data   = ak8975_fetch_data,
+};
+#endif
+
+static int ak8975_iio_buffer_new(struct iio_dev *indio_dev)
+{
+	int err = 0;
+#ifdef CONFIG_PARROT_AK8963_NOTRIGGER
+	struct iio_buffer *buffer = NULL;
+
+	indio_dev->modes     = INDIO_BUFFER_HARDWARE;
+	indio_dev->setup_ops = &ak8975_iio_buffer_setup_ops;
+
+	buffer = iio_kfifo_allocate(indio_dev);
+	if (!buffer) {
+		err = -ENOMEM;
+		goto exit;
+	}
+
+	iio_device_attach_buffer(indio_dev, buffer);
+
+	err = iio_buffer_register(indio_dev, ak8975_channels,
+				  ARRAY_SIZE(ak8975_channels));
+	if (err < 0)
+		goto exit;
+
+	iio_mykonos3_register(IIO_MYKONOS3_MAGNETO,
+			      indio_dev, &ak8975_iio_mykonos3_ops);
+#else
+	indio_dev->modes = INDIO_DIRECT_MODE;
+
+	err = iio_triggered_buffer_setup(indio_dev, NULL,
+					 ak8975_trigger_handler, NULL);
+	if (err < 0)
+		goto exit;
+#endif
+exit:
+	return err;
+}
+
+static void ak8975_iio_buffer_cleanup(struct iio_dev *indio_dev)
+{
+#ifdef CONFIG_PARROT_AK8963_NOTRIGGER
+	iio_kfifo_free(indio_dev->buffer);
+	iio_mykonos3_unregister(IIO_MYKONOS3_MAGNETO, indio_dev);
+#else
+	iio_triggered_buffer_cleanup(indio_dev);
+#endif
+	iio_buffer_unregister(indio_dev);
+}
+
 static int ak8975_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
@@ -804,12 +944,10 @@ static int ak8975_probe(struct i2c_client *client,
 	indio_dev->channels = ak8975_channels;
 	indio_dev->num_channels = ARRAY_SIZE(ak8975_channels);
 	indio_dev->info = &ak8975_info;
-	indio_dev->modes = INDIO_DIRECT_MODE;
 	indio_dev->available_scan_masks = ak8975_scan_masks;
 	indio_dev->name = name;
 
-	err = iio_triggered_buffer_setup(indio_dev, NULL,
-					 ak8975_trigger_handler, NULL);
+	err = ak8975_iio_buffer_new(indio_dev);
 	if (err < 0)
 		goto exit_gpio;
 
@@ -820,7 +958,7 @@ static int ak8975_probe(struct i2c_client *client,
 	return 0;
 
 buffer_cleanup:
-	iio_triggered_buffer_cleanup(indio_dev);
+	ak8975_iio_buffer_cleanup(indio_dev);
 exit_gpio:
 	if (data->drdy_irq >= 0)
 		devm_free_irq(&client->dev, data->drdy_irq, data);
@@ -836,8 +974,8 @@ static int ak8975_remove(struct i2c_client *client)
 	struct iio_dev *indio_dev = i2c_get_clientdata(client);
 	struct ak8975_data *data = iio_priv(indio_dev);
 
+	ak8975_iio_buffer_cleanup(indio_dev);
 	devm_iio_device_unregister(&client->dev, indio_dev);
-	iio_triggered_buffer_cleanup(indio_dev);
 
 	if (data->drdy_irq >= 0)
 		devm_free_irq(&client->dev, data->drdy_irq, data);

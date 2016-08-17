@@ -12,6 +12,8 @@
 #ifndef __TC358746A_H__
 #define __TC358746A_H__
 
+#include <linux/v4l2-mediabus.h>
+
 struct tc358746a_platform_data {
 	int (*set_power)(int on);
 

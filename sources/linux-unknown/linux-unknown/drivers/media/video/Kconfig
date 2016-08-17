@@ -673,6 +673,13 @@ config VIDEO_GALILEO1
 	  This is a V4L2 sensor-level driver for Nokia Galileo1 41M camera
 	  sensor. It is present in the Nokia Lumia 808 phone.
 
+config VIDEO_GALILEO2
+	tristate "Nokia Galileo2 sensor"
+	depends on I2C && VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API
+	---help---
+	  This is a V4L2 sensor-level driver for Nokia Galileo2 camera
+	  sensor.
+
 config VIDEO_MT9F002
 	tristate "mt9f002 sensor"
 	depends on I2C && VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API

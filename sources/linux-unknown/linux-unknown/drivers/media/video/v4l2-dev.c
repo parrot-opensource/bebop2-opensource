@@ -882,6 +882,7 @@ int __video_register_device(struct video_device *vdev, int type, int nr,
 	/* Should not happen since we thought this minor was free */
 	WARN_ON(video_device[vdev->minor] != NULL);
 	vdev->index = get_index(vdev);
+	video_device[vdev->minor] = vdev;
 	mutex_unlock(&videodev_lock);
 	/* if no lock was passed, then make sure the LOCK_ALL_FOPS bit is
 	   clear and warn if it wasn't. */
@@ -949,9 +950,6 @@ int __video_register_device(struct video_device *vdev, int type, int nr,
 #endif
 	/* Part 6: Activate this minor. The char device can now be used. */
 	set_bit(V4L2_FL_REGISTERED, &vdev->flags);
-	mutex_lock(&videodev_lock);
-	video_device[vdev->minor] = vdev;
-	mutex_unlock(&videodev_lock);
 
 	return 0;
 
@@ -959,6 +957,7 @@ cleanup:
 	mutex_lock(&videodev_lock);
 	if (vdev->cdev)
 		cdev_del(vdev->cdev);
+	video_device[vdev->minor] = NULL;
 	devnode_clear(vdev);
 	mutex_unlock(&videodev_lock);
 	/* Mark this video device as never having been registered. */

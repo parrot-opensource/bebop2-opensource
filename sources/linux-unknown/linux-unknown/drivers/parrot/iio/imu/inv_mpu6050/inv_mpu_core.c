@@ -9,6 +9,10 @@
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 * GNU General Public License for more details.
+*
+* For all 'magic' numbers in this file, please refer to datasheets :
+*   mpu6050 : RM-MPU-6000A.pdf
+*   mpu6500 : RM-MPU-6500A-00.pdf
 */
 
 //#define DEBUG
@@ -34,10 +38,10 @@
 /* pi */
 # define M_PI           3.14159265358979323846
 static const int gyro_scale_6050[NUM_MPU6050_FSR] = {
-	[INV_MPU6050_FSR_250DPS]  = (M_PI*1000000000LL)/(180*131.0),	//133090,
-	[INV_MPU6050_FSR_500DPS]  = (M_PI*1000000000LL)/(180*65.5),	//266181,
-	[INV_MPU6050_FSR_1000DPS] = (M_PI*1000000000LL)/(180*32.8),	//532362,
-	[INV_MPU6050_FSR_2000DPS] = (M_PI*1000000000LL)/(180*16.4),	//1064724
+	[INV_MPU6050_FSR_250DPS]  = (M_PI*1000000000LL)/(180*131.0), /*133090*/
+	[INV_MPU6050_FSR_500DPS]  = (M_PI*1000000000LL)/(180*65.5),  /*266181*/
+	[INV_MPU6050_FSR_1000DPS] = (M_PI*1000000000LL)/(180*32.8),  /*532362*/
+	[INV_MPU6050_FSR_2000DPS] = (M_PI*1000000000LL)/(180*16.4),  /*1064724*/
 };
 
 /*
@@ -47,10 +51,10 @@ static const int gyro_scale_6050[NUM_MPU6050_FSR] = {
 /* standard acceleration of gravity (gee, free-fall on Earth) */
 #define G_TO_MS2                      9.80665
 static const int accel_scale[NUM_ACCL_FSR] = {
-	[INV_MPU6050_FS_02G] = (G_TO_MS2*1000000000LL)/16384,	//598,
-	[INV_MPU6050_FS_04G] = (G_TO_MS2*1000000000LL)/8192,	//1196,
-	[INV_MPU6050_FS_08G] = (G_TO_MS2*1000000000LL)/4096,	//2392,
-	[INV_MPU6050_FS_16G] = (G_TO_MS2*1000000000LL)/2048,	//4785
+	[INV_MPU6050_FS_02G] = (G_TO_MS2*1000000000LL)/16384, /*598*/
+	[INV_MPU6050_FS_04G] = (G_TO_MS2*1000000000LL)/8192,  /*1196*/
+	[INV_MPU6050_FS_08G] = (G_TO_MS2*1000000000LL)/4096,  /*2392*/
+	[INV_MPU6050_FS_16G] = (G_TO_MS2*1000000000LL)/2048,  /*4785*/
 };
 
 static const unsigned long temp_scale[INV_NUM_PARTS][2] = {
@@ -126,6 +130,7 @@ static const struct inv_mpu6050_chip_config chip_config_6050 = {
 	.fifo_period_ns = 1000000000LL/INV_MPU6050_INIT_FIFO_RATE,
 	.gyro_fifo_enable = false,
 	.accl_fifo_enable = false,
+	.temp_fifo_enable = false,
 	.accl_fs = INV_MPU6050_FS_04G,
 };
 
@@ -138,6 +143,7 @@ static const struct inv_mpu6050_chip_config chip_config_6500 = {
 	.fifo_period_ns = 1000000000LL/INV_MPU6050_INIT_FIFO_RATE,
 	.gyro_fifo_enable = false,
 	.accl_fifo_enable = false,
+	.temp_fifo_enable = false,
 	.accl_fs = INV_MPU6050_FS_02G,
 };
 
@@ -356,7 +362,8 @@ static int inv_mpu6050_read_raw(struct iio_dev *indio_dev,
 			}
 			break;
 		case IIO_TEMP:
-			/* wait for stablization */
+			/* Temp sensor is never disabled,
+				just wait for its stablization */
 			msleep(INV_MPU6050_SENSOR_UP_TIME);
 			inv_mpu6050_sensor_show(st, st->reg->temperature,
 							IIO_MOD_X, val);
@@ -400,7 +407,7 @@ error_read_raw:
 			*val  = temp_offset[st->chip_type][0];
 			*val2 = temp_offset[st->chip_type][1];
 
-			return IIO_VAL_INT;
+			return IIO_VAL_INT_PLUS_MICRO;
 		default:
 			return -EINVAL;
 		}
@@ -979,23 +986,25 @@ static int inv_mpu6050_validate_trigger(struct iio_dev *indio_dev,
 
 static const struct iio_chan_spec inv_mpu_channels[] = {
 	IIO_CHAN_SOFT_TIMESTAMP(INV_MPU6050_SCAN_TIMESTAMP),
-	/*
-	 * Note that temperature should only be via polled reading only,
-	 * not the final scan elements output.
-	 */
+	INV_MPU6050_CHAN(IIO_ANGL_VEL, IIO_MOD_X, INV_MPU6050_SCAN_GYRO_X),
+	INV_MPU6050_CHAN(IIO_ANGL_VEL, IIO_MOD_Y, INV_MPU6050_SCAN_GYRO_Y),
+	INV_MPU6050_CHAN(IIO_ANGL_VEL, IIO_MOD_Z, INV_MPU6050_SCAN_GYRO_Z),
 	{
 		.type = IIO_TEMP,
 		.indexed = 1,
 		.channel = 0,
-		.info_mask_separate =  BIT(IIO_CHAN_INFO_RAW)
-				| BIT(IIO_CHAN_INFO_OFFSET)
-				| BIT(IIO_CHAN_INFO_SCALE),
-		.scan_index = -1,
+		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW)
+					| BIT(IIO_CHAN_INFO_SCALE)
+					| BIT(IIO_CHAN_INFO_OFFSET),
+		.scan_index = INV_MPU6050_SCAN_TEMP,
+		.scan_type = {
+				.sign = 's',
+				.realbits = 16,
+				.storagebits = 16,
+				.shift = 0,
+				.endianness = IIO_BE,
+			     },
 	},
-	INV_MPU6050_CHAN(IIO_ANGL_VEL, IIO_MOD_X, INV_MPU6050_SCAN_GYRO_X),
-	INV_MPU6050_CHAN(IIO_ANGL_VEL, IIO_MOD_Y, INV_MPU6050_SCAN_GYRO_Y),
-	INV_MPU6050_CHAN(IIO_ANGL_VEL, IIO_MOD_Z, INV_MPU6050_SCAN_GYRO_Z),
-
 	INV_MPU6050_CHAN(IIO_ACCEL, IIO_MOD_X, INV_MPU6050_SCAN_ACCL_X),
 	INV_MPU6050_CHAN(IIO_ACCEL, IIO_MOD_Y, INV_MPU6050_SCAN_ACCL_Y),
 	INV_MPU6050_CHAN(IIO_ACCEL, IIO_MOD_Z, INV_MPU6050_SCAN_ACCL_Z),

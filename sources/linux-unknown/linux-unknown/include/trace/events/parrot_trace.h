@@ -56,6 +56,12 @@ TRACE_EVENT(user_kmessage,
 	TP_printk("message = %s", __get_str(message))
 )
 
+#ifdef CREATE_TRACE_POINTS
+EXPORT_TRACEPOINT_SYMBOL(user_kevent_start);
+EXPORT_TRACEPOINT_SYMBOL(user_kevent_stop);
+EXPORT_TRACEPOINT_SYMBOL(user_kmessage);
+#endif
+
 #endif
 
 #include <trace/define_trace.h>

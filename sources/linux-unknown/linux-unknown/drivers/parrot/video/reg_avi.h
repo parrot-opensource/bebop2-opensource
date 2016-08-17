@@ -795,6 +795,7 @@ union avi_cam_interface
                 unsigned pad_select     : 2;
                 unsigned unpacker       : 2;
                 unsigned raw10          : 2;
+                unsigned rol_lsb        : 1;
                 unsigned ror_lsb        : 1;
         };
         u32 _register;

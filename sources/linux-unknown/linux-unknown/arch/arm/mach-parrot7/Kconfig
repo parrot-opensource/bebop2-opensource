@@ -183,6 +183,14 @@ config ARCH_PARROT7_P7DEV_CAMERA
 	help
 	 Support for camera daughter board reintroduced for parros prototype
 
+config ARCH_PARROT7_P7DEV_GALILEO2
+	bool "P7DEV Galileo2 daughter board"
+	depends on CAM_AVI
+	select ARCH_PARROT7_BOARD
+	default n
+	help
+	 Support for galileo2 p7dev daughter board
+
 config ARCH_PARROT7_P7DEV_SICILIA
 	bool "P7DEV Camera daughter board *with* Sicilia patch"
 	depends on CAM_AVI
@@ -415,6 +423,20 @@ config ARCH_PARROT7_SFX1_HX280_SIZE
     range 0 96
     default 64
 endif
+
+menuconfig MACH_PARROT_GALILEI
+	bool "Galilei board"
+	select ARCH_PARROT7_COMMON
+
+if MACH_PARROT_GALILEI
+config ARCH_PARROT7_GALILEI_HX280_SIZE
+	int "Size of Video encoder dedicated system RAM (mB)"
+	default 96
+endif
+
+menuconfig MACH_PARROT_MPP
+	bool "Mpp board"
+	select ARCH_PARROT7_COMMON
 
 menuconfig MACH_PARROT_BEBOP
 	bool "Bebop board"

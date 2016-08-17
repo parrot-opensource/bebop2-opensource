@@ -520,7 +520,7 @@ struct drone_common_hsis_sysfs_attr mk3_hsis_sysfs[] = {
 	MK3_HSIS_SYSFS_ATTR(p7rev),
 	MK3_HSIS_SYSFS_ATTR(hwrev),
 	MK3_HSIS_SYSFS_ATTR(pcbrev),
-	{ .value = NULL, } 
+	{ .value = NULL, }
 };
 
 
@@ -532,8 +532,8 @@ struct drone_common_hsis_sysfs_attr mk3_hsis_sysfs[] = {
 #define BLDC_LUT_DEFAULT {0, 1, 2, 3}
 static const u8 bldc_lut_default[4] = BLDC_LUT_DEFAULT;
 
-#define BLDC_LUT_MILOS_PV {0, 1, 3, 2}
-static const u8 bldc_lut_milos_pv[4] = BLDC_LUT_MILOS_PV;
+#define BLDC_LUT_MILOS_DV {0, 1, 3, 2}
+static const u8 bldc_lut_milos_dv[4] = BLDC_LUT_MILOS_DV;
 
 /* motors spin direction */
 #define BLDC_SPIN_DIR_DEFAULT 0x5 /* 0b0101, CW/CCW/CW/CCW */
@@ -544,6 +544,19 @@ static struct bldc_cypress_platform_data bldc_cypress_pdata = {
 	.lut = BLDC_LUT_DEFAULT,
 	.spin_dir = BLDC_SPIN_DIR_DEFAULT,
 };
+
+/*******
+ * IIO *
+ *******/
+static struct platform_device mykonos3_iio_device = {
+	.name = "iio_mykonos3",
+	.id = -1,
+};
+
+static void __init mykonos3_iio_init(void)
+{
+	platform_device_register(&mykonos3_iio_device);
+}
 
 /*******
  * BSP *
@@ -686,23 +699,27 @@ static void __init mykonos3x_init_mach(enum mk3_hardware_board board)
 	drone_common_init_usb(mk3_hsis.host_mode_on, mk3_hsis.host_mode_3v3,
 			      mk3_hsis.usb0_oc);
 
+	p7brd_init_usb(1, -1, CI_UDC_DR_HOST);
+
 	/* Init sensors */
 	drone_common_init_ak8963(AK8963_I2C_BUS, mk3_hsis.magneto_int_p7);
 	drone_common_init_inv_mpu6050(MPU6050_I2C_BUS, mk3_hsis.gyro_int_p7,
-				      FSYNC_GYRO_FILTER);
+				      FSYNC_GYRO_FILTER, mk3_hsis.clkin_gyro);
 	drone_common_init_ms5607(MS5607_I2C_BUS);
 
 	/* Init BLDC platform data for Milos board */
 	if (board == MK3X_MILOS) {
 		bldc_cypress_pdata.spin_dir = BLDC_SPIN_DIR_MILOS;
-		if (mk3_hsis.pcbrev >= MK3_HW02)
-			memcpy(bldc_cypress_pdata.lut, bldc_lut_milos_pv,
+		if (mk3_hsis.pcbrev < MK3_HW02)
+			memcpy(bldc_cypress_pdata.lut, bldc_lut_milos_dv,
 			       sizeof(bldc_cypress_pdata.lut));
 	}
 
 	/* Init BLDC */
 	drone_common_init_bldc_with_lut(BLDC_I2C_BUS, mk3_hsis.reset_psoc,
 					&bldc_cypress_pdata);
+
+	mykonos3_iio_init();
 
 	/* Init FAN */
 	drone_common_init_fan(mk3_hsis.fan);

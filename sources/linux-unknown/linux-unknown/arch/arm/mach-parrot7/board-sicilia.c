@@ -554,6 +554,7 @@ static void __init sicilia_init_multispec_cams(void)
 		pdata->interface         = sicilia_multispec_cam_interface;
 		pdata->bus_width         = 16;
 		pdata->subdevs           = subdevs;
+		pdata->vb2_cache_flags   = VB2_CACHE_DMA_CONTIG | VB2_CACHE_WRITETHROUGH;
 
 		p7_reserve_avicammem(dev, MULTISPEC_CAM_RAM_SIZE);
 
@@ -1277,7 +1278,8 @@ static void __init sicilia_init_mach(void)
 
 	/* Eeprom WP */
 	p7brd_export_gpio(P7_GPIO_NR(65), GPIOF_OUT_INIT_HIGH, "eeprom-wp");
-	p7brd_export_gpio(P7_GPIO_NR(76), GPIOF_IN, "IMU irq");
+	drone_common_init_inv_mpu6050(1, P7_GPIO_NR(76), 5, 5/* pwm */);
+	drone_common_export_gpio(P7_GPIO_NR(76), GPIOF_IN, "IMU irq");
 
 	/* misc gpios */
 	p7brd_export_gpio(P7_GPIO_NR(82), GPIOF_IN, "COM_Debug_On");

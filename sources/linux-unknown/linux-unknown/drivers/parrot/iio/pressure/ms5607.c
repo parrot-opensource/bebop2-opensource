@@ -12,15 +12,21 @@
  */
 //#define DEBUG
 
-#include <linux/module.h>
+#include <linux/delay.h>
 #include <linux/i2c.h>
+#include <linux/iio/buffer.h>
 #include <linux/iio/iio.h>
 #include <linux/iio/sysfs.h>
 #include <linux/iio/trigger_consumer.h>
-#include <linux/iio/buffer.h>
 #include <linux/iio/triggered_buffer.h>
-#include <linux/delay.h>
 #include <linux/math64.h>
+#include <linux/module.h>
+#ifdef CONFIG_PARROT_MS5607_NOTRIGGER
+#include <linux/iio/buffer.h>
+#include <linux/iio/kfifo_buf.h>
+#endif
+
+#include <iio/platform_data/mykonos3.h>
 
 #define MS5607_CMD_RESET	0x1E /* ADC reset command */
 #define MS5607_CMD_ADC_READ	0x00 /* ADC read command */
@@ -99,6 +105,8 @@ struct ms5607_data {
 		uint32_t			temperature;
 		uint32_t			pressure;
 	} raw_buffer;
+	int					pressure_fetched;
+	int					temperature_fetched;
 };
 
 static const int ms5607_oversampling_ratio_values[OSR_NR] = {
@@ -301,7 +309,7 @@ static int ms5607_read_calibration(struct ms5607_data *data)
 	for (i = 0; i < MS5607_PROM_SZ; i++) {
 		ret = i2c_smbus_write_byte(data->client, MS5607_CMD_PROM_RD+2*i);
 		if (ret < 0) {
-			dev_err(&data->client->dev, "%s: Command calibration fails\n", __func__);
+			dev_err(&data->client->dev, "%s: Command calibration fails (i = %d)\n", __func__, i);
 			return ret;
 		}
 		ret = i2c_master_recv(data->client, (char *)&prom[i], sizeof(s16));
@@ -385,7 +393,7 @@ static const unsigned long ms5607_conversion_time[OSR_NR][2] = {
 #define C_20_DEG_CELSIUS                   (20L * C_TEMPERATURE_SCALER)   /**< +20 degC */
 #define C_15_DEG_CELSIUS                   (15L * C_TEMPERATURE_SCALER)   /**< +15 degC */
 
-#define C_PRESSURE_SCALER                  (1000LL)                       /**< x 1000 scaler */
+#define C_PRESSURE_SCALER                  (10LL)                       /**< x 10 scaler */
 
 #define POW_2_4  ((uint64_t) (1U << 4U))
 #define POW_2_6  ((uint64_t) (1U << 6U))
@@ -604,14 +612,7 @@ static int ms5607_read_processed_temperature(struct ms5607_data *data)
 
 static int ms5607_read_processed_pressure(struct ms5607_data *data)
 {
-	int		ret;
-
-	ret = ms5607_read_processed_temperature(data);
-	if (ret < 0) {
-		dev_err(&data->client->dev,
-			"%s: error %d on ms5607_read_processed_temperature\n", __func__, ret);
-		return ret;
-	}
+	int ret;
 
 	ret = ms5607_read_raw_pressure(data);
 	if (ret < 0) {
@@ -690,20 +691,27 @@ static int ms5607_read_raw(struct iio_dev *indio_dev,
 	return ret;
 }
 
+#ifndef CONFIG_PARROT_MS5607_NOTRIGGER
 static int ms5607_read(struct ms5607_data *data)
 {
 	int ret;
 
 	mutex_lock(&data->lock);
 
+	ret = ms5607_read_processed_temperature(data);
+	if (ret < 0) {
+		mutex_unlock(&data->lock);
+		goto exit;
+	}
+
 	ret = ms5607_read_processed_pressure(data);
 	if (ret < 0) {
 		mutex_unlock(&data->lock);
-		return ret;
+		goto exit;
 	}
 
+exit:
 	mutex_unlock(&data->lock);
-
 	return ret;
 }
 
@@ -727,6 +735,7 @@ done:
 	iio_trigger_notify_done(indio_dev->trig);
 	return IRQ_HANDLED;
 }
+#endif
 
 static const struct iio_chan_spec ms5607_channels[] = {
 	{
@@ -823,6 +832,134 @@ static const struct iio_info ms5607_info = {
 
 static const unsigned long ms5607_scan_masks[] = {0x3, 0}; /* 2 channels Pressure & Temperature */
 
+#ifdef CONFIG_PARROT_MS5607_NOTRIGGER
+static int ms5607_fetch_temp(struct iio_dev *indio_dev)
+{
+	struct ms5607_data *data = iio_priv(indio_dev);
+	int ret = 0;
+
+	if (!data->pressure_fetched && !data->temperature_fetched)
+		data->timestamps[TS_trigger] = iio_get_time_ns();
+
+	mutex_lock(&data->lock);
+
+	ret = ms5607_read_processed_temperature(data);
+	if (ret < 0) {
+		mutex_unlock(&data->lock);
+		goto exit;
+	}
+
+	mutex_unlock(&data->lock);
+
+	data->timestamps[TS_push_temperature] = iio_get_time_ns();;
+	data->temperature_fetched = 1;
+
+	if (data->pressure_fetched && data->temperature_fetched) {
+		data->pressure_fetched = 0;
+		data->temperature_fetched = 0;
+		iio_push_to_buffers_with_timestamp(indio_dev,
+					   &data->processed_buffer,
+					   data->timestamps[TS_push_pressure]);
+	}
+exit:
+	return ret;
+}
+
+static int ms5607_fetch_pressure(struct iio_dev *indio_dev)
+{
+	struct ms5607_data *data = iio_priv(indio_dev);
+	int ret = 0;
+
+	if (!data->pressure_fetched && !data->temperature_fetched)
+		data->timestamps[TS_trigger] = iio_get_time_ns();
+
+	mutex_lock(&data->lock);
+
+	ret = ms5607_read_processed_pressure(data);
+	if (ret < 0) {
+		mutex_unlock(&data->lock);
+		goto exit;
+	}
+
+	mutex_unlock(&data->lock);
+
+	data->timestamps[TS_push_pressure] = iio_get_time_ns();
+	data->pressure_fetched = 1;
+
+	if (data->pressure_fetched && data->temperature_fetched) {
+		data->pressure_fetched = 0;
+		data->temperature_fetched = 0;
+		iio_push_to_buffers_with_timestamp(indio_dev,
+					   &data->processed_buffer,
+					   data->timestamps[TS_push_pressure]);
+	}
+exit:
+	return ret;
+}
+
+static const struct iio_buffer_setup_ops ms5607_iio_buffer_setup_ops = {
+};
+
+struct iio_mykonos3_ops	ms5607_iio_mykonos3_ops_temp = {
+	.request_data = NULL,
+	.fetch_data   = ms5607_fetch_temp,
+};
+
+struct iio_mykonos3_ops	ms5607_iio_mykonos3_ops_pressure = {
+	.request_data = NULL,
+	.fetch_data   = ms5607_fetch_pressure,
+};
+#endif
+
+static int ms5607_iio_buffer_new(struct iio_dev *indio_dev)
+{
+	int err = 0;
+#ifdef CONFIG_PARROT_MS5607_NOTRIGGER
+	struct iio_buffer *buffer = NULL;
+
+	indio_dev->modes     = INDIO_BUFFER_HARDWARE;
+	indio_dev->setup_ops = &ms5607_iio_buffer_setup_ops;
+
+	buffer = iio_kfifo_allocate(indio_dev);
+	if (!buffer) {
+		err = -ENOMEM;
+		goto exit;
+	}
+
+	iio_device_attach_buffer(indio_dev, buffer);
+
+	err = iio_buffer_register(indio_dev, ms5607_channels,
+				  ARRAY_SIZE(ms5607_channels));
+	if (err < 0)
+		goto exit;
+
+	iio_mykonos3_register(IIO_MYKONOS3_BAROMETER, indio_dev,
+			      &ms5607_iio_mykonos3_ops_pressure);
+	iio_mykonos3_register(IIO_MYKONOS3_TEMP, indio_dev,
+			      &ms5607_iio_mykonos3_ops_temp);
+#else
+	indio_dev->modes = INDIO_DIRECT_MODE;
+
+	err = iio_triggered_buffer_setup(indio_dev, NULL,
+					 ms5607_trigger_handler, NULL);
+	if (err < 0)
+		goto exit;
+#endif
+exit:
+	return err;
+}
+
+static void ms5607_iio_buffer_cleanup(struct iio_dev *indio_dev)
+{
+#ifdef CONFIG_PARROT_MS5607_NOTRIGGER
+	iio_kfifo_free(indio_dev->buffer);
+	iio_mykonos3_unregister(IIO_MYKONOS3_BAROMETER, indio_dev);
+#else
+	iio_triggered_buffer_cleanup(indio_dev);
+#endif
+	iio_buffer_unregister(indio_dev);
+}
+
 static int ms5607_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
@@ -842,7 +979,6 @@ static int ms5607_probe(struct i2c_client *client,
 	indio_dev->info = &ms5607_info;
 	indio_dev->name = id->name;
 	indio_dev->dev.parent = &client->dev;
-	indio_dev->modes = INDIO_DIRECT_MODE;
 	indio_dev->channels = ms5607_channels;
 	indio_dev->num_channels = ARRAY_SIZE(ms5607_channels);
 	indio_dev->available_scan_masks = ms5607_scan_masks;
@@ -850,11 +986,10 @@ static int ms5607_probe(struct i2c_client *client,
 	setup_oversampling_ratios(data);
 
 	ret = ms5607_read_calibration(data);
-	if (ret < 0)
-	  	return ret;
+	/* XXX if (ret < 0)
+	  	return ret;*/
 
-	ret = iio_triggered_buffer_setup(indio_dev, NULL,
-					 ms5607_trigger_handler, NULL);
+	ret = ms5607_iio_buffer_new(indio_dev);
 	if (ret < 0)
 		return ret;
 
@@ -869,7 +1004,7 @@ static int ms5607_probe(struct i2c_client *client,
 	return 0;
 
 buffer_cleanup:
-	iio_triggered_buffer_cleanup(indio_dev);
+	ms5607_iio_buffer_cleanup(indio_dev);
 	return ret;
 }
 
@@ -878,7 +1013,7 @@ static int ms5607_remove(struct i2c_client *client)
 	struct iio_dev *indio_dev = i2c_get_clientdata(client);
 
 	devm_iio_device_unregister(&client->dev, indio_dev);
-	iio_triggered_buffer_cleanup(indio_dev);
+	ms5607_iio_buffer_cleanup(indio_dev);
 
 	return 0;
 }

@@ -76,6 +76,7 @@
 #define VGTT_HW_13	(BIT(4) | BIT(3) | BIT(2) | VGTT_BSP)
 #define VGTT_HW_14	(BIT(4) | BIT(3) | BIT(2) | BIT(1) | VGTT_BSP)
 
+static int hw_rev;
 
 /*************
  * Versions
@@ -613,6 +614,8 @@ static struct smsc82514_pdata hub_init = {
 	.us_port   = DS_HIGH,
 	.ds_port_1 = DS_HIGH,
 	.ds_port_2 = DS_HIGH,
+	.ds_port_3 = DS_HIGH,
+	.ds_port_4 = DS_HIGH,
 	.reset_pin = P7_GPIO_NR(USB_HUB_RST_N),
 };
 
@@ -819,10 +822,51 @@ static int __init volvo_trucks_get_rev(void)
 	return board_rev;
 }
 
+/* Check if the hadware revision is >= or <= to
+ * the reference revision passed as argument*/
+static int __init volvo_trucks_rev_compare(int ref_rev, int greater)
+{
+	int revs[] = {VGTT_HW_00, VGTT_HW_01, VGTT_HW_02,
+		VGTT_HW_03, VGTT_HW_04, VGTT_HW_05,
+		VGTT_HW_06, VGTT_HW_07, VGTT_HW_08,
+		VGTT_HW_09, VGTT_HW_10, VGTT_HW_11,
+		VGTT_HW_12, VGTT_HW_13};
+
+	int i, found = 0;
+
+	if (!hw_rev)
+		BUG_ON(!hw_rev);
+
+	if (hw_rev == ref_rev)
+		return 1;
+
+	for (i = 0; i < ARRAY_SIZE(revs); i++) {
+
+		if (revs[i] == ref_rev)
+			found = 1;
+
+		if (revs[i] == hw_rev) {
+			if ((found && greater) /* hw_rev > ref_rev */
+			   || (!found && !greater)) { /* hw_rev < ref_rev */
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+	}
+
+	return 0;
+}
+
+/* Hardware revision greater than reference revision */
+#define hw_rev_gt(x) volvo_trucks_rev_compare(x, 1)
+
+/* Hardware revision lower than reference revision */
+#define hw_rev_lt(x) volvo_trucks_rev_compare(x, 0)
 
 static void __init init_board(void)
 {
-	int loop, hw_rev;
+	int loop;
 
 	unsigned int fb_nr = ARRAY_SIZE(volvo_truck_avi_lcd0_overlays);
 	unsigned long fb_start = volvo_truck_avi_lcd0_overlays[fb_nr - 1].dma_memory.start;
@@ -898,15 +942,15 @@ static void __init init_board(void)
 	/* eMMC init */
 	p7brd_init_sdhci(2, &volvo_truck_sdhci_emmc_pdata,
 					NULL, NULL, NULL,
-					(hw_rev >= VGTT_HW_03)?
+					(hw_rev_gt(VGTT_HW_03)) ?
 					volvo_truck_sdhci_emmc_pins:NULL,
-					(hw_rev >= VGTT_HW_03)?
+					(hw_rev_gt(VGTT_HW_03)) ?
 					ARRAY_SIZE(volvo_truck_sdhci_emmc_pins):0);
 
 	/* AM/FM Tuner init
 	   SPI1 (spi0) : AM/FM Tuner */
 	p7_init_spim_slave(0, &amfm_tuner_spim_dev);
-	if (hw_rev >= VGTT_HW_03) {
+	if (hw_rev_gt(VGTT_HW_03)) {
 		fc7100_init_spim_single(0, 1, -1 /*3*/, 0, 2);
 	} else {
 		fc7100_init_spim_single(0, 16, -1 /*18*/, 17, 19);
@@ -918,7 +962,7 @@ static void __init init_board(void)
 	/* DAB :  DiB30062M
 	   SPI2 (spi1) : DAB */
 	p7_init_spim_slave(1, &dab_spim_dev);
-	if (hw_rev >= VGTT_HW_03) {
+	if (hw_rev_gt(VGTT_HW_03)) {
 		fc7100_init_spim_single(1, 16, 17, 18, 19);
 	} else {
 		fc7100_init_spim_single(1, 1, 0, 3, 2);
@@ -941,7 +985,7 @@ static void __init init_board(void)
 	for( loop = 0; loop < ARRAY_SIZE(volvo_truck_gpios); loop ++){
 
 		/* update "amfm-cs" */
-		if ((hw_rev >= VGTT_HW_03)
+		if ((hw_rev_gt(VGTT_HW_03))
 		   && (volvo_truck_gpios[loop].gpio
 			== P7_GPIO_NR(AMFM_TUNER_CS))) {
 			volvo_truck_gpios[loop].gpio =

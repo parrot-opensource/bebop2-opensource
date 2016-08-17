@@ -27,5 +27,6 @@
 int bldc_cypress_probe(struct iio_dev *indio_dev);
 void bldc_cypress_remove(struct iio_dev *indio_dev);
 irqreturn_t bldc_cypress_read_fifo(int irq, void *p);
+int bldc_cypress_fetch_data(struct iio_dev *indio_dev);
 
 #endif

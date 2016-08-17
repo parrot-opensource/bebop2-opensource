@@ -60,6 +60,8 @@ static int __devinit p7i2cmux_probe(struct platform_device *pdev)
 	int                              i;
 	int                              ret   = 0;
 
+	printk("%s\n", __func__);
+
 	if (!pdata)
 		return -ENODEV;
 
@@ -199,7 +201,7 @@ module_platform_driver(p7i2cmux_driver);
 #else
 static int __init p7_i2cmux_init(void)
 {
-       return platform_driver_register(&p7i2cmux_driver);
+	return platform_driver_register(&p7i2cmux_driver);
 }
 
 postcore_initcall(p7_i2cmux_init);

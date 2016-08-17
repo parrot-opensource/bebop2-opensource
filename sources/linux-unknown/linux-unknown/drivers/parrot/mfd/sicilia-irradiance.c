@@ -44,13 +44,13 @@ static struct i2c_board_info tsl2591_board_info = {
 
 static struct i2c_client * pca9633_client;
 static struct i2c_client * tsl2591_client[TSL2591_SENSORS_NB];
+static int dib0700_gpio_base = -1;
 
 static int irradiance_probe(struct usb_interface *intf,
                             const struct usb_device_id *id)
 {
 	int ret = 0;
 	struct i2c_adapter * adapter = NULL;
-	int dib0700_gpio_base;
 	int i, j;
 
 	ret = dib0700_probe(intf, &dib0700_gpio_base);
@@ -103,6 +103,8 @@ static void irradiance_device_exit(struct usb_interface *intf)
 	}
 
 	i2c_unregister_device(pca9633_client);
+	if (dib0700_gpio_base != -1)
+		gpio_free(dib0700_gpio_base + GPIO_GNSS_POWER_EN);
 	dib0700_device_exit(intf);
 }
 

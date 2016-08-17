@@ -75,13 +75,14 @@ int inv_reset_fifo(struct iio_dev *indio_dev)
 		d |= INV_MPU6050_BITS_GYRO_OUT;
 	if (st->chip_config.accl_fifo_enable)
 		d |= INV_MPU6050_BIT_ACCEL_OUT;
+	if (st->chip_config.temp_fifo_enable)
+		d |= INV_MPU6050_BIT_TEMP_OUT;
 	result = inv_mpu6050_write_reg(st, st->reg->fifo_en, d);
 	if (result)
 		goto reset_fifo_fail;
 
 	/* enable interrupt */
-	if (st->chip_config.accl_fifo_enable ||
-	    st->chip_config.gyro_fifo_enable) {
+	if (d) {
 		result = inv_mpu6050_write_reg(st, st->reg->int_enable,
 					INV_MPU6050_BIT_DATA_RDY_EN);
 		if (result)
@@ -108,7 +109,7 @@ irqreturn_t inv_mpu6050_irq_handler(int irq, void *p)
 	struct inv_mpu6050_state *st = iio_priv(indio_dev);
 	s64 timestamp;
 
-	timestamp = iio_get_time_ns();
+	timestamp = ktime_to_ns(ktime_get());
 	/* if interrupts are filtered, compensate delay */
 	timestamp -= st->chip_config.filter_period_ns;
 	kfifo_in_spinlocked(&st->timestamps, &timestamp, 1,
@@ -235,7 +236,8 @@ irqreturn_t inv_mpu6050_read_fifo(int irq, void *p)
 
 	mutex_lock(&indio_dev->mlock);
 	if (!(st->chip_config.accl_fifo_enable |
-		st->chip_config.gyro_fifo_enable))
+		st->chip_config.gyro_fifo_enable |
+		st->chip_config.temp_fifo_enable))
 		goto end_session;
 
 	/* Calculate IMU sample size (depends of enabled channels) */
@@ -245,6 +247,9 @@ irqreturn_t inv_mpu6050_read_fifo(int irq, void *p)
 
 	if (st->chip_config.gyro_fifo_enable)
 		bytes_per_datum += INV_MPU6050_BYTES_PER_3AXIS_SENSOR;
+
+	if (st->chip_config.temp_fifo_enable)
+		bytes_per_datum += INV_MPU6050_BYTES_TEMPERATURE;
 
 	/* Fetch FIFO size */
 	result = i2c_smbus_read_i2c_block_data(st->client,

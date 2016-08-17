@@ -33,6 +33,7 @@
 #include <video/avi.h>
 #include <spi/p7-spi.h>
 #include <spi/p7-spim.h>
+#include <linux/reboot.h>
 #include "board-common.h"
 #include "common.h"
 #include "pinctrl.h"
@@ -112,17 +113,17 @@ enum {
 /* Motors */
 #define HSIS_HWxx__MOTOR_PWM		0
 #define HSIS_HWxx_PWM__MOTOR_PWM	P7_PWM_00
-#define HSIS_HWxx__SERVO1_PWM		6
-#define HSIS_HWxx__SERVO2_PWM		5
-#define HSIS_HWxx__SERVO3_PWM		4
-#define HSIS_HWxx__SERVO4_PWM		3
-#define HSIS_HWxx__SERVO5_PWM		2
+#define HSIS_HWxx__SERVO1_PWM		4
+#define HSIS_HWxx__SERVO2_PWM		3
+#define HSIS_HWxx__SERVO3_PWM		5
+#define HSIS_HWxx__SERVO4_PWM		2
+#define HSIS_HWxx__SERVO5_PWM		6
 #define HSIS_HWxx__SERVO6_PWM		1
-#define HSIS_HWxx_PWM__SERVO1_PWM	P7_PWM_06
-#define HSIS_HWxx_PWM__SERVO2_PWM	P7_PWM_05
-#define HSIS_HWxx_PWM__SERVO3_PWM	P7_PWM_04
-#define HSIS_HWxx_PWM__SERVO4_PWM	P7_PWM_03
-#define HSIS_HWxx_PWM__SERVO5_PWM	P7_PWM_02
+#define HSIS_HWxx_PWM__SERVO1_PWM	P7_PWM_04
+#define HSIS_HWxx_PWM__SERVO2_PWM	P7_PWM_03
+#define HSIS_HWxx_PWM__SERVO3_PWM	P7_PWM_05
+#define HSIS_HWxx_PWM__SERVO4_PWM	P7_PWM_02
+#define HSIS_HWxx_PWM__SERVO5_PWM	P7_PWM_06
 #define HSIS_HWxx_PWM__SERVO6_PWM	P7_PWM_01
 
 /* Fan */
@@ -313,7 +314,7 @@ static struct p7gpio_filter_phase ev_irq_gpios_filter[] = {
  *   vertival camera,
  *   MEM2MEM device (scaler and ISP)
  */
-#define EVINRUDE_VIDEO_MEMORY_SIZE (176*1024*1024)
+#define EVINRUDE_VIDEO_MEMORY_SIZE (206*1024*1024)
 
 /*******
  * PWM *
@@ -649,6 +650,21 @@ static void evinrude_configure_leds(void)
 	}
 }
 
+static int evinrude_rst_notify_sys(struct notifier_block *this,
+		unsigned long code, void *unused)
+{
+	/* reset wifi chip, otherwise sometimes it doesn't work after reboot */
+	if (gpio_is_valid(ev_hsis.reset_wifi))
+		gpio_set_value(ev_hsis.reset_wifi, 1);
+
+	return 0;
+}
+
+static struct notifier_block evinrude_rst_notifier = {
+	.notifier_call = evinrude_rst_notify_sys,
+};
+
+
 static void __init evinrude_init_mach(void)
 {
 	int i;
@@ -745,11 +761,13 @@ static void __init evinrude_init_mach(void)
 	/* Init USB */
 	drone_common_init_usb(ev_hsis.host_mode_on, ev_hsis.host_mode_3v3,
 			      ev_hsis.usb0_oc);
+	/* Init EHCI 1 */
+	p7brd_init_usb(1, -1, CI_UDC_DR_HOST);
 
 	/* Init sensors */
 	drone_common_init_ak8963(AK8963_I2C_BUS, ev_hsis.magneto_int_p7);
 	drone_common_init_inv_mpu6050(MPU6050_I2C_BUS, ev_hsis.gyro_int_p7,
-				      FSYNC_GYRO_FILTER);
+				      FSYNC_GYRO_FILTER, ev_hsis.clkin_gyro);
 	drone_common_init_ms5607(MS5607_I2C_BUS);
 
 	/* Init BLDC */
@@ -771,7 +789,7 @@ static void __init evinrude_init_mach(void)
 
 	/* Export default and custom GPIOs */
 	pr_info("Evinrude board : exporting GPIOs\n");
-	if (ev_hsis.hwrev >= EV_HW01)
+	if (ev_hsis.hwrev >= EV_HW02)
 		drone_common_export_gpio(ev_hsis.reset_gnss,GPIOF_OUT_INIT_LOW, "RESET_GNSS");
 	else
 		drone_common_export_gpio(ev_hsis.reset_gnss,GPIOF_OUT_INIT_HIGH, "RESET_GNSS");
@@ -781,6 +799,8 @@ static void __init evinrude_init_mach(void)
 	pr_info(
 	    "Evinrude board : exporting HSIS to userspace in /sys/kernel/hsis");
 	drone_common_init_sysfs(ev_hsis_sysfs);
+
+	register_reboot_notifier(&evinrude_rst_notifier);
 
 	/* End of initialization */
 	pr_info("Evinrude board : init done\n");

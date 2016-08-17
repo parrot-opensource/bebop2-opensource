@@ -1022,9 +1022,10 @@ static long uvc_v4l2_do_ioctl(struct file *file, unsigned int cmd, void *arg)
 static long uvc_v4l2_ioctl(struct file *file,
 		     unsigned int cmd, unsigned long arg)
 {
+	struct video_device *vfd = video_devdata(file);
 	if (uvc_trace_param & UVC_TRACE_IOCTL) {
 		uvc_printk(KERN_DEBUG, "uvc_v4l2_ioctl(");
-		v4l_printk_ioctl(cmd);
+		v4l_printk_ioctl(video_device_node_name(vfd), cmd);
 		printk(")\n");
 	}
 

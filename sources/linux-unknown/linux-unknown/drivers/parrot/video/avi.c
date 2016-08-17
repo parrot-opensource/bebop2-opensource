@@ -1258,6 +1258,90 @@ void avi_isp_pedestal_get_registers(struct avi_node *chain_bayer,
 }
 EXPORT_SYMBOL(avi_isp_pedestal_get_registers);
 
+void avi_isp_grim_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_green_imbalance_regs *regs,
+		struct avi_isp_green_imbalance_green_red_coeff_mem_regs *gr_regs,
+		struct avi_isp_green_imbalance_green_blue_coeff_mem_regs *gb_regs)
+{
+	unsigned long addr;
+
+	addr = avi_node_base(chain_bayer) + AVI_ISP_GREEN_IMBALANCE;
+
+	memcpy_from_registers(regs, addr, sizeof(*regs));
+	memcpy_from_registers(gr_regs,
+			addr + AVI_ISP_GREEN_IMBALANCE_GREEN_RED_COEFF_MEM,
+			sizeof(*gr_regs));
+	memcpy_from_registers(gb_regs,
+			addr + AVI_ISP_GREEN_IMBALANCE_GREEN_BLUE_COEFF_MEM,
+			sizeof(*gb_regs));
+}
+EXPORT_SYMBOL(avi_isp_grim_get_registers);
+
+void avi_isp_dpc_rgrim_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_dead_pixel_correction_regs *regs,
+		struct avi_isp_dead_pixel_correction_list_mem_regs *list)
+{
+	unsigned long addr;
+
+	addr = avi_node_base(chain_bayer) + AVI_ISP_DEAD_PIXEL_CORRECTION;
+
+	memcpy_from_registers(regs, addr + AVI_ISP_DEAD_PIXEL_CORRECTION_CFA,
+			      sizeof(*regs));
+	memcpy_from_registers(list,
+			      addr + AVI_ISP_DEAD_PIXEL_CORRECTION_LIST_MEM,
+			      sizeof(*list));
+}
+EXPORT_SYMBOL(avi_isp_dpc_rgrim_get_registers);
+
+void avi_isp_denoising_get_registers(struct avi_node *chain_bayer,
+				     struct avi_isp_denoising_regs *regs)
+{
+	memcpy_from_registers(regs,
+			      avi_node_base(chain_bayer) + AVI_ISP_DENOISING,
+			      sizeof(*regs));
+}
+EXPORT_SYMBOL(avi_isp_denoising_get_registers);
+
+void avi_isp_lsc_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_lens_shading_correction_regs *regs,
+		struct avi_isp_lens_shading_correction_red_coeff_mem_regs *r_regs,
+		struct avi_isp_lens_shading_correction_green_coeff_mem_regs *g_regs,
+		struct avi_isp_lens_shading_correction_blue_coeff_mem_regs *b_regs)
+{
+	unsigned long addr;
+
+	addr = avi_node_base(chain_bayer) + AVI_ISP_LENS_SHADING_CORRECTION;
+
+	memcpy_from_registers(regs, addr, sizeof (*regs));
+	memcpy_from_registers(r_regs,
+			      addr + AVI_ISP_LENS_SHADING_CORRECTION_RED_COEFF_MEM,
+			      sizeof(*r_regs));
+	memcpy_from_registers(g_regs,
+			      addr + AVI_ISP_LENS_SHADING_CORRECTION_GREEN_COEFF_MEM,
+			      sizeof(*g_regs));
+	memcpy_from_registers(b_regs,
+			      addr + AVI_ISP_LENS_SHADING_CORRECTION_BLUE_COEFF_MEM,
+			      sizeof(*b_regs));
+}
+EXPORT_SYMBOL(avi_isp_lsc_get_registers);
+
+void avi_isp_ca_correction_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_chromatic_aberration_regs *regs)
+{
+	memcpy_from_registers(regs,
+			      avi_node_base(chain_bayer) + AVI_ISP_CHROMATIC_ABERRATION,
+			      sizeof(*regs));
+}
+EXPORT_SYMBOL(avi_isp_ca_correction_get_registers);
+
+void avi_isp_color_correction_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_color_correction_regs *regs)
+{
+	memcpy_from_registers(regs,
+			      avi_node_base(chain_bayer) + AVI_ISP_COLOR_CORRECTION,
+			      sizeof(*regs));
+}
+EXPORT_SYMBOL(avi_isp_color_correction_get_registers);
 
 int avi_node_get_irq_flag(struct avi_node const *node)
 {

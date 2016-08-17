@@ -682,9 +682,6 @@ void __init drone_common_init_usb(int gpio_on, int gpio_host_mode_3v3,
 	else
 		p7brd_init_usb(0, gpio_on, CI_UDC_DR_DUAL_DEVICE);
 
-	/* Init EHCI 1 */
-	p7brd_init_usb(1, -1, CI_UDC_DR_HOST);
-
 	/* Export USB GPIOs */
 	drone_common_export_gpio(gpio_host_mode_3v3, GPIOF_IN, "HOST_MODE_3V3");
 	drone_common_export_gpio(gpio_usb0_oc, GPIOF_IN, "USB0_OC");
@@ -706,7 +703,7 @@ void __init drone_common_init_usb(int gpio_on, int gpio_host_mode_3v3,
 static struct ak8975_platform_data ak8963_pdata = {
 	.orientation = DRONE_MAG_ROTATION_MATRIX,
 	.drdy_gpio = -1, /* GPIO connected to DRDY pin exclusive with I2C irq */
-	.trg_gpio = -1   /* GPIO connected to TRG pin (AK8963)  */
+	.trg_gpio = -1,  /* GPIO connected to TRG pin (AK8963)  */
 };
 #else
 #define IIO_MAGNETOMETER_AK8963 "ak8963"
@@ -761,9 +758,56 @@ static struct i2c_board_info inv_mpu6050_info = {
 #endif
 };
 
-void __init drone_common_init_inv_mpu6050(int i2c_bus, int irq, int filter_rate)
+#ifdef DRIVER_PARROT_IIO_INV_MPU6050
+/*
+ * Set the MPU6050 (gyro/accell) input clock
+ * Desired frequency is 32768 Hz with 50% duty cycle (period=30517ns)
+ * Period was set empirically to 31517 to get a 5ms data ready period
+ * Desired frequency is slightly modified to synchronize camera and IMU
+ */
+#define MPU6050_PWM_PERIOD_NS 31510
+static int mpu6050_pwm_enable(int clkin_pwm)
+{
+	struct pwm_device *mpu6050_pwm_device;
+	int ret = 0;
+
+	/* check pwm pin is valid */
+	if (!gpio_is_valid(clkin_pwm))
+		return -EINVAL;
+
+	/* Request PWM */
+	mpu6050_pwm_device = pwm_request(clkin_pwm, "MPU6050_CLK");
+	if (IS_ERR(mpu6050_pwm_device)) {
+		ret = PTR_ERR(mpu6050_pwm_device);
+		goto err_alloc;
+	}
+
+	/* Configure PWM */
+	ret = pwm_config(mpu6050_pwm_device, 0, MPU6050_PWM_PERIOD_NS);
+	if (ret)
+		goto err_config;
+
+	/* Enable PWM */
+	ret = pwm_enable(mpu6050_pwm_device);
+	if (ret)
+		goto err_config;
+
+	return 0;
+
+err_config:
+	pwm_free(mpu6050_pwm_device);
+err_alloc:
+	pr_warn("failed to set clock for mpu6050 chip\n");
+	return ret;
+}
+
+#endif
+
+void __init drone_common_init_inv_mpu6050(int i2c_bus, int irq, int filter_rate,
+					 int clkin_pwm)
 {
 #ifdef DRIVER_PARROT_IIO_INV_MPU6050
+	mpu6050_pwm_enable(clkin_pwm);
 	inv_mpu6050_pdata.filter_rate = filter_rate;
 	inv_mpu6050_info.irq = P7_GPIO_NR(irq);
 	parrot_init_i2c_slave(i2c_bus, &inv_mpu6050_info, "IMU",

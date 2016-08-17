@@ -13,6 +13,7 @@
 #include <media/v4l2-device.h>
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-dev.h>
+#include <media/v4l2-event.h>
 #include <media/videobuf2-core.h>
 #include <media/videobuf2-dma-contig.h>
 #include <parrot/avicam_dummy_dev.h>
@@ -873,6 +874,7 @@ static void avicam_next(struct avi_capture_context	*ctx,
 	dma_addr_t		 dma_addr;
 	unsigned long		 flags;
 	bool			 handled       = false;
+	struct v4l2_event event;
 
 #ifdef CONFIG_AVICAM_USE_ISP
 	/* Do blanking ISP task */
@@ -896,6 +898,12 @@ static void avicam_next(struct avi_capture_context	*ctx,
 	/* Propagate interrupt to subdev */
 	sd = avicam_remote_subdev(avicam, NULL);
 	v4l2_subdev_call(sd, core, interrupt_service_routine, 0, &handled);
+
+	/* Queue V4L2 frame_sync event */
+	memset(&event, 0, sizeof(event));
+	event.type = V4L2_EVENT_FRAME_SYNC;
+	event.u.frame_sync.frame_sequence = avicam->frame_count / 2;
+	v4l2_event_queue(avicam->vdev, &event);
 
 	if (vbuf == NULL) {
 		spin_lock_irqsave(&avicam->vbq_lock, flags);
@@ -1110,12 +1118,27 @@ static int avicam_streamon(struct vb2_queue* vq, unsigned int count)
 	ctx->interlaced	= (pix->field != V4L2_FIELD_NONE);
 
 	/* There is no V4L2 colorspace for 'GREY' so we specify it manually */
-	if (mbus_desc->type == AVI_PIXTYPE_GREY)
-		ctx->capture_cspace = (mbus_desc->bpp == 8) ? AVI_GREY_CSPACE :
-							      AVI_Y10_CSPACE;
-	else
+	if (mbus_desc->type == AVI_PIXTYPE_GREY) {
+		if (mbus_desc->bpp == 8 ||
+		    pix->pixelformat == V4L2_PIX_FMT_GREY) {
+			ctx->capture_cspace = AVI_GREY_CSPACE;
+		} else {
+			ctx->capture_cspace = AVI_Y10_CSPACE;
+		}
+	} else {
 		ctx->capture_cspace =
 			avi_v4l2_to_avi_cspace(format.format.colorspace);
+	}
+
+	if (mbus_desc->bpp == 10 && ctx->capture_cspace == AVI_GREY_CSPACE) {
+		/* We have a 10 bit interface but we only want to capture 8
+		 * bits. We can do this by using ror-lsb to shift the 8MSB to
+		 * the first 8bits and then set the unpacker to move those 8bits
+		 * to the Y component in the VL */
+		ctx->interface.ror_lsb = 1;
+		ctx->interface.raw10 = 0;
+		ctx->interface.unpacker = AVI_CAP_RAW8_1X8;
+	}
 
 	ctx->next	= &avicam_next;
 	ctx->done	= &avicam_done;
@@ -1423,6 +1446,21 @@ static long avicam_default(struct file	*file,
 	return ret;
 }
 
+static int avicam_subscribe_event(struct v4l2_fh *fh,
+                                  struct v4l2_event_subscription *sub)
+{
+	if (sub->type != V4L2_EVENT_FRAME_SYNC)
+		return -EINVAL;
+
+	return v4l2_event_subscribe(fh, sub, 0, NULL);
+}
+
+static int avicam_unsubscribe_event(struct v4l2_fh *fh,
+                                     struct v4l2_event_subscription *sub)
+{
+	return v4l2_event_unsubscribe(fh, sub);
+}
+
 static const struct v4l2_ioctl_ops avicam_ioctl_ops = {
 	.vidioc_querycap	 = avicam_querycap,
 	.vidioc_enum_fmt_vid_cap = avicam_enum_fmt_vid_cap,
@@ -1448,6 +1486,9 @@ static const struct v4l2_ioctl_ops avicam_ioctl_ops = {
 	.vidioc_streamoff	 = vb2_ioctl_streamoff,
 	.vidioc_default		 = avicam_default,
 
+	.vidioc_subscribe_event   = avicam_subscribe_event,
+	.vidioc_unsubscribe_event = avicam_unsubscribe_event,
+
 	/* These functions just call the subdev methods of the same name. They
 	 * are only used by the adv7611 userland tool for debugging
 	 * purposes. Once they are not needed anymore we should remove them from
@@ -1471,13 +1512,25 @@ static int avicam_open(struct file *file)
 	int				 ret;
 	struct vb2_queue*                q = &avicam->vb_vidq;
 
+	struct avicam_fh               *fh;
+
+	fh = kzalloc(sizeof(*fh), GFP_KERNEL);
+	if (!fh) {
+		ret = -ENOMEM;
+		goto no_mem;
+	}
+
+	v4l2_fh_init(&fh->vfh, avicam->vdev);
+	v4l2_fh_add(&fh->vfh);
+	file->private_data = &fh->vfh;
+
 	mutex_lock(&avicam->lock);
 
 	sd = avicam_remote_subdev(avicam, &format.pad);
 	if (!sd) {
 		dev_err(avicam->dev, "no subdev found\n");
 		ret = -ENODEV;
-		goto unlock;
+		goto no_subdev;
 	}
 
 	if (avicam->use_count > 0) {
@@ -1542,6 +1595,13 @@ static int avicam_open(struct file *file)
 
 	ret = 0;
 
+	goto unlock;
+
+ no_subdev:
+	v4l2_fh_del(&fh->vfh);
+	file->private_data = NULL;
+	kfree(fh);
+
  unlock:
 	if (ret == 0)
 		avicam->use_count++;
@@ -1549,7 +1609,7 @@ static int avicam_open(struct file *file)
 	mutex_unlock(&avicam->lock);
 
 	dprintk(avicam, "camera device opened\n");
-
+ no_mem:
 	return ret;
 }
 

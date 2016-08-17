@@ -103,6 +103,8 @@ obj-$(CONFIG_MACH_PARROT_BEBOP)            += board-bebop.o
 obj-$(CONFIG_MACH_PARROT_RNB6)             += board-rnb6.o
 obj-$(CONFIG_MACH_PARROT_PAROS)            += board-paros.o
 obj-$(CONFIG_MACH_PARROT_SICILIA)          += board-sicilia.o
+obj-$(CONFIG_MACH_PARROT_GALILEI)          += board-galilei.o
+obj-$(CONFIG_MACH_PARROT_MPP)              += board-mpp.o
 
 # P7Dev related
 obj-$(CONFIG_MACH_PARROT_P7DEV)             += board-p7dev.o
@@ -110,6 +112,7 @@ obj-$(CONFIG_ARCH_PARROT7_P7DEV_NOR)        += board-p7dev-nor.o
 obj-$(CONFIG_ARCH_PARROT7_P7DEV_FPGA)       += board-p7dev-fpga.o
 obj-$(CONFIG_ARCH_PARROT7_P7DEV_RNB6)       += board-p7dev-rnb6.o
 obj-$(CONFIG_ARCH_PARROT7_P7DEV_CAMERA)     += board-p7dev-camera.o
+obj-$(CONFIG_ARCH_PARROT7_P7DEV_GALILEO2)   += board-p7dev-galileo2.o
 obj-$(CONFIG_ARCH_PARROT7_P7DEV_SICILIA)    += board-p7dev-sicilia.o
 obj-$(CONFIG_ARCH_PARROT7_P7DEV_HDMI)       += board-p7dev-hdmi.o
 obj-$(CONFIG_ARCH_PARROT7_P7DEV_SPI)        += board-p7dev-spi.o

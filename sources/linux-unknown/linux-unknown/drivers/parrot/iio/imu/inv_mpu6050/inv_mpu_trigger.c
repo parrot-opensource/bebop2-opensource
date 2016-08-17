@@ -23,6 +23,7 @@ static void inv_scan_query(struct iio_dev *indio_dev)
 			"before using trig-mpu6050\n");
 		st->chip_config.gyro_fifo_enable = false;
 		st->chip_config.accl_fifo_enable = false;
+		st->chip_config.temp_fifo_enable = false;
 		return;
 	}
 
@@ -32,6 +33,10 @@ static void inv_scan_query(struct iio_dev *indio_dev)
 		test_bit(INV_MPU6050_SCAN_GYRO_Y,
 			 indio_dev->active_scan_mask) ||
 		test_bit(INV_MPU6050_SCAN_GYRO_Z,
+			 indio_dev->active_scan_mask);
+
+	st->chip_config.temp_fifo_enable =
+		test_bit(INV_MPU6050_SCAN_TEMP,
 			 indio_dev->active_scan_mask);
 
 	st->chip_config.accl_fifo_enable =

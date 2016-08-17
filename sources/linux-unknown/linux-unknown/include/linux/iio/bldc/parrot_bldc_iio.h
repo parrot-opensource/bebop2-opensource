@@ -37,6 +37,13 @@
 #define PARROT_BLDC_GET_INFO_LENGTH	14
 #define PARROT_BLDC_OBS_DATA_LENGTH	15
 
+/* Flight Data status */
+enum {
+	PARROT_BLDC_FD_OLD = 0,
+	PARROT_BLDC_FD_UPDATE_REQ,
+	PARROT_BLDC_FD_UPDATED
+};
+
 /* scan element definition */
 enum {
 	PARROT_BLDC_SCAN_OBS_DATA_SPEED_MOTOR1,
@@ -111,6 +118,8 @@ enum PARROT_BLDC_IIO_ATTR_ADDR {
 	ATTR_INFO_FT_PREVIOUS_TIME,
 	ATTR_INFO_FT_TOTAL_TIME,
 	ATTR_INFO_FT_LAST_ERROR,
+	ATTR_INFO_FT_ALL,
+	ATTR_INFO_FT_UPDATE,
 	ATTR_INFO_SPIN_DIR,
 	ATTR_OBS_MOTORS,
 	ATTR_RC
@@ -136,6 +145,8 @@ struct bldc_state {
 	struct mutex mutex;
 	u8 *buffer;
 	int is_overflow;
+	int fd_state;
+	u8 *cache;
 };
 
 void bldc_i2c_configure(struct iio_dev *indio_dev,

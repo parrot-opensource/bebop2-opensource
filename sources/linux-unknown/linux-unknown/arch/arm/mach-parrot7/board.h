@@ -128,6 +128,11 @@ extern p7_init_brd_fn spisdb_probe __init;
 extern p7_init_brd_fn cameradb_probe __init;
 #endif
 
+#ifdef CONFIG_ARCH_PARROT7_P7DEV_GALILEO2
+extern p7_init_brd_fn galileo2db_probe __init;
+extern p7_init_brd_fn galileo2db_rsvmem __init;
+#endif
+
 #ifdef CONFIG_ARCH_PARROT7_P7DEV_SICILIA
 extern p7_init_brd_fn siciliadb_probe __init;
 #endif

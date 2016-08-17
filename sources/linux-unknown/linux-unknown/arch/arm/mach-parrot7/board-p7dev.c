@@ -137,6 +137,24 @@ static bool p7dev_cameradb_there(void)
 }
 #endif  /* CONFIG_ARCH_PARROT7_P7DEV_CAMERA */
 
+#ifdef CONFIG_ARCH_PARROT7_P7DEV_GALILEO2
+P7_DEFINE_BOARD(p7dev_galileo2db,
+                "galileo2",
+                &p7dev_j100_conn,
+                galileo2db_probe,
+                galileo2db_rsvmem);
+
+static int p7dev_galileo2db_there(void)
+{
+	return p7_brd_there(&p7dev_galileo2db);
+}
+#else   /* CONFIG_ARCH_PARROT7_P7DEV_GALILEO2 */
+static bool p7dev_galileo2db_there(void)
+{
+	return false;
+}
+#endif  /* CONFIG_ARCH_PARROT7_P7DEV_GALILEO2 */
+
 #ifdef CONFIG_ARCH_PARROT7_P7DEV_SICILIA
 P7_DEFINE_BOARD(p7dev_siciliadb,
                 "sicilia",
@@ -264,6 +282,9 @@ static struct p7_board* const p7dev_boards[] __initconst = {
 #ifdef CONFIG_ARCH_PARROT7_P7DEV_CAMERA
 	  &p7dev_cameradb,
 #endif
+#ifdef CONFIG_ARCH_PARROT7_P7DEV_GALILEO2
+	  &p7dev_galileo2db,
+#endif
 #ifdef CONFIG_ARCH_PARROT7_P7DEV_SICILIA
 	  &p7dev_siciliadb,
 #endif
@@ -359,12 +380,12 @@ static struct pinctrl_map p7dev_aai_pins[] __initdata = {
 	P7_INIT_PINCFG(P7_AAI_05, p7dev_aai_conf),
 	P7_INIT_PINMAP(P7_AAI_09),
 	P7_INIT_PINCFG(P7_AAI_09, p7dev_aai_conf),
-	P7_INIT_PINMAP(P7_AAI_11),
-	P7_INIT_PINCFG(P7_AAI_11, p7dev_aai_conf),
+	/*P7_INIT_PINMAP(P7_AAI_11),
+	  P7_INIT_PINCFG(P7_AAI_11, p7dev_aai_conf),*/
 	P7_INIT_PINMAP(P7_AAI_12),
 	P7_INIT_PINCFG(P7_AAI_12, p7dev_aai_conf),
-	P7_INIT_PINMAP(P7_AAI_13),
-	P7_INIT_PINCFG(P7_AAI_13, p7dev_aai_conf),
+	/*P7_INIT_PINMAP(P7_AAI_13),
+	  P7_INIT_PINCFG(P7_AAI_13, p7dev_aai_conf),*/
 	P7_INIT_PINMAP(P7_AAI_14),
 	P7_INIT_PINCFG(P7_AAI_14, p7dev_aai_conf),
 
@@ -879,9 +900,9 @@ static void __init p7dev_init_mach(void)
 	p7brd_init_i2cm(1, 100);
 
 	p7_init_p7mu(0,
-				 &p7dev_p7mu_pdata,
-				 p7dev_p7mu_pins,
-				 ARRAY_SIZE(p7dev_p7mu_pins));
+		     &p7dev_p7mu_pdata,
+		     p7dev_p7mu_pins,
+		     ARRAY_SIZE(p7dev_p7mu_pins));
 
 	p7_probe_brd(p7dev_boards, ARRAY_SIZE(p7dev_boards));
 
@@ -927,6 +948,9 @@ static void __init p7dev_init_mach(void)
 		p7brd_init_sdhci(2, &p7dev_sdhci2_pdata, NULL, NULL, NULL,
 				 NULL, 0);
 
+
+#if 0
+
 	/*
 	 * USB0 role is host only so that we may use first controller with daughter
 	 * boards (pins conflict with I2CM2).
@@ -937,7 +961,9 @@ static void __init p7dev_init_mach(void)
 	else
 		p7brd_init_usb(0, P7_GPIO_NR(72), CI_UDC_DR_DUAL_HOST);
 
-	if (!p7dev_cameradb_there() && !p7dev_fpgadb_there())
+	if (!p7dev_cameradb_there() &&
+	    !p7dev_fpgadb_there() &&
+	    !p7dev_galileo2db_there()) {
 		/*
 		 * I2C muxed buses are used by camera daughter board and conflict with
 		 * USB1 pins. USB1 role is host only.
@@ -945,7 +971,9 @@ static void __init p7dev_init_mach(void)
 		 * controller. Leave VBUS management reponsability to USB0 just above.
 		 */
 		p7brd_init_hcd(1, -1);
+	}
 
+#endif
 	p7_init_venc();
 	p7_init_vdec();
 	if (p7dev_rev == 0)

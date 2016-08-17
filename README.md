@@ -1,5 +1,5 @@
 Open Source Software used in **Parrot Bebop2**.  
-Firmware version: **3.0.6**  
+Firmware version: **3.1.0**  
 Unless stated otherwise, later versions of the firmware
 use these same software modules.
 
@@ -7,14 +7,17 @@ use these same software modules.
 The SDK can be found here: http://developer.parrot.com
 
 All Licenses notice files of Open Source Software used in the
-product are gathered in [notice.html](notices/police-notice.html).
+product are gathered in [notice.html](notices/police-notice.html).  
 You can download Open Source Archives from following table:
 
 |License|Package
 |---|---
 |GPL|[busybox](sources/busybox-unknown)
+|GPL|[ethtool](sources/ethtool-3.4.2)
 |GPL|[libelf](sources/libelf-0.152)
 |GPL|[lttng-ust (liblttng-ust-ctl/ustctl.c)](sources/lttng-ust-2.1.1)
+|GPL|[procps](sources/procps-3.2.8)
+|GPL|[yavta](sources/yavta-unknown)
 |GPL2|[devmem](sources/devmem-unknown)
 |GPL2|[dnsmasq](sources/dnsmasq-2.62)
 |GPL2|[e2fsprogs](sources/e2fsprogs-1.42.11)
@@ -26,6 +29,7 @@ You can download Open Source Archives from following table:
 |GPL2|[udevd](sources/udevd-164)
 |GPL2|[udevd_init](sources/udevd_init-164)
 |GPL2|[util-linux-ng](sources/util-linux-ng-2.26)
+|GPL2|[wireless_tools](sources/wireless_tools-29)
 |LGPL|[libc-arm-2012-03-fix](sources/libc-arm-2012-03-fix-unknown)
 |LGPL|[libconfig](sources/libconfig-1.5)
 |LGPL|[lttng-ust](sources/lttng-ust-2.1.1)

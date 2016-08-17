@@ -22,4 +22,10 @@ config PARROT_IIO_MS5607_TIMESTAMPS
 	depends on PARROT_IIO_MS5607
 	default n
 
+config PARROT_MS5607_NOTRIGGER
+	bool "MS5607: synchronous i2c acces with mykonos3 iio device"
+	depends on PARROT_IIO_MS5607
+	select PARROT_IIO_MYKONOS3
+	default n
+
 endmenu

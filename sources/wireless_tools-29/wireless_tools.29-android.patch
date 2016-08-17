@@ -1,0 +1,111 @@
+Seulement dans wireless_tools.29.PATCHED/: ifrename
+diff -ru wireless_tools.29/ifrename.c wireless_tools.29.PATCHED/ifrename.c
+--- wireless_tools.29/ifrename.c	2007-03-15 19:44:50.000000000 +0100
++++ wireless_tools.29.PATCHED/ifrename.c	2009-08-10 14:23:35.000000000 +0200
+@@ -451,6 +451,48 @@
+   0, { NULL, NULL, NULL, NULL, NULL },
+ };
+ 
++#ifdef ANDROID
++static ssize_t
++getdelim (char **lineptr, size_t *n, int delimiter, FILE *file)
++{
++  size_t count;
++  int ch;
++
++  if (*lineptr == NULL || *n == 0)
++    {
++      *n = 100;
++      *lineptr = malloc (*n);
++      if (*lineptr == NULL)
++        return -1;
++    }
++
++  count = 0;
++  while ((ch = fgetc (file)) != EOF)
++    {
++      if (*n <= count + 1)
++        {
++          *n *= 2;
++          *lineptr = realloc (*lineptr, *n);
++          if (*lineptr == NULL)
++            return -1;
++        }
++      (*lineptr)[count++] = ch;
++      if (ch == delimiter)
++        {
++          (*lineptr)[count] = 0;
++          return count;
++        }
++    }
++  return -1;
++}
++
++static ssize_t
++getline(char **lineptr, size_t *n, FILE *stream)
++{
++	return getdelim(lineptr, n, '\n', stream);
++}
++#endif
++
+ /******************** INTERFACE NAME MANAGEMENT ********************/
+ /*
+  * Bunch of low level function for managing interface names.
+Seulement dans wireless_tools.29.PATCHED/: iwconfig
+Seulement dans wireless_tools.29.PATCHED/: iwevent
+Seulement dans wireless_tools.29.PATCHED/: iwgetid
+diff -ru wireless_tools.29/iwlib.h wireless_tools.29.PATCHED/iwlib.h
+--- wireless_tools.29/iwlib.h	2007-06-22 20:01:04.000000000 +0200
++++ wireless_tools.29.PATCHED/iwlib.h	2009-08-10 14:23:35.000000000 +0200
+@@ -28,7 +28,11 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <netdb.h>		/* gethostbyname, getnetbyname */
++#ifndef ANDROID
+ #include <net/ethernet.h>	/* struct ether_addr */
++#else
++#include <net/if_ether.h>
++#endif
+ #include <sys/time.h>		/* struct timeval */
+ #include <unistd.h>
+ 
+Seulement dans wireless_tools.29.PATCHED/: iwlist
+Seulement dans wireless_tools.29.PATCHED/: iwpriv
+Seulement dans wireless_tools.29.PATCHED/: iwspy
+Seulement dans wireless_tools.29.PATCHED/: libiw.so.29
+diff -ru wireless_tools.29/Makefile wireless_tools.29.PATCHED/Makefile
+--- wireless_tools.29/Makefile	2009-08-10 14:08:08.000000000 +0200
++++ wireless_tools.29.PATCHED/Makefile	2009-08-10 14:23:35.000000000 +0200
+@@ -102,11 +102,11 @@
+ endif
+ 
+ # Other flags
+-CFLAGS=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
++CFLAGS+=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
+ 	-Wpointer-arith -Wcast-qual -Winline -I.
+ #CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
+ DEPFLAGS=-MMD
+-XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG)
++XCFLAGS+=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG)
+ PICFLAG=-fPIC
+ 
+ # Standard compilation targets
+@@ -145,7 +145,7 @@
+ 
+ # Compilation of the dynamic library
+ $(DYNAMIC): $(OBJS:.o=.so)
+-	$(CC) -shared -o $@ -Wl,-soname,$@ $(STRIPFLAGS) $(LIBS) -lc $^
++	$(CC) $(DYN_LDFLAGS) -shared -o $@ -Wl,-soname,$@ $(STRIPFLAGS) $(LIBS) -lc $^
+ 
+ # Compilation of the static library
+ $(STATIC): $(OBJS:.o=.so)
+@@ -162,8 +162,6 @@
+ 	install -m 755 -d $(INSTALL_LIB)
+ 	install -m 755 $(DYNAMIC) $(INSTALL_LIB)
+ 	ln -sfn $(DYNAMIC) $(INSTALL_LIB)/$(DYNAMIC_LINK)
+-	@echo "*** Don't forget to add $(INSTALL_LIB) to /etc/ld.so.conf, and run ldconfig as root. ***"
+-	@$(LDCONFIG) || echo "*** Could not run ldconfig ! ***"
+ 
+ # Install the static library
+ install-static:: $(STATIC)
+Seulement dans wireless_tools.29.PATCHED/: .unpacked

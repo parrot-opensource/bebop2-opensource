@@ -34,6 +34,7 @@
 struct avimulti_buffer {
 	struct vb2_buffer vb;
 	struct list_head list;
+	int       needs_unmap;
 	unsigned done_needed;
 	unsigned done_current;
 };
@@ -42,7 +43,7 @@ struct avimulti_buffer {
  * One instance per capturing camera
  */
 struct avi_multicapt_context {
-	unsigned                         i;	
+	unsigned                         i;
 	struct avi_capture_context	 capture_ctx;
 	struct avicam_platform_data*     avicam_pdata;
 
@@ -140,7 +141,7 @@ static inline int avimulti_instance(struct avi_multicapt_top *top)
 /**
  * Returns the mosaic image height
  */
-static int avimulti_image_height(struct avi_multicapt_top *top)
+static unsigned avimulti_image_height(struct avi_multicapt_top *top)
 {
 	return top->pdata->height * (top->pdata->nb_cameras+top->pdata->nb_full_framerate);
 }
@@ -148,7 +149,7 @@ static int avimulti_image_height(struct avi_multicapt_top *top)
 /**
  * Return the total mosaic size, in bytes
  */
-static int avimulti_image_size(struct avi_multicapt_top *top)
+static unsigned avimulti_image_size(struct avi_multicapt_top *top)
 {
 	return avimulti_image_height(top) * top->pdata->width * CAM_BYTES_PER_PIXEL;
 }
@@ -172,6 +173,12 @@ static int avimulti_metadata_height(struct avi_multicapt_top *top) {
  */
 static int avimulti_metadata_size(struct avi_multicapt_top *top) {
 	return top->pdata->width * avimulti_metadata_height(top) * CAM_BYTES_PER_PIXEL;
+}
+
+static unsigned avimulti_buffer_size(struct avi_multicapt_top *top)
+{
+	return avimulti_image_size(top) +
+		avimulti_metadata_size(top);
 }
 
 /**
@@ -199,8 +206,7 @@ static int avimulti_queue_setup(struct vb2_queue *vq,
 static int avimulti_vbuf_prepare(struct vb2_buffer* vb)
 {
 	struct avi_multicapt_top *multicapt_top = vb2_get_drv_priv(vb->vb2_queue);
-	unsigned int size = avimulti_image_size(multicapt_top) +
-			    avimulti_metadata_size(multicapt_top);
+	unsigned int size = avimulti_buffer_size(multicapt_top);
 
 	vb2_set_plane_payload(vb, 0, size);
 	vb->v4l2_buf.field = V4L2_FIELD_NONE;
@@ -289,8 +295,11 @@ static void avimulti_done(struct avi_capture_context	*ctx,
 		struct avimulti_metadata metadata;
 		unsigned int index =
 			multicapt->offset_bytes / (pdata->width * pdata->height * CAM_BYTES_PER_PIXEL);
+		u8 *image_base = (u8 *)vb2_plane_vaddr(&vbuf->vb, 0);
 		struct avimulti_metadata *metadata_addr =
-			vb2_plane_vaddr(&vbuf->vb, 0) + avimulti_image_size(multicapt_top);
+			(struct avimulti_metadata *)(image_base + avimulti_image_size(multicapt_top));
+
+		BUG_ON(image_base == NULL);
 
 		metadata.timestamp = ktime_get().tv64;
 		metadata.enabled = multicapt->enabled;
@@ -335,13 +344,15 @@ static void avimulti_done(struct avi_capture_context	*ctx,
 static void avimulti_clean_metadata(struct avi_multicapt_top *multicapt_top,
                                     struct avimulti_buffer *vbuf)
 {
-	struct avimulti_metadata *metadata_addr;
+	u8 *metadata_addr;
 
 	if (!multicapt_top->pdata->enable_metadata)
 		return;
 
-	metadata_addr = vb2_plane_vaddr(&vbuf->vb, 0) +
-			avimulti_image_size(multicapt_top);
+	metadata_addr = (u8*)vb2_plane_vaddr(&vbuf->vb, 0);
+	BUG_ON(!metadata_addr);
+
+	metadata_addr += avimulti_image_size(multicapt_top);
 
 	memset(metadata_addr, 0,
 	       sizeof(struct avimulti_metadata) *
@@ -394,7 +405,7 @@ static void avimulti_next(struct avi_capture_context    *ctx,
 			return;
 		}
 	}
-	
+
 	multicapt->cur_buf = vbuf;
 
 	/* We don't want corrupt cameras to be waited for */
@@ -494,7 +505,7 @@ static int avimulti_streamon(struct vb2_queue* vq, unsigned int count)
 		else
 			ctx->alternate              = 0;
 
-		ctx->i                              = i;	
+		ctx->i                              = i;
 		ctx->cur_alt                        = 0;
 		ctx->priv_top			    = multicapt_top;
 		ctx->cur_buf                        = NULL;
@@ -882,7 +893,6 @@ static int __devinit avimulti_probe(struct platform_device *pdev)
 	         video_device_node_name(multicapt_top->vdev));
 
 	alloc_ctx = (struct vb2_dc_conf *)vb2_dma_contig_init_ctx(&pdev->dev);
-	alloc_ctx->cache_flags = multicapt_top->pdata->vb2_cache_flags;
 
 	multicapt_top->alloc_ctx = alloc_ctx;
 	return 0;

@@ -54,7 +54,6 @@ struct avimulti_platform_data {
 	 * "HZ" = 1s
 	 */
 	unsigned int timeout;
-
 	/**
 	 * Videobuf2 cpu caching flags
 	 */

@@ -6,6 +6,7 @@ source "drivers/parrot/iio/adc/Kconfig"
 source "drivers/parrot/iio/imu/Kconfig"
 source "drivers/parrot/iio/bldc/Kconfig"
 source "drivers/parrot/iio/magnetometer/Kconfig"
+source "drivers/parrot/iio/parrot/Kconfig"
 source "drivers/parrot/iio/pressure/Kconfig"
 if IIO_TRIGGER
 source "drivers/parrot/iio/trigger/Kconfig"

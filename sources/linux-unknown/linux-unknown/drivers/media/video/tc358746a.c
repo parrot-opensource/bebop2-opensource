@@ -416,8 +416,11 @@ static int tc358746a_calibrate(struct v4l2_subdev *sd)
 		tc358746a_read(sd, CSISTATUS, &csistatus._register);
 		tc358746a_read(sd, PHYSTA, &physta._register);
 
+		/*printk("BRIDGE CALIBRATION 0x62: %04x 0x64: %04x\n",
+		       physta._register, csistatus._register);*/
+
 		error = ((physta._register & 0x0055) != 0) ||
-			((csistatus._register & 0x01FF) != 0);
+			((csistatus._register & 0x01BF) != 0);
 
 		/* We hit the first possible value of the PHYTIMDLY window */
 		if (!error && !state) {

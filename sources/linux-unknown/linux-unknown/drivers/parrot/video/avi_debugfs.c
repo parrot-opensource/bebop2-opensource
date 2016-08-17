@@ -389,9 +389,11 @@ static void avi_cam_show(struct seq_file *s, const struct avi_node *cam)
 	seq_printf(s, "\n"
 		      "INTERFACE:   PAD_SELECT: 0x%x\n",
 		   regs.interface.pad_select);
-	seq_printf(s, "INTERFACE:   UNPACKER: %d, RAW10: %d, ROR_LSB: %d\n",
+	seq_printf(s, "INTERFACE:   UNPACKER: %d, RAW10: %d\n",
 		   regs.interface.unpacker,
-		   regs.interface.raw10,
+		   regs.interface.raw10);
+	seq_printf(s, "INTERFACE:   ROL_LSB: %d, ROR_LSB: %d\n",
+		   regs.interface.rol_lsb,
 		   regs.interface.ror_lsb);
 	seq_printf(s, "RUN:         %d\n", regs.run.run);
 	seq_printf(s, "FREE_RUN:    %d\n", regs.run.free_run);
@@ -982,6 +984,340 @@ static void avi_isp_pedestal_show(struct seq_file *s,
 MAKE_AVI_ISP_PEDESTAL_SHOW(0)
 MAKE_AVI_ISP_PEDESTAL_SHOW(1)
 
+static void avi_isp_grim_show(struct seq_file *s,
+			      struct avi_node *chain_bayer)
+{
+	struct avi_isp_green_imbalance_regs regs;
+	struct avi_isp_green_imbalance_green_red_coeff_mem_regs *gr_regs;
+	struct avi_isp_green_imbalance_green_blue_coeff_mem_regs *gb_regs;
+	int i;
+
+	/* gr and gb regs make function exceed frame size so allocate them
+	 * on the heap */
+	gr_regs = kzalloc(sizeof(*gr_regs), GFP_KERNEL);
+	gb_regs = kzalloc(sizeof(*gb_regs), GFP_KERNEL);
+
+	avi_isp_grim_get_registers(chain_bayer, &regs, gr_regs, gb_regs);
+	seq_printf(s, "CFA:           %s\n",
+			cfa_format_to_str[regs.bayer_cfa.cfa]);
+	seq_printf(s, "CELL SIZE:     %ux%u\n", regs.cell_w.cell_w,
+			regs.cell_h.cell_h);
+	seq_printf(s, "CELL SIZE INV: %ux%u\n", regs.cell_w_inv.w_inv,
+			regs.cell_h_inv.h_inv);
+	seq_printf(s, "CELL IDS:      %u,%u\n", regs.cell_id_x_y.cell_id_x,
+			regs.cell_id_x_y.cell_id_y);
+	seq_printf(s, "OFFSETS:       %u,%u\n", regs.offset_x_y.offset_x,
+			regs.offset_x_y.offset_y);
+	seq_printf(s, "ALPHA:         %u\n", regs.alpha.alpha);
+	seq_printf(s, "BETA:          %u\n", regs.beta.beta);
+
+	/* display Gr and Gb coefficients */
+	seq_printf(s, "\n"
+			"ID : GR GB\n");
+
+	for (i = 0; i < 221; i++) {
+		seq_printf(s, "%03x: %02x %02x\n", i,
+				gr_regs->red_coeff_mem[i].gr_coeff_value,
+				gb_regs->green_coeff_mem[i].gb_coeff_value);
+	}
+
+	kfree(gr_regs);
+	kfree(gb_regs);
+}
+
+#define MAKE_AVI_ISP_GRIM_SHOW(_nr) \
+	static int avi_isp_grim##_nr##_show(struct seq_file *s, \
+					    void *unused) \
+	{ \
+		avi_isp_grim_show(s, \
+				avi_ctrl.nodes[AVI_ISP_CHAIN_BAYER##_nr##_NODE]); \
+		return 0; \
+	}
+
+MAKE_AVI_ISP_GRIM_SHOW(0)
+MAKE_AVI_ISP_GRIM_SHOW(1)
+
+static void avi_isp_dpc_rgrim_show(struct seq_file *s,
+				   struct avi_node *chain_bayer)
+{
+	struct avi_isp_dead_pixel_correction_regs regs;
+	struct avi_isp_dead_pixel_correction_list_mem_regs *list;
+	int i;
+	unsigned int column_size;
+
+	/* list is too big to be allocated on the stack */
+	list = kzalloc(sizeof(*list), GFP_KERNEL);
+
+	avi_isp_dpc_rgrim_get_registers(chain_bayer, &regs, list);
+	seq_printf(s, "CFA:              %s\n", cfa_format_to_str[regs.cfa.cfa]);
+	seq_printf(s, "BYPASS_LIST:      %u\n", regs.bypass.list);
+	seq_printf(s, "BYPASS_AUTO:      %u\n", regs.bypass.auto_detection);
+	seq_printf(s, "BYPASS_RGRIM:     %u\n", regs.bypass.rgrim);
+	seq_printf(s, "THRESHOLD:        %u\n", regs.threshold.threshold);
+	seq_printf(s, "RGRIM IMBALANCE1: %u\n", regs.rgrim_conf.tim_1);
+	seq_printf(s, "RGRIM IMBALANCE2: %u\n", regs.rgrim_conf.tim_2);
+	seq_printf(s, "RGRIM SATURATION: %u\n", regs.rgrim_conf.tsat);
+	seq_printf(s, "RGRIM CONTRAST:   %u\n", regs.rgrim_conf.tcon);
+	seq_printf(s, "RGRIM GAIN:       %u\n", regs.rgrim_gain.gain);
+
+	/* Display list mem on 4 columns */
+	seq_printf(s, "\n"
+			"ID :  X   Y  OP | "
+			"ID :  X   Y  OP | "
+			"ID :  X   Y  OP | "
+			"ID :  X   Y  OP | \n");
+	column_size = 256 / 4;
+
+	for (i = 0; i < column_size; i++) {
+		unsigned int c1 = i;
+		unsigned int c2 = c1 + column_size;
+		unsigned int c3 = c2 + column_size;
+		unsigned int c4 = c3 + column_size;
+		const union avi_isp_dead_pixel_correction_list_mem *l1;
+		const union avi_isp_dead_pixel_correction_list_mem *l2;
+		const union avi_isp_dead_pixel_correction_list_mem *l3;
+		const union avi_isp_dead_pixel_correction_list_mem *l4;
+
+		l1 = &list->list_mem[c1];
+		l2 = &list->list_mem[c2];
+		l3 = &list->list_mem[c3];
+		l4 = &list->list_mem[c4];
+
+		seq_printf(s,
+			   "%03x: %03x %03x %02x | "
+			   "%03x: %03x %03x %02x | "
+			   "%03x: %03x %03x %02x | "
+			   "%03x: %03x %03x %02x\n",
+			   c1, l1->coord_x, l1->coord_y, l1->op_code,
+			   c2, l2->coord_x, l2->coord_y, l2->op_code,
+			   c3, l3->coord_x, l3->coord_y, l3->op_code,
+			   c4, l4->coord_x, l4->coord_y, l4->op_code);
+	}
+
+	kfree(list);
+}
+
+#define MAKE_AVI_ISP_DPC_RGRIM_SHOW(_nr) \
+	static int avi_isp_dpc_rgrim##_nr##_show(struct seq_file *s, \
+					    void *unused) \
+	{ \
+		avi_isp_dpc_rgrim_show(s, \
+				avi_ctrl.nodes[AVI_ISP_CHAIN_BAYER##_nr##_NODE]); \
+		return 0; \
+	}
+
+MAKE_AVI_ISP_DPC_RGRIM_SHOW(0)
+MAKE_AVI_ISP_DPC_RGRIM_SHOW(1)
+
+static void avi_isp_denoising_show(struct seq_file *s,
+				   struct avi_node *chain_bayer)
+{
+	struct avi_isp_denoising_regs regs;
+
+	avi_isp_denoising_get_registers(chain_bayer, &regs);
+	seq_printf(s, "CFA:   %s\n", cfa_format_to_str[regs.cfa.cfa]);
+	seq_printf(s, "RED:   %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+			regs.lumocoeff_r_03_00.lumocoeff_r_00,
+			regs.lumocoeff_r_03_00.lumocoeff_r_01,
+			regs.lumocoeff_r_03_00.lumocoeff_r_02,
+			regs.lumocoeff_r_03_00.lumocoeff_r_03,
+			regs.lumocoeff_r_07_04.lumocoeff_r_04,
+			regs.lumocoeff_r_07_04.lumocoeff_r_05,
+			regs.lumocoeff_r_07_04.lumocoeff_r_06,
+			regs.lumocoeff_r_07_04.lumocoeff_r_07,
+			regs.lumocoeff_r_11_08.lumocoeff_r_08,
+			regs.lumocoeff_r_11_08.lumocoeff_r_09,
+			regs.lumocoeff_r_11_08.lumocoeff_r_10,
+			regs.lumocoeff_r_11_08.lumocoeff_r_11,
+			regs.lumocoeff_r_13_12.lumocoeff_r_12,
+			regs.lumocoeff_r_13_12.lumocoeff_r_13);
+	seq_printf(s, "BLUE:  %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+			regs.lumocoeff_b_03_00.lumocoeff_b_00,
+			regs.lumocoeff_b_03_00.lumocoeff_b_01,
+			regs.lumocoeff_b_03_00.lumocoeff_b_02,
+			regs.lumocoeff_b_03_00.lumocoeff_b_03,
+			regs.lumocoeff_b_07_04.lumocoeff_b_04,
+			regs.lumocoeff_b_07_04.lumocoeff_b_05,
+			regs.lumocoeff_b_07_04.lumocoeff_b_06,
+			regs.lumocoeff_b_07_04.lumocoeff_b_07,
+			regs.lumocoeff_b_11_08.lumocoeff_b_08,
+			regs.lumocoeff_b_11_08.lumocoeff_b_09,
+			regs.lumocoeff_b_11_08.lumocoeff_b_10,
+			regs.lumocoeff_b_11_08.lumocoeff_b_11,
+			regs.lumocoeff_b_13_12.lumocoeff_b_12,
+			regs.lumocoeff_b_13_12.lumocoeff_b_13);
+	seq_printf(s, "GREEN:  %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+			regs.lumocoeff_g_03_00.lumocoeff_g_00,
+			regs.lumocoeff_g_03_00.lumocoeff_g_01,
+			regs.lumocoeff_g_03_00.lumocoeff_g_02,
+			regs.lumocoeff_g_03_00.lumocoeff_g_03,
+			regs.lumocoeff_g_07_04.lumocoeff_g_04,
+			regs.lumocoeff_g_07_04.lumocoeff_g_05,
+			regs.lumocoeff_g_07_04.lumocoeff_g_06,
+			regs.lumocoeff_g_07_04.lumocoeff_g_07,
+			regs.lumocoeff_g_11_08.lumocoeff_g_08,
+			regs.lumocoeff_g_11_08.lumocoeff_g_09,
+			regs.lumocoeff_g_11_08.lumocoeff_g_10,
+			regs.lumocoeff_g_11_08.lumocoeff_g_11,
+			regs.lumocoeff_g_13_12.lumocoeff_g_12,
+			regs.lumocoeff_g_13_12.lumocoeff_g_13);
+}
+
+#define MAKE_AVI_ISP_DENOISING_SHOW(_nr) \
+	static int avi_isp_denoising##_nr##_show(struct seq_file *s, \
+					    void *unused) \
+	{ \
+		avi_isp_denoising_show(s, \
+				avi_ctrl.nodes[AVI_ISP_CHAIN_BAYER##_nr##_NODE]); \
+		return 0; \
+	}
+
+MAKE_AVI_ISP_DENOISING_SHOW(0)
+MAKE_AVI_ISP_DENOISING_SHOW(1)
+
+static void avi_isp_lsc_show(struct seq_file *s, struct avi_node *chain_bayer)
+{
+	struct avi_isp_lens_shading_correction_regs regs;
+	struct avi_isp_lens_shading_correction_red_coeff_mem_regs *r_regs;
+	struct avi_isp_lens_shading_correction_green_coeff_mem_regs *g_regs;
+	struct avi_isp_lens_shading_correction_blue_coeff_mem_regs *b_regs;
+	int i;
+
+	r_regs = kzalloc(sizeof(*r_regs), GFP_KERNEL);
+	g_regs = kzalloc(sizeof(*g_regs), GFP_KERNEL);
+	b_regs = kzalloc(sizeof(*b_regs), GFP_KERNEL);
+
+	avi_isp_lsc_get_registers(chain_bayer, &regs, r_regs, g_regs, b_regs);
+	seq_printf(s, "CFA:           %s\n",
+			cfa_format_to_str[regs.bayer_cfa.cfa]);
+	seq_printf(s, "CELL SIZE:     %ux%u\n", regs.cell_w.cell_w,
+			regs.cell_h.cell_h);
+	seq_printf(s, "CELL SIZE INV: %ux%u\n", regs.cell_w_inv.w_inv,
+			regs.cell_h_inv.h_inv);
+	seq_printf(s, "CELL IDS:      %u,%u\n", regs.cell_id_x_y.cell_id_x,
+			regs.cell_id_x_y.cell_id_y);
+	seq_printf(s, "OFFSETS:       %u,%u\n", regs.offset_x_y.offset_x,
+			regs.offset_x_y.offset_y);
+	seq_printf(s, "ALPHA:         %u\n", regs.alpha.alpha);
+	seq_printf(s, "BETA:          %u\n", regs.beta.beta);
+	seq_printf(s, "THRESHOLD RGB: %u %u %u\n", regs.threshold.threshold_r,
+			regs.threshold.threshold_g, regs.threshold.threshold_b);
+	seq_printf(s, "GAIN RGB:      %u %u %u\n", regs.gain.gain_r,
+			regs.gain.gain_g, regs.gain.gain_b);
+
+	/* display RGB coefficients */
+	seq_printf(s, "\n"
+			"ID : R  G  B\n");
+
+	for (i = 0; i < 221; i++) {
+		seq_printf(s, "%03x: %02x %02x %02x\n", i,
+				r_regs->red_coeff_mem[i].r_coeff_value,
+				g_regs->green_coeff_mem[i].g_coeff_value,
+				b_regs->blue_coeff_mem[i].b_coeff_value);
+	}
+
+	kfree(r_regs);
+	kfree(g_regs);
+	kfree(b_regs);
+}
+
+#define MAKE_AVI_ISP_LSC_SHOW(_nr) \
+	static int avi_isp_lsc##_nr##_show(struct seq_file *s, \
+					    void *unused) \
+	{ \
+		avi_isp_lsc_show(s, \
+				avi_ctrl.nodes[AVI_ISP_CHAIN_BAYER##_nr##_NODE]); \
+		return 0; \
+	}
+
+MAKE_AVI_ISP_LSC_SHOW(0)
+MAKE_AVI_ISP_LSC_SHOW(1)
+
+static void avi_isp_ca_correction_show(struct seq_file *s,
+				       struct avi_node *chain_bayer)
+{
+	struct avi_isp_chromatic_aberration_regs regs;
+
+	avi_isp_ca_correction_get_registers(chain_bayer, &regs);
+	seq_printf(s, "CFA:                       %s\n",
+			cfa_format_to_str[regs.cfa.cfa]);
+	seq_printf(s, "CIRCLE POSITION (SQUARED): %ux%u (%ux%u)\n",
+			regs.circle_pos_x_center.x_center,
+			regs.circle_pos_y_center.y_center,
+			regs.circle_pos_x_squared.x_squared,
+			regs.circle_pos_y_squared.y_squared);
+	seq_printf(s, "LOG2 INCREMENTS:           %ux%u\n",
+			regs.increments_log2.x_log2_inc,
+			regs.increments_log2.y_log2_inc);
+	seq_printf(s, "RADIUS SQUARED:            %u\n",
+			regs.radius_squared.radius_squared);
+	seq_printf(s, "DISPLACEMENT_BLUE_COEFF:   %u\n",
+			regs.displacement_coeffs.displacement_blue);
+	seq_printf(s, "DISPLACEMENT_RED_COEFF:    %u\n",
+			regs.displacement_coeffs.displacement_red);
+	seq_printf(s, "GREEN VARIATION:           %u\n",
+			regs.green_variation.green_var);
+}
+
+#define MAKE_AVI_ISP_CA_CORRECTION_SHOW(_nr) \
+	static int avi_isp_ca_correction##_nr##_show(struct seq_file *s, \
+					    void *unused) \
+	{ \
+		avi_isp_ca_correction_show(s, \
+				avi_ctrl.nodes[AVI_ISP_CHAIN_BAYER##_nr##_NODE]); \
+		return 0; \
+	}
+
+MAKE_AVI_ISP_CA_CORRECTION_SHOW(0)
+MAKE_AVI_ISP_CA_CORRECTION_SHOW(1)
+
+static void avi_isp_color_correction_show(struct seq_file *s,
+					  struct avi_node *chain_bayer)
+{
+	struct avi_isp_color_correction_regs regs;
+
+	avi_isp_color_correction_get_registers(chain_bayer, &regs);
+	seq_printf(s, "[ %04x %04x %04x ]   / [RY]   [ %02x ] \\   [ %02x ];"
+		   " %02x <= RY <= %02x\n",
+		   regs.coeff_01_00.coeff_00,
+		   regs.coeff_01_00.coeff_01,
+		   regs.coeff_10_02.coeff_02,
+		   regs.offset_ry.offset_in,
+		   regs.offset_ry.offset_out,
+		   regs.clip_ry.clip_min,
+		   regs.clip_ry.clip_max);
+	seq_printf(s, "[ %04x %04x %04x ] x | [GU] - [ %02x ] | + [ %02x ];"
+		   " %02x <= GU <= %02x\n",
+		   regs.coeff_10_02.coeff_10,
+		   regs.coeff_12_11.coeff_11,
+		   regs.coeff_12_11.coeff_12,
+		   regs.offset_gu.offset_in,
+		   regs.offset_gu.offset_out,
+		   regs.clip_gu.clip_min,
+		   regs.clip_gu.clip_max);
+	seq_printf(s, "[ %04x %04x %04x ]   \\ [BV]   [ %02x ] /   [ %02x ];"
+		   " %02x <= BV <= %02x\n",
+		   regs.coeff_21_20.coeff_20,
+		   regs.coeff_21_20.coeff_21,
+		   regs.coeff_22.coeff_22,
+		   regs.offset_bv.offset_in,
+		   regs.offset_bv.offset_out,
+		   regs.clip_bv.clip_min,
+		   regs.clip_bv.clip_max);
+}
+
+#define MAKE_AVI_ISP_COLOR_CORRECTION_SHOW(_nr) \
+	static int avi_isp_color_correction##_nr##_show(struct seq_file *s, \
+							void *unused) \
+	{ \
+		avi_isp_color_correction_show(s, \
+				avi_ctrl.nodes[AVI_ISP_CHAIN_BAYER##_nr##_NODE]); \
+		return 0; \
+	}
+
+MAKE_AVI_ISP_COLOR_CORRECTION_SHOW(0)
+MAKE_AVI_ISP_COLOR_CORRECTION_SHOW(1)
+
 static void avi_cfg_display(struct seq_file *s, const char *n, u32 r1, u32 r2,
 		u32 r3)
 {
@@ -1353,7 +1689,27 @@ static int __init avi_debugfs_init(void)
 	    AVI_ISP_DEBUGFS_REGISTER("pedestal", 0,
 				     &avi_isp_pedestal0_show)           ||
 	    AVI_ISP_DEBUGFS_REGISTER("pedestal", 1,
-				     &avi_isp_pedestal1_show)) {
+				     &avi_isp_pedestal1_show)           ||
+	    AVI_ISP_DEBUGFS_REGISTER("grim", 0, &avi_isp_grim0_show)    ||
+	    AVI_ISP_DEBUGFS_REGISTER("grim", 1, &avi_isp_grim1_show)    ||
+	    AVI_ISP_DEBUGFS_REGISTER("dpc_rgrim", 0,
+				     &avi_isp_dpc_rgrim0_show)          ||
+	    AVI_ISP_DEBUGFS_REGISTER("dpc_rgrim", 1,
+				     &avi_isp_dpc_rgrim1_show)          ||
+	    AVI_ISP_DEBUGFS_REGISTER("denoising", 0,
+				     &avi_isp_denoising0_show)          ||
+	    AVI_ISP_DEBUGFS_REGISTER("denoising", 1,
+				     &avi_isp_denoising1_show)          ||
+	    AVI_ISP_DEBUGFS_REGISTER("lsc", 0, &avi_isp_lsc0_show)      ||
+	    AVI_ISP_DEBUGFS_REGISTER("lsc", 1, &avi_isp_lsc1_show)      ||
+	    AVI_ISP_DEBUGFS_REGISTER("cac", 0,
+				     &avi_isp_ca_correction0_show)      ||
+	    AVI_ISP_DEBUGFS_REGISTER("cac", 1,
+				     &avi_isp_ca_correction1_show)      ||
+	    AVI_ISP_DEBUGFS_REGISTER("color_correction", 0,
+				     &avi_isp_color_correction0_show)   ||
+	    AVI_ISP_DEBUGFS_REGISTER("color_correction", 1,
+				     &avi_isp_color_correction1_show)) {
 		debugfs_remove_recursive(avi_debugfs_root);
 		avi_debugfs_root = NULL;
 		return -ENOMEM;

@@ -454,9 +454,13 @@ static int mt9m021_set_size(struct v4l2_subdev *sd)
 	struct v4l2_mbus_framefmt *fmt = &mt9m021->format;
 
 	int hratio = DIV_ROUND_CLOSEST(c->width,  fmt->width);
-	int vratio = DIV_ROUND_CLOSEST(c->height - EMBEDDED_DATA_HEIGHT,
-	                               fmt->height);
+	int vratio = DIV_ROUND_CLOSEST(c->height,
+	                               fmt->height - EMBEDDED_DATA_HEIGHT);
 	u16 binning;
+
+	/* Check there is enough room to output embedded data lines */
+	if (((c->height / vratio) + EMBEDDED_DATA_HEIGHT) > fmt->height)
+		return -1;
 
 	/* MT9M021 supports only 3 modes:
 	 *   - No binning
@@ -480,7 +484,7 @@ static int mt9m021_set_size(struct v4l2_subdev *sd)
 	mt9m021_write(sd, MT9M021_Y_ADDR_START, mt9m021->crop.top);
 	mt9m021_write(sd, MT9M021_X_ADDR_START, mt9m021->crop.left);
 	mt9m021_write(sd, MT9M021_Y_ADDR_END, mt9m021->crop.top
-	              + mt9m021->crop.height - 1 - EMBEDDED_DATA_HEIGHT);
+	              + mt9m021->crop.height - 1);
 	mt9m021_write(sd, MT9M021_X_ADDR_END,   mt9m021->crop.left +
 						mt9m021->crop.width - 1);
 
@@ -542,8 +546,10 @@ static int mt9m021_apply_exposure(struct v4l2_subdev *sd)
 
 	/* AE Luma Target */
 	mt9m021_write(sd, MT9M021_AE_TARGET_LUMA, ae_tgt_luma);
-	mt9m021_write(sd, MT9M021_AE_AG_EXPOSURE_HI, ae_ag_exposure_hi);
-	mt9m021_write(sd, MT9M021_AE_AG_EXPOSURE_LO, ae_ag_exposure_lo);
+	int_time = (ae_ag_exposure_hi * 1000) / line_duration_ns;
+	mt9m021_write(sd, MT9M021_AE_AG_EXPOSURE_HI, int_time);
+	int_time = (ae_ag_exposure_lo * 1000) / line_duration_ns;
+	mt9m021_write(sd, MT9M021_AE_AG_EXPOSURE_LO, int_time);
 
 	/* Analogue gain */
 	mt9m021_write(sd, MT9M021_DIGITAL_TEST, dig_test_reg._register);
@@ -605,9 +611,11 @@ static int mt9m021_s_stream(struct v4l2_subdev *sd, int enable)
 
 	ret = mt9m021_pll_setup(sd);
 	if (ret < 0)
-		goto error_pll_setup;
+		goto power_off;
 
-	mt9m021_set_size(sd);
+	ret = mt9m021_set_size(sd);
+	if (ret < 0)
+		goto power_off;
 
 	/* Flip */
 	mt9m021_write(sd, MT9M021_READ_MODE, 0x0000);
@@ -642,7 +650,7 @@ static int mt9m021_s_stream(struct v4l2_subdev *sd, int enable)
 
 	return 0;
 
-error_pll_setup:
+power_off:
 	if (pdata->set_power)
 		pdata->set_power(0);
 
@@ -1049,13 +1057,15 @@ static int mt9m021_probe(struct i2c_client *client,
 		goto error_media_entity_init;
 	}
 
-	/* Set default configuration: Y10 960p30 at center */
+	/* Set default configuration: Y10 960p30 at center, with 4 embedded data
+	 * lines
+	 */
 	mt9m021->crop.width    = 1280;
 	mt9m021->crop.height   =  960;
 	mt9m021->crop.left     =    0;
 	mt9m021->crop.top      =    0;
 	mt9m021->format.width  = 1280;
-	mt9m021->format.height =  960;
+	mt9m021->format.height =  964;
 	mt9m021->format.code   = V4L2_MBUS_FMT_Y10_1X10;
 	mt9m021->frame_interval.numerator   =  1;
 	mt9m021->frame_interval.denominator = 30;

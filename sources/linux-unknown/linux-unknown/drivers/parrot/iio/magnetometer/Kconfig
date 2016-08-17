@@ -24,4 +24,10 @@ config PARROT_IIO_AK8975_TIMESTAMPS
 	depends on PARROT_IIO_AK8975
 	default n
 
+config PARROT_AK8963_NOTRIGGER
+	bool "AK8975: synchronous i2c acces with mykonos3 iio device"
+	depends on PARROT_IIO_AK8975
+	select PARROT_IIO_MYKONOS3
+	default n
+
 endmenu

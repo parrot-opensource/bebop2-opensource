@@ -90,6 +90,7 @@ struct inv_mpu6050_chip_config {
 	unsigned int	enable:1;
 	unsigned int	accl_fifo_enable:1;
 	unsigned int	gyro_fifo_enable:1;
+	unsigned int	temp_fifo_enable:1;
 	u16		fifo_rate;
 	s64		fifo_period_ns;
 	s64		filter_period_ns;
@@ -159,6 +160,7 @@ struct inv_mpu6050_state {
 #define INV_MPU6050_REG_FIFO_EN             0x23
 #define INV_MPU6050_BIT_ACCEL_OUT           0x08
 #define INV_MPU6050_BITS_GYRO_OUT           0x70
+#define INV_MPU6050_BIT_TEMP_OUT            0x80
 
 #define INV_MPU6050_REG_INT_PIN_CFG         0x37
 #define INV_MPU6050_BIT_INT_LEVEL	    (1<<7)
@@ -200,6 +202,7 @@ struct inv_mpu6050_state {
 #define INV_MPU6050_REG_FIFO_R_W            0x74
 
 #define INV_MPU6050_BYTES_PER_3AXIS_SENSOR   6
+#define INV_MPU6050_BYTES_TEMPERATURE        2
 #define INV_MPU6050_FIFO_COUNT_BYTE          2
 #define INV_MPU6050_FIFO_THRESHOLD           500
 #define INV_MPU6050_POWER_UP_TIME            100
@@ -208,10 +211,10 @@ struct inv_mpu6050_state {
 #define INV_MPU6050_REG_UP_TIME              5
 
 #define INV_MPU6050_TEMP_SENSITIVITY	     340L
-#define INV_MPU6050_TEMP_OFFSET_C	     35
-#define INV_MPU6050_TEMP_OFFSET_LSB	     -521
+#define INV_MPU6050_TEMP_OFFSET_C	     35L
+#define INV_MPU6050_TEMP_OFFSET_LSB	     -521L
 
-#define INV_MPU6050_TEMP_OFFSET	             ((INV_MPU6050_TEMP_OFFSET_C \
+#define INV_MPU6050_TEMP_OFFSET              ((INV_MPU6050_TEMP_OFFSET_C \
 					      *INV_MPU6050_TEMP_SENSITIVITY) \
 					      -INV_MPU6050_TEMP_OFFSET_LSB)
 
@@ -250,6 +253,7 @@ enum inv_mpu6050_scan {
 	INV_MPU6050_SCAN_ACCL_X,
 	INV_MPU6050_SCAN_ACCL_Y,
 	INV_MPU6050_SCAN_ACCL_Z,
+	INV_MPU6050_SCAN_TEMP,
 	INV_MPU6050_SCAN_GYRO_X,
 	INV_MPU6050_SCAN_GYRO_Y,
 	INV_MPU6050_SCAN_GYRO_Z,

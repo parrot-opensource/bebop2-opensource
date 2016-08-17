@@ -686,7 +686,7 @@ static struct avimulti_platform_data sfx1b_multicapture_pdata  = {
 	.height            = 480,
 	.enable_metadata   = 1,
 	.timeout           = 3 * HZ,
-	.vb2_cache_flags   = VB2_CACHE_DMA_CONTIG | VB2_CACHE_FLUSH,
+	.vb2_cache_flags   = VB2_CACHE_DMA_CONTIG | VB2_CACHE_WRITETHROUGH,
 };
 
 
@@ -1170,7 +1170,7 @@ static void __init sfx1b_init_mach(void)
 	/* IMU */
 	drone_common_init_inv_mpu6050(24,
 				      P7_GPIO_NR(159),
-				      5);
+				      5, -1);
 
 	p7_init_venc();
 }

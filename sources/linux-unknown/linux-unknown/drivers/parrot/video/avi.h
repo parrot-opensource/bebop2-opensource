@@ -478,4 +478,33 @@ extern void avi_isp_statistics_bayer_get_registers(
 extern void avi_isp_pedestal_get_registers(struct avi_node *chain_bayer,
 					   struct avi_isp_pedestal_regs *regs);
 
+/* Green imbalance */
+extern void avi_isp_grim_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_green_imbalance_regs *regs,
+		struct avi_isp_green_imbalance_green_red_coeff_mem_regs *gr_regs,
+		struct avi_isp_green_imbalance_green_blue_coeff_mem_regs *gb_regs);
+
+/* Dead pixel correction + RGrim */
+extern void avi_isp_dpc_rgrim_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_dead_pixel_correction_regs *regs,
+		struct avi_isp_dead_pixel_correction_list_mem_regs *list);
+
+/* Denoising */
+extern void avi_isp_denoising_get_registers(struct avi_node *chain_bayer,
+					    struct avi_isp_denoising_regs *regs);
+
+/* LSC + WB Gain */
+extern void avi_isp_lsc_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_lens_shading_correction_regs *regs,
+		struct avi_isp_lens_shading_correction_red_coeff_mem_regs *r_regs,
+		struct avi_isp_lens_shading_correction_green_coeff_mem_regs *g_regs,
+		struct avi_isp_lens_shading_correction_blue_coeff_mem_regs *b_regs);
+
+/* Chromatic aberration correction */
+extern void avi_isp_ca_correction_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_chromatic_aberration_regs *regs);
+
+/* Color correction */
+extern void avi_isp_color_correction_get_registers(struct avi_node *chain_bayer,
+		struct avi_isp_color_correction_regs *regs);
 #endif

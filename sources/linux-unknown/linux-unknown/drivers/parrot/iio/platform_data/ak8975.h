@@ -1,5 +1,8 @@
 #ifndef _AK8975_H_
 #define _AK8975_H_
+
+#include "mykonos3.h"
+
 /**
  * @file ak8975h
  *  Parrot IIO driver for Magnetometer AK8975/AK8963

@@ -22,10 +22,15 @@
 #include <linux/kfifo.h>
 #include <linux/spinlock.h>
 #include <linux/iio/iio.h>
+#ifdef CONFIG_PARROT_BLDC_CYPRESS_NOTRIGGER
+#include <linux/iio/kfifo_buf.h>
+#endif
 
 #include <linux/iio/bldc/parrot_bldc_cypress_iio.h>
 #include <linux/iio/bldc/parrot_bldc_iio.h>
 #include <iio/platform_data/bldc_cypress.h>
+
+#include <iio/platform_data/mykonos3.h>
 
 static const struct iio_chan_spec bldc_cypress_channels[] = {
 	/* keep 4th first motors channels at first table place */
@@ -238,6 +243,61 @@ free_buf:
 	return result;
 }
 
+static ssize_t bldc_cypress_show_cached_info(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct iio_dev *indio_dev = dev_to_iio_dev(dev);
+	struct bldc_state *st = iio_priv(indio_dev);
+	struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
+	int result;
+	unsigned short nb_flights;
+	unsigned short previous_time;
+	unsigned int total_time;
+	int is_updated;
+
+	switch ((u32)this_attr->address) {
+	case ATTR_INFO_FT_ALL:
+		is_updated = (st->fd_state == PARROT_BLDC_FD_UPDATED);
+		nb_flights = st->cache[4] << 8 | st->cache[5];
+		previous_time = st->cache[6] << 8 | st->cache[7];
+		total_time = st->cache[8] << 24 |
+				st->cache[9] << 16 |
+				st->cache[10] << 8 |
+				st->cache[11];
+		result = sprintf(buf, "%d %d %d %c %d, %hu, %hu, %u, %d\n",
+				is_updated,
+				st->cache[0],
+				st->cache[1],
+				st->cache[2],
+				st->cache[3],
+				nb_flights,
+				previous_time,
+				total_time,
+				st->cache[12]);
+		if (is_updated)
+			st->fd_state = PARROT_BLDC_FD_OLD;
+		break;
+	default:
+		result = -ENODEV;
+	}
+
+	return result;
+}
+
+static ssize_t bldc_update_flight_info(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct iio_dev *indio_dev = dev_to_iio_dev(dev);
+	struct bldc_state *st = iio_priv(indio_dev);
+
+	if (!st)
+		return -ENOENT;
+
+	st->fd_state = PARROT_BLDC_FD_UPDATE_REQ;
+
+	return count;
+}
+
 static ssize_t bldc_cypress_show_spin_dir(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -322,6 +382,18 @@ static IIO_DEVICE_ATTR(last_flight_error,
 		       NULL,
 		       ATTR_INFO_FT_LAST_ERROR);
 
+static IIO_DEVICE_ATTR(flight_all_infos,
+		       S_IRUGO,
+		       bldc_cypress_show_cached_info,
+		       NULL,
+		       ATTR_INFO_FT_ALL);
+
+static IIO_DEVICE_ATTR(update_flight_info,
+		       S_IWUGO,
+		       NULL,
+		       bldc_update_flight_info,
+		       ATTR_INFO_FT_UPDATE);
+
 static IIO_DEVICE_ATTR(spin_dir,
 		       S_IRUGO,
 		       bldc_cypress_show_spin_dir,
@@ -341,6 +413,8 @@ static struct attribute *inv_attributes[] = {
 	&iio_dev_attr_previous_flight_time.dev_attr.attr,
 	&iio_dev_attr_total_flight_time.dev_attr.attr,
 	&iio_dev_attr_last_flight_error.dev_attr.attr,
+	&iio_dev_attr_flight_all_infos.dev_attr.attr,
+	&iio_dev_attr_update_flight_info.dev_attr.attr,
 	&iio_dev_attr_spin_dir.dev_attr.attr,
 	NULL,
 };
@@ -371,14 +445,82 @@ static const struct iio_info bldc_cypress_info = {
 	.attrs			= &inv_attribute_group,
 };
 
+#ifdef CONFIG_PARROT_BLDC_CYPRESS_NOTRIGGER
+static const struct iio_buffer_setup_ops bldc_cypress_iio_buffer_setup_ops = {
+};
+
+struct iio_mykonos3_ops bldc_cypress_mykonos3_ops = {
+	.request_data = NULL,
+	.fetch_data   = bldc_cypress_fetch_data,
+};
+#endif
+
+static int bldc_cypress_iio_buffer_new(struct iio_dev *indio_dev)
+{
+	int err = 0;
+
+#ifdef CONFIG_PARROT_BLDC_CYPRESS_NOTRIGGER
+	struct iio_buffer *buffer = NULL;
+
+	indio_dev->modes = INDIO_BUFFER_HARDWARE;
+	indio_dev->setup_ops = &bldc_cypress_iio_buffer_setup_ops;
+
+	buffer = iio_kfifo_allocate(indio_dev);
+	if (!buffer) {
+		err = -ENOMEM;
+		goto exit;
+	}
+
+	iio_device_attach_buffer(indio_dev, buffer);
+	err = iio_buffer_register(indio_dev, bldc_cypress_channels,
+				  ARRAY_SIZE(bldc_cypress_channels));
+	if (err < 0)
+		goto exit;
+
+	iio_mykonos3_register(IIO_MYKONOS3_MOTORS,
+			      indio_dev, &bldc_cypress_mykonos3_ops);
+#else
+	struct bldc_state *st = iio_device_get_drvdata(indio_dev);
+
+	indio_dev->modes = INDIO_BUFFER_TRIGGERED;
+	err = iio_triggered_buffer_setup(indio_dev,
+					 NULL,
+					 bldc_cypress_read_fifo,
+					 NULL);
+	if (err < 0) {
+		dev_err(st->dev, "configure buffer fail %d\n", err);
+		goto exit;
+	}
+#endif
+exit:
+	return err;
+}
+
+static void bldc_cypress_iio_buffer_cleanup(struct iio_dev *indio_dev)
+{
+#ifdef CONFIG_PARROT_BLDC_CYPRESS_NOTRIGGER
+	iio_kfifo_free(indio_dev->buffer);
+	iio_mykonos3_unregister(IIO_MYKONOS3_MOTORS, indio_dev);
+#else
+	iio_triggered_buffer_cleanup(indio_dev);
+#endif
+	iio_buffer_unregister(indio_dev);
+}
+
 int bldc_cypress_probe(struct iio_dev *indio_dev)
 {
-	struct bldc_state		*st;
+	struct bldc_state *st;
 	int result, i;
 
 	st = iio_priv(indio_dev);
 
 	mutex_init(&st->mutex);
+
+	/* init flight data cache */
+	st->cache = kzalloc(PARROT_BLDC_GET_INFO_LENGTH, GFP_KERNEL);
+	if (st->cache == NULL)
+		return -ENOMEM;
+	st->fd_state = PARROT_BLDC_FD_OLD;
 
 	/* copy default channels */
 	memcpy(st->channels, bldc_cypress_channels, sizeof(st->channels));
@@ -390,17 +532,10 @@ int bldc_cypress_probe(struct iio_dev *indio_dev)
 	indio_dev->channels = st->channels;
 	indio_dev->num_channels = ARRAY_SIZE(st->channels);
 	indio_dev->info = &bldc_cypress_info;
-	indio_dev->modes = INDIO_BUFFER_TRIGGERED;
 
-	result = iio_triggered_buffer_setup(indio_dev,
-					    NULL,
-					    bldc_cypress_read_fifo,
-					    NULL);
-	if (result) {
-		dev_err(st->dev, "configure buffer fail %d\n",
-				result);
-		return result;
-	}
+	result = bldc_cypress_iio_buffer_new(indio_dev);
+	if (result < 0)
+		goto out_remove_trigger;
 
 	result = devm_iio_device_register(st->dev, indio_dev);
 	if (result) {
@@ -415,6 +550,7 @@ int bldc_cypress_probe(struct iio_dev *indio_dev)
 	return 0;
 
 out_remove_trigger:
+	bldc_cypress_iio_buffer_cleanup(indio_dev);
 	return result;
 }
 EXPORT_SYMBOL(bldc_cypress_probe);
@@ -424,8 +560,9 @@ void bldc_cypress_remove(struct iio_dev *indio_dev)
 	struct bldc_state *st = iio_priv(indio_dev);
 
 	devm_iio_device_unregister(st->dev, indio_dev);
-	iio_triggered_buffer_cleanup(indio_dev);
+	bldc_cypress_iio_buffer_cleanup(indio_dev);
 	kfree(st->buffer);
+	kfree(st->cache);
 }
 EXPORT_SYMBOL(bldc_cypress_remove);
 

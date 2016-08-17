@@ -1,0 +1,88 @@
+--- procps-3.2.8/top.h	2006-06-25 08:41:48.000000000 +0200
++++ /home/jb/workspace/samus/pulsar/out/pulsar_test-pclinux/build/procps/procps-3.2.8/top.h	2014-05-13 09:54:24.878380741 +0200
+@@ -245,7 +245,7 @@
+ 
+ // Flags for each possible field
+ enum pflag {
+-   P_PID, P_PPD, P_URR, P_UID, P_URE, P_GRP, P_TTY,
++   P_PID_, P_PPD, P_URR, P_UID, P_URE, P_GRP, P_TTY,
+    P_PRI, P_NCE,
+    P_CPN, P_CPU, P_TME, P_TM2,
+    P_MEM, P_VRT, P_SWP, P_RES, P_COD, P_DAT, P_SHR,
+@@ -365,7 +365,7 @@
+    { P_CPU, DEF_WINFLGS, 0, \
+       COLOR_RED, COLOR_RED, COLOR_YELLOW, COLOR_RED, \
+       "Def", DEF_FIELDS }, \
+-   { P_PID, DEF_WINFLGS, 0, \
++   { P_PID_, DEF_WINFLGS, 0, \
+       COLOR_CYAN, COLOR_CYAN, COLOR_WHITE, COLOR_CYAN, \
+       "Job", JOB_FIELDS }, \
+    { P_MEM, DEF_WINFLGS, 0, \
+
+--- procps-3.2.8/top.c	2007-05-28 18:04:00.000000000 +0200
++++ /home/jb/workspace/samus/pulsar/out/pulsar_test-pclinux/build/procps/procps-3.2.8/top.c	2014-05-13 09:56:21.222840217 +0200
+@@ -184,7 +183,7 @@
+          * 2 columns each.
+          */
+ 
+-SCB_NUMx(P_PID, XXXID)
++SCB_NUMx(P_PID_, XXXID)
+ SCB_NUMx(P_PPD, ppid)
+ SCB_STRx(P_URR, ruser)
+ SCB_NUMx(P_UID, euid)
+@@ -1228,7 +1227,7 @@
+       L_EITHER       - must L_status, else 64-bit math, __udivdi3 on 32-bit !
+       keys   head           fmts     width   scale  sort   desc                     lflg
+      ------  -----------    -------  ------  -----  -----  ----------------------   -------- */
+-   { "AaAa", "   PID",      " %5u",     -1,    -1, SF(PID), "Process Id",           L_NONE   },
++   { "AaAa", "   PID",      " %5u",     -1,    -1, SF(PID_), "Process Id",           L_NONE   },
+    { "BbBb", "  PPID",      " %5u",     -1,    -1, SF(PPD), "Parent Process Pid",   L_EITHER },
+    { "CcQq", " RUSER   ",   " %-8.8s",  -1,    -1, SF(URR), "Real user name",       L_RUSER  },
+    { "DdCc", "  UID",       " %4u",     -1,    -1, SF(UID), "User Id",              L_NONE   },
+@@ -1522,7 +1521,7 @@
+             break;
+          case 'A':                      // supposed to be start_time
+             c = 0; // for scoreboard
+-            rc->win[0].sortindx = P_PID;
++            rc->win[0].sortindx = P_PID_;
+             break;
+          case 'T':
+             c = 0; // for scoreboard
+@@ -1530,7 +1529,7 @@
+             break;
+          case 'N':
+             c = 0; // for scoreboard
+-            rc->win[0].sortindx = P_PID;
++            rc->win[0].sortindx = P_PID_;
+             break;
+ 
+          default:
+@@ -1646,8 +1645,8 @@
+       unsigned pid_digits = get_pid_digits();
+       if(pid_digits<4) pid_digits=4;
+       snprintf(pid_fmt, sizeof pid_fmt, " %%%uu", pid_digits);
+-      Fieldstab[P_PID].fmts = pid_fmt;
+-      Fieldstab[P_PID].head = "        PID" + 10 - pid_digits;
++      Fieldstab[P_PID_].fmts = pid_fmt;
++      Fieldstab[P_PID_].head = "        PID" + 10 - pid_digits;
+       Fieldstab[P_PPD].fmts = pid_fmt;
+       Fieldstab[P_PPD].head = "       PPID" + 10 - pid_digits;
+    }
+@@ -2836,7 +2835,7 @@
+             const unsigned  xkey;
+             const FLG_t     sort;
+          } xtab[] = {
+-            { "Memory", 'M', P_MEM, }, { "Numerical", 'N', P_PID, },
++            { "Memory", 'M', P_MEM, }, { "Numerical", 'N', P_PID_, },
+             { "CPU",    'P', P_CPU, }, { "Time",      'T', P_TM2  }, };
+          int i;
+          for (i = 0; i < MAXTBL(xtab); ++i)
+@@ -3111,7 +3110,7 @@
+          case P_NCE:
+             MKCOL((int)p->nice);
+             break;
+-         case P_PID:
++         case P_PID_:
+             MKCOL((unsigned)p->XXXID);
+             break;
+          case P_PPD:

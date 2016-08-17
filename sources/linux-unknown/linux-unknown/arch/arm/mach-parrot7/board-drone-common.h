@@ -108,7 +108,7 @@ void __init drone_common_init_usb(int gpio_on, int gpio_host_mode_3v3,
  */
 void __init drone_common_init_ak8963(int i2c_bus, int irq);
 void __init drone_common_init_inv_mpu6050(int i2c_bus, int irq,
-					  int filter_rate);
+					  int filter_rate, int clkin_pwm);
 void __init drone_common_init_ms5607(int i2c_bus);
 
 /* Initialize BLDC controller.
