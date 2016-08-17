@@ -1328,9 +1328,26 @@ source "arch/Kconfig"
 
 endmenu		# General setup
 
+choice
+	prompt "Dma coherent allocator"
+	default HAVE_GENERIC_DMA_COHERENT
+        help
+          For Exom select 'DMA coherent extended'
+
 config HAVE_GENERIC_DMA_COHERENT
-	bool
-	default n
+	bool "DMA coherent"
+        help
+          Classic dma coherent allocator
+
+config HAVE_GENERIC_DMA_COHERENT_EXT
+	bool "DMA coherent extended"
+        help
+	  Enhanced dma coherent allocator to save memory
+
+config HAVE_GENERIC_DMA_COHERENT_NONE
+	bool "No DMA coherent"
+
+endchoice
 
 config SLABINFO
 	bool

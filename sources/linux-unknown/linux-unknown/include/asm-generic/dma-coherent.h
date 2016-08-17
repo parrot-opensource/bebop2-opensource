@@ -1,7 +1,7 @@
 #ifndef DMA_COHERENT_H
 #define DMA_COHERENT_H
 
-#ifdef CONFIG_HAVE_GENERIC_DMA_COHERENT
+#if defined(CONFIG_HAVE_GENERIC_DMA_COHERENT) || defined(CONFIG_HAVE_GENERIC_DMA_COHERENT_EXT)
 /*
  * These two functions are only for dma allocator.
  * Don't use them in device drivers.
