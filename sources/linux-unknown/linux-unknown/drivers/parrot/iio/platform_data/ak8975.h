@@ -36,13 +36,12 @@
  * Contains platform specific information on how to configure the AKM8975 to
  * work on this platform.  The orientation matricies are 3x3 rotation matricies
  * that are applied to the data to rotate from the mounting orientation to the
- * platform orientation.  The values must be one of 0, 1, or -1 and each row and
- * column should have exactly 1 non-zero value.
+ * platform orientation.  The values must be in the [-1;1] range.
  */
 struct ak8975_platform_data {
-	s8 orientation[3][3];	/* Orientation matrix of the chip */
-	int drdy_gpio;		/* GPIO connected to DRDY pin exclusive with I2C irq */
-	int trg_gpio;		/* GPIO connected to TRG pin (AK8963)  */
+	const char *orientation; /* Orientation matrix of the chip */
+	int drdy_gpio;           /* GPIO connected to DRDY pin exclusive with I2C irq */
+	int trg_gpio;            /* GPIO connected to TRG pin (AK8963)  */
 };
 
 /* Compatible Asahi Kasei Compass parts */

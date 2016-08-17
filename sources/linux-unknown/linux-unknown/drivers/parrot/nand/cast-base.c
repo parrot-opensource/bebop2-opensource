@@ -664,7 +664,7 @@ static int nand_write_buf(struct cast_nand_host *host,
  * Setting CAST controller timing registers to
  * desired speed mode and data interface
  */
-static void cast_init_timings(struct mtd_info *mtd, int mode, int syn, int tccs)
+static void cast_init_timings(struct mtd_info *mtd, int mode, int syn, u16 tccs)
 {
 	u32 period;
 	u32 pll;
@@ -850,7 +850,7 @@ static void onfi_compatible(struct mtd_info *mtd)
 	int i;
 	int err = 0;
 	const int buf_size = 20;
-	int tccs;
+	u16 tccs;
 	u8 buf[buf_size];
 	u16 nand_id = host->id[0] | (host->id[1] << 8);
 

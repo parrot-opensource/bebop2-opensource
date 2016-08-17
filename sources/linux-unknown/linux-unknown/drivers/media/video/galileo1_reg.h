@@ -399,4 +399,7 @@ union global_reset_mode_config1 {
 #define HALF_DRATE_LIMIT                   0x340C
 #define CCP2BLKD                           0x3580
 
+/* TEMPERATURE SENSOR */
+#define TEMP_SENSOR_OUTPUT                 0x013A
+
 #endif /* _GALILEO1_REG_H_ */

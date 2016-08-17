@@ -897,6 +897,13 @@ config USB_CARPLAY
 	  Say "y" to link the driver statically, or "m" to build a
 	  dynamically linked module.
 
+config USB_AEA
+	tristate "Apple External Accessory usb gadget driver"
+	depends on NET && !USB_CARPLAY
+	help
+	  Say "y" to link the driver statically, or "m" to build a
+	  dynamically linked module.
+
 config USB_G_NOKIA
 	tristate "Nokia composite gadget"
 	depends on PHONET

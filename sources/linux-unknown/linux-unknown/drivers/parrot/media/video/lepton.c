@@ -35,10 +35,17 @@ MODULE_LICENSE("GPL");
 
 #define LEPTON_DRV_NAME "lepton"
 
-#define LEPTON_SPI_XFER_SPEED (20 * 1000 * 1000)
-#define LEPTON_HEADER_LENGTH  (4)
-#define LEPTON_DISCARD_PKT    (0x0FF0)
-#define LEPTON_CRC_POLY       ((u32) 0x11021)
+#define LEPTON_SPI_XFER_SPEED      (20 * 1000 * 1000)
+#define LEPTON_HEADER_LENGTH       (4)
+#define LEPTON_DISCARD_PKT         (0x0FF0)
+#define LEPTON_CRC_POLY            ((u32) 0x11021)
+#define LEPTON_FRAME_TIMER_MS      (30)
+#define LEPTON_RESYNCHRO_TIMER_MS  (200)
+#define LEPTON_NB_VIDEO_PACKETS    (60)
+#define LEPTON_FRAME_COUNT_OFFSET  (40)
+#define LEPTON_NR_SPI_MESSAGES     (2)
+#define LEPTON_SEND_NEXT_QUEUED_VB (0)
+#define LEPTON_STOP_TRANSFER       (1)
 
 struct lepton {
 	struct v4l2_device              v4l2_dev;
@@ -50,27 +57,31 @@ struct lepton {
 
 	void                            *alloc_ctx;
 
-#define LEPTON_NR_SPI_MESSAGES         (2)
 	struct spi_device               *spi;
 	struct spi_message              spi_msg[LEPTON_NR_SPI_MESSAGES];
 	struct spi_transfer             *spi_xfers;
-	int                             n_xfers;
+	int                             n_pkts;
 
 	void                            *virt_addr;
 	dma_addr_t                      dma_addr;
 	size_t                          buf_size;
 
 	struct vb2_queue                vb2_queue;
-	const struct lepton_format     *fmt;
+	const struct lepton_format      *fmt;
 	struct v4l2_pix_format          pix_fmt;
 
 	struct list_head                vb_queued;
-#define LEPTON_SEND_NEXT_QUEUED_VB    (0)
-#define LEPTON_STOP_TRANSFER          (1)
+
 	unsigned long                   flags;
 
 	struct mutex                    mutex;
 	spinlock_t                      slock;
+
+	struct timer_list               timer;
+	unsigned long                   start_jiffies;
+	struct lepton_buffer            *buf;
+	u32                             frame_count_current;
+	u32                             frame_count_last;
 };
 
 struct lepton_buffer {
@@ -219,23 +230,27 @@ static inline size_t spi_align(size_t len)
 
 static void spi_fill_xfers(struct lepton *lep, void *virt, dma_addr_t dma)
 {
-	int pkt_len = spi_get_packet_length(lep);
-	int align_len = spi_align(pkt_len);
-	struct spi_message *msg;
+	int                  pkt_len;
+	int                  align_len;
 	struct spi_transfer *xfer;
-	int i;
 
-	for(i = 0; i < LEPTON_NR_SPI_MESSAGES; i++) {
-		msg = &lep->spi_msg[i];
-		list_for_each_entry(xfer, &msg->transfers, transfer_list) {
-			xfer->len = pkt_len;
-			xfer->rx_buf = virt;
-			xfer->rx_dma = dma;
+	pkt_len = spi_get_packet_length(lep);
 
-			virt += align_len;
-			dma += align_len;
-		}
-	}
+	/* First line */
+	xfer = lep->spi_xfers;
+	xfer->len = pkt_len;
+	xfer->rx_buf = virt;
+	xfer->rx_dma = dma;
+
+	/* Others packets */
+	align_len = spi_align(pkt_len);
+	virt += align_len;
+	dma += align_len;
+
+	xfer = lep->spi_xfers + 1;
+	xfer->len = pkt_len * (lep->n_pkts - 1);
+	xfer->rx_buf = virt;
+	xfer->rx_dma = dma;
 }
 
 static int spi_async_first_line(struct lepton *lep, struct lepton_buffer *b)
@@ -275,11 +290,24 @@ static void spi_first_line_complete(void *context)
 		if (buf->cnt_fail > 1000) {
 			printk(KERN_ERR "TOO MUCH FAIL, RESET SENSOR\n");
 			buf->cnt_fail = 0;
+			/*
+			 * Force re-synchronization :
+			 * Deassert /CS and idle SCK for at least 5 frame periods (>185 msec)
+			 */
+			lep->buf = buf;
+			mod_timer(&lep->timer, jiffies + msecs_to_jiffies(LEPTON_RESYNCHRO_TIMER_MS));
+			return;
 		}
 
 		spi_async_first_line(lep, buf);
 		return;
 	}
+
+	/*
+	 * Save the start of the reception for configure the timer
+	 * To receive the next frame
+	 */
+	lep->start_jiffies = jiffies;
 
 	err = spi_async_remaining_lines(lep, buf);
 	if (!err)
@@ -300,14 +328,43 @@ static void copy_to_vb_buffer(struct lepton *lep, struct lepton_buffer *buf)
 		int copy_len = pkt_len - LEPTON_HEADER_LENGTH;
 		int i;
 
-		for (i = 0; i < lep->n_xfers; i++) {
+		for (i = 0; i < lep->n_pkts; i++) {
 			memcpy(dst, src + LEPTON_HEADER_LENGTH, copy_len);
-			src += align_len;
+			src += (i == 0) ? align_len : pkt_len;
 			dst += copy_len;
 		}
 	}
 
 	return;
+}
+
+/* Triggered by timer */
+static void lepton_timeout(unsigned long data)
+{
+	struct lepton *lep = (struct lepton *)data;
+
+	spi_async_first_line(lep, lep->buf);
+}
+
+static void capture_frame_delay(struct lepton *lep, struct lepton_buffer *buf)
+{
+	if (format_can_zero_copy(lep->fmt)) {
+		struct vb2_buffer *vb_buf = &buf->vb;
+
+		/*
+		 * If we support zero copy, receive sensor data directly in
+		 * vb2_buffers. Prepare spi_transfers with the buffer addresses
+		 * (dma and cpu).
+		 */
+		spi_fill_xfers(lep,
+		               vb2_plane_vaddr(vb_buf, 0),
+		               vb2_dma_contig_plane_dma_addr(vb_buf, 0));
+	}
+
+	lep->buf = buf;
+
+	mod_timer(&lep->timer, lep->start_jiffies + msecs_to_jiffies(LEPTON_FRAME_TIMER_MS));
+
 }
 
 static int capture_frame(struct lepton *lep, struct lepton_buffer *buf)
@@ -325,14 +382,75 @@ static int capture_frame(struct lepton *lep, struct lepton_buffer *buf)
 		               vb2_dma_contig_plane_dma_addr(vb_buf, 0));
 	}
 
+	lep->buf = buf;
+
 	return spi_async_first_line(lep, buf);
+}
+
+static int get_telemetry_from_sd(struct lepton *lep, int *val)
+{
+	struct v4l2_streamparm param;
+	int err;
+
+	err = v4l2_subdev_call(lep->subdev, video, g_parm, &param);
+	if (err)
+		return err;
+
+	*val = param.parm.raw_data[0];
+
+	/*
+	 * 0 = telemetry disabled
+	 * 1 = telemetry as header
+	 * 2 = telemetry as footer
+	 */
+
+	return 0;
 }
 
 static void spi_frame_complete(void *context)
 {
-	struct lepton_buffer *next = NULL, *buf = context;
-	struct lepton *lep = vb2_get_drv_priv(buf->vb.vb2_queue);
-	int status = VB2_BUF_STATE_DONE;
+	struct lepton_buffer  *next = NULL, *buf = context;
+	struct lepton         *lep = vb2_get_drv_priv(buf->vb.vb2_queue);
+	int                   status = VB2_BUF_STATE_DONE;
+	struct spi_transfer   *xfer = lep->spi_xfers + 1;
+	int                   pkt_len = spi_get_packet_length(lep);
+	int                   telemetry;
+	u8                    skip_frame = 0;
+
+	/*
+	 * We skip duplicated frame when :
+	 * - telemetry is enabled (to get frame count)
+	 * - telemetry is set as footer
+	 */
+	if (get_telemetry_from_sd(lep, &telemetry) == 0 && (telemetry == 2)) {
+		/*
+		 * We look for the frame count, in telemetry lines (3 last lines)
+		 * Total packets : 60 (video) + 3 (telemetry)
+		 * We look to 59th position because it is on second transfert
+		 * Counter (32 bits) begin to 20th 16 bits word
+		 */
+
+		int  frameOffset;
+		u8   *data = (u8 *) xfer->rx_buf;
+
+		skip_frame = 1;
+
+		frameOffset = pkt_len * (LEPTON_NB_VIDEO_PACKETS-1) + LEPTON_HEADER_LENGTH + LEPTON_FRAME_COUNT_OFFSET;
+
+		lep->frame_count_current = (data[frameOffset+2] << 24) +
+			(data[frameOffset+3] << 16) +
+			(data[frameOffset+0] << 8) +
+			data[frameOffset+1];
+
+		/*
+		 * Each frame is duplicated 2 times
+		 * Send to user only one
+		 */
+		if (lep->frame_count_current == lep->frame_count_last) {
+			capture_frame_delay(lep, buf);
+			return;
+		}
+	}
 
 	spin_lock(&lep->slock);
 	/*
@@ -352,14 +470,16 @@ static void spi_frame_complete(void *context)
 	spin_unlock(&lep->slock);
 
 	if (check_crc) {
-		struct spi_transfer *xfer;
 		bool crc;
 		int i;
 
-		for(i = 1; i < lep->n_xfers; i++) {
-			xfer = lep->spi_xfers + i;
+		/*
+		 * Check crc on second transfert
+		 * First line already received and crc checked
+		 */
+		for(i = 0; i < lep->n_pkts - 1; i++) {
+			crc = lepton_check_crc(xfer->rx_buf + pkt_len * i, pkt_len);
 
-			crc = lepton_check_crc(xfer->rx_buf, xfer->len);
 			if (!crc) {
 				status = VB2_BUF_STATE_ERROR;
 				break;
@@ -367,28 +487,32 @@ static void spi_frame_complete(void *context)
 		}
 	}
 
+	if (skip_frame)
+		lep->frame_count_last = lep->frame_count_current;
+
 	copy_to_vb_buffer(lep, buf);
+	v4l2_get_timestamp(&buf->vb.v4l2_buf.timestamp);
 	vb2_buffer_done(&buf->vb, status);
 
 	if (next)
-		capture_frame(lep, next);
+		capture_frame_delay(lep, next);
 }
 
 static int spi_init_messages(struct lepton *lep)
 {
 	struct spi_message *msg;
 	struct spi_transfer *xfers;
-	int n_xfers = lep->pix_fmt.height / lep->fmt->line_per_pkt;
+	int n_pkts = lep->pix_fmt.height / lep->fmt->line_per_pkt;
 
 	if (lep->spi_xfers)
 		return 0;
 
-	xfers = kcalloc(n_xfers, sizeof(struct spi_transfer), GFP_KERNEL);
+	xfers = kcalloc(LEPTON_NR_SPI_MESSAGES, sizeof(struct spi_transfer), GFP_KERNEL);
 	if (!xfers)
 		return -ENOMEM;
 
 	lep->spi_xfers = xfers;
-	lep->n_xfers = n_xfers;
+	lep->n_pkts = n_pkts;
 
 	msg = &lep->spi_msg[0];
 	spi_message_init(msg);
@@ -403,11 +527,8 @@ static int spi_init_messages(struct lepton *lep)
 	spi_message_init(msg);
 	msg->complete = spi_frame_complete;
 	msg->is_dma_mapped = true;
-	for(; xfers != lep->spi_xfers + n_xfers; xfers++) {
-		xfers->delay_usecs = 3;
-		xfers->speed_hz = LEPTON_SPI_XFER_SPEED;
-		spi_message_add_tail(xfers, msg);
-	}
+	xfers->speed_hz = LEPTON_SPI_XFER_SPEED;
+	spi_message_add_tail(xfers, msg);
 
 	return 0;
 }
@@ -513,7 +634,7 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 		size_t size = spi_get_packet_length(lep);
 
 		size = spi_align(size);
-		size *= lep->n_xfers;
+		size *= lep->n_pkts;
 
 		cpu = dma_alloc_coherent(NULL, size, &dma, GFP_DMA);
 		if (!cpu) {
@@ -890,6 +1011,8 @@ int vidioc_streamon(struct file *file, void *priv, enum v4l2_buf_type i)
 	if (err)
 		goto stop_stream;
 
+	setup_timer(&lep->timer, lepton_timeout, (long unsigned)lep);
+
 	return 0;
 
 stop_stream:
@@ -901,6 +1024,8 @@ error:
 int vidioc_streamoff(struct file *file, void *fh, enum v4l2_buf_type i)
 {
 	struct lepton *lep = video_drvdata(file);
+
+	del_timer(&lep->timer);
 
 	v4l2_subdev_call(lep->subdev, video, s_stream, 0);
 	return vb2_ioctl_streamoff(file, fh, i);
@@ -1032,6 +1157,11 @@ static int lepton_probe(struct spi_device *spi)
 
 	lep->vdev = vdev;
 	lep->spi = spi;
+
+	init_timer(&lep->timer);
+	lep->frame_count_current = 0;
+	lep->frame_count_last = 0;
+
 	return 0;
 
 release_vdev:

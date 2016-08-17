@@ -1792,10 +1792,13 @@ static int galileo2_initialize_controls(struct v4l2_subdev *sd)
 				       ~0x3,
 				       V4L2_FLASH_STROBE_SOURCE_SOFTWARE);
 
+	/* Analog gain
+	** value based on 'raytrix driver' and checked by i2c sniffing on phone
+	*/
 	galileo2->gain = v4l2_ctrl_new_std(hdl,
 					   &galileo2_ctrl_ops,
 					   V4L2_CID_ANALOGUE_GAIN,
-					   0, 0xffff, 1, 5 * 0x34);
+					   0, 0x208, 1, 5 * 0x34);
 
 	if (hdl->error) {
 		v4l2_err(sd, "failed to add new ctrls\n");

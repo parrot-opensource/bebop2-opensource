@@ -29,6 +29,8 @@
 struct avi_m2m_platform_data {
 	unsigned long caps;
 	int enable_stats;
+	enum vb2_cache_flags vb2_cache_flags;
+	enum vb2_cache_flags stat_vb2_cache_flags;
 };
 
 #endif /* _AVI_M2M_H_ */

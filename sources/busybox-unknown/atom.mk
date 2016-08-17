@@ -28,7 +28,8 @@ BUSYBOX_PATCHES := \
 	busybox-1.20.2-kernel_ver.patch \
 	busybox-1.20.2-pkg-config-selinux.patch \
 	busybox-1.20.2-sys-resource.patch \
-	busybox-1.20.2-bin_init.patch
+	busybox-1.20.2-bin_init.patch \
+	init-make-the-command-line-rewrite-optional.patch
 
 ifeq ("$(TARGET_LIBC)","bionic")
 BUSYBOX_PATCHES += \
@@ -91,7 +92,7 @@ $(BUSYBOX_SRC_DIR)/.config: $(BUSYBOX_CONFIG_FILE) $(BUSYBOX_UNPACKED_FILE)
 # Build
 $(BUSYBOX_BUILD_DIR)/$(LOCAL_MODULE_FILENAME): $(BUSYBOX_SRC_DIR)/.config
 	@echo "Checking busybox config: $(BUSYBOX_CONFIG_FILE)"
-	$(Q)yes "" 2>/dev/null | $(MAKE) $(BUSYBOX_MAKE_ARGS) -C $(BUSYBOX_SRC_DIR) silentoldconfig
+	$(Q)yes "" 2>/dev/null | $(MAKE) $(BUSYBOX_MAKE_ARGS) -C $(BUSYBOX_SRC_DIR) oldconfig
 	@echo "Building busybox"
 	$(Q)$(MAKE) $(BUSYBOX_MAKE_ARGS) -C $(BUSYBOX_SRC_DIR) SKIP_STRIP=y
 	@echo "Installing busybox"

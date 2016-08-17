@@ -1,5 +1,5 @@
 Open Source Software used in **Parrot Bebop2**.  
-Firmware version: **3.2.0**  
+Firmware version: **3.3.0**  
 Unless stated otherwise, later versions of the firmware
 use these same software modules.
 
@@ -19,7 +19,7 @@ You can download Open Source Archives from following table:
 |GPL|[procps](sources/procps-3.2.8)
 |GPL|[yavta](sources/yavta-unknown)
 |GPL2|[devmem](sources/devmem-unknown)
-|GPL2|[dnsmasq](sources/dnsmasq-2.62)
+|GPL2|[dnsmasq](sources/dnsmasq-2.66)
 |GPL2|[e2fsprogs](sources/e2fsprogs-1.42.11)
 |GPL2|[iptables](sources/iptables-1.4.11.1)
 |GPL2|[linux](sources/linux-unknown)
@@ -30,6 +30,7 @@ You can download Open Source Archives from following table:
 |GPL2|[udevd_init](sources/udevd_init-164)
 |GPL2|[util-linux-ng](sources/util-linux-ng-2.26)
 |GPL2|[wireless_tools](sources/wireless_tools-29)
+|GPL3|[netdata](sources/netdata-1.2.0)
 |LGPL|[libc-arm-2012-03-fix](sources/libc-arm-2012-03-fix-unknown)
 |LGPL|[libconfig](sources/libconfig-1.5)
 |LGPL|[lttng-ust](sources/lttng-ust-2.1.1)
@@ -45,6 +46,9 @@ You can download Open Source Archives from following table:
 |LGPL2|[libusb_1_0](sources/libusb_1_0-1.0.19)
 |LGPL2|[media-ctl](sources/media-ctl-unknown)
 |LGPL2|[util-linux-ng (lib/canonicalize.c)](sources/util-linux-ng-2.26)
+|LGPL2|[util-linux-ng (lib/fileutils.c)](sources/util-linux-ng-2.26)
 |LGPL2|[util-linux-ng (lib/randutils.c)](sources/util-linux-ng-2.26)
+|LGPL2|[util-linux-ng (lib/strutils.c)](sources/util-linux-ng-2.26)
 |LGPL2|[util-linux-ng (libblkid)](sources/util-linux-ng-2.26)
+|LGPL2|[util-linux-ng (libfdisk)](sources/util-linux-ng-2.26)
 |LGPL2|[util-linux-ng (libmount)](sources/util-linux-ng-2.26)

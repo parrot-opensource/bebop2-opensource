@@ -111,7 +111,8 @@ void iio_mykonos3_unregister(enum iio_mykonos3_devtype type,
 		goto exit;
 	}
 
-	if (dev->indio_dev != indio_dev) {
+	dev = &iio_mykonos3_devtab[type];
+	if (!dev || dev->indio_dev != indio_dev) {
 		pr_err("Error registering device: type %d not owned by '%s'\n",
 		       type, indio_dev->name);
 		goto exit;

@@ -1305,6 +1305,7 @@ int gserial_connect(struct gserial *gser, u8 port_num)
 		gs_start_io(port);
 		if (gser->connect)
 			gser->connect(gser);
+		(void)gs_start_tx(port);
 	} else {
 		if (gser->disconnect)
 			gser->disconnect(gser);

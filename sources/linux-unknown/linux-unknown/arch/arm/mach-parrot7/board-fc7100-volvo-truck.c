@@ -458,8 +458,8 @@ static struct avifb_overlay volvo_truck_avi_lcd0_overlays[] = {
 			.width	 = 800-64,
 			.enabled = 1,
 		},
-		.zorder		 = -1,
-		.dma_memory.end	 = 800 * 480 * 4 * 2,
+		.zorder		 = 1,
+		.dma_memory.end	 = (800-64) * 480 * 4 * 2,
 	},
 	{
 		.layout		 = {
@@ -467,8 +467,18 @@ static struct avifb_overlay volvo_truck_avi_lcd0_overlays[] = {
 			.width	 = 64,
 			.enabled = 1,
 		},
-		.zorder		 = -1,
+		.zorder		 = 2,
 		.dma_memory.end	 = 64 * 480 * 4 * 2,
+	},
+	{
+		.layout 	= {
+			.alpha 	 = AVI_ALPHA_OSD,
+			.x	 = 64,
+			.width	 = 800-64,
+			.enabled = 1,
+		},
+		.zorder		= 0,
+		.dma_memory.end	= (800-64) * 480 * 4 * 2,
 	},
 };
 

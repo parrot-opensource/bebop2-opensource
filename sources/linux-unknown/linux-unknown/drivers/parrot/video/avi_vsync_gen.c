@@ -316,7 +316,6 @@ static int __devinit avivsync_probe(struct platform_device *pdev)
 {
 	struct avivsync_platform_data	*pdata;
 	struct avivsync_data		*data;
-	const struct avi_chan		*chan;
 	int				 i;
 	int				 ret = 0;
 
@@ -348,8 +347,9 @@ static int __devinit avivsync_probe(struct platform_device *pdev)
 		goto no_pins;
 	}
 
-#warning "This code needs to be ported to the segment API"
 #if 0
+#warning "This code needs to be ported to the segment API"
+	const struct avi_chan		*chan;
 	if (!pdata->avi_group || pdata->avi_group->chan_nr == 0) {
 		ret = -ENODEV;
 		goto no_group;
@@ -398,8 +398,10 @@ static int __devinit avivsync_probe(struct platform_device *pdev)
 sysfs_register_failed:
 	dev_set_drvdata(&pdev->dev, NULL);
 configure_failed:
+#if 0
 bad_chan:
 no_group:
+#endif
 	pinctrl_put(data->pctl);
 no_pins:
 	clk_put(data->pixclock);

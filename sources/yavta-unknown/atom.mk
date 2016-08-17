@@ -16,5 +16,8 @@ LOCAL_CATEGORY_PATH := video
 LOCAL_SRC_FILES := \
 	yavta.c
 
+LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH)/include
+
 include $(BUILD_EXECUTABLE)
 

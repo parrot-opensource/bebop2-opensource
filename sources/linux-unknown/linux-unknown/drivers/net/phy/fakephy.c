@@ -43,10 +43,6 @@ static int fp_setup_forced(struct phy_device *phydev)
 	return 0;
 }
 
-static int fp_config_advert(struct phy_device *phydev)
-{
-	return 0;
-}
 static int fp_config_aneg(struct phy_device *phydev)
 {
 	fp_setup_forced(phydev);

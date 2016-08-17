@@ -26,6 +26,8 @@
 #include <asm/hardware/gic.h>
 #include <mach/p7.h>
 #include <mach/pwm.h>
+#include <linux/input.h>
+#include <linux/gpio_keys.h>
 #include "common.h"
 #include "system.h"
 #include "board.h"
@@ -64,6 +66,7 @@
 #define GPIO_IMU_INT		91
 #define GPIO_PCA_OE_N		120 /* Exported */
 #define GPIO_FSYNC_MPU		126 /* Exported */
+#define GPIO_CAM_STROBE		128
 #define GPIO_FSYNC_IMU		127
 #define GPIO_TOSHIBA_RESET_N	132
 #define GPIO_PCB_VERSION_00	138
@@ -113,6 +116,7 @@ struct galilei_hsis {
 	int fsync_imu;
 	int clk_in_imu;
 	int flir_reset_n;
+	int cam_strobe;
 	/* Thermistor */
 	int thermal1;
 	int thermal2;
@@ -153,6 +157,7 @@ struct galilei_hsis {
 	.fsync_imu		= GPIO_FSYNC_IMU,
 	.clk_in_imu		= PWM_CLK_IN_IMU,
 	.flir_reset_n		= GPIO_FLIR_RESET_N,
+	.cam_strobe		= GPIO_CAM_STROBE,
 	/* Thermistor */
 	.thermal1		= PWM_THERMAL_PWM_1,
 	.thermal2		= PWM_THERMAL_PWM_2,
@@ -186,8 +191,44 @@ struct drone_common_gpio galilei_gpios[] = {
 	GALILEI_GPIO(pwr_12v_good_n, GPIOF_IN, "12v_pwr_good_n"),
 	GALILEI_GPIO(pwr_1v2_good,  GPIOF_IN, "1v2_pwr_good"),
 	GALILEI_GPIO(fsync_mpu, GPIOF_IN, "Fsync_mpu"),
-	GALILEI_GPIO(pca_oe_en, GPIOF_OUT_INIT_LOW, "PCA_OE_en"),
+	GALILEI_GPIO(pca_oe_en, GPIOF_OUT_INIT_HIGH, "PCA_OE_en"), // Deactivate PCA, PWM from P7 directly used
 	{ .gpio = NULL, }
+};
+
+/***************
+ * GPIO keys *
+ ***************/
+
+/* Macro to simplify definition of GPIO keys */
+#define RX_KEYS_GPIO(_gpio, _code, _active_low, _desc)\
+{\
+	.gpio						= (P7_GPIO_NR(_gpio)),\
+	.type						= EV_KEY,\
+	.code						= (_code),\
+	.can_disable					= false,\
+	.wakeup						= false,\
+	/* Not a real button, no need to debounce */ \
+	.debounce_interval				= 0,\
+	.active_low					= (_active_low),\
+	.desc						= (_desc)\
+}
+
+static struct gpio_keys_button p7_gpio_keys[] = {
+/*      GPIO                               Code      Active low  Description */
+	RX_KEYS_GPIO(P7_GPIO_NR(GPIO_CAM_STROBE), KEY_UP,   false,      "Galileo2 FSTROBE line"),
+};
+
+static struct gpio_keys_platform_data p7_gpio_keys_platform_data = {
+	.buttons	= p7_gpio_keys,
+	.nbuttons	= ARRAY_SIZE(p7_gpio_keys),
+};
+
+static struct platform_device p7_gpio_keys_device = {
+	.name	= "gpio-keys",
+	.id	= 0,
+	.dev = {
+		.platform_data = &p7_gpio_keys_platform_data,
+	},
 };
 
 /**************
@@ -208,6 +249,7 @@ struct drone_common_hsis_sysfs_attr galilei_hsis_sysfs[] = {
 	GALILEI_HSIS_SYSFS_ATTR(fsync_imu),
 	GALILEI_HSIS_SYSFS_ATTR(flir_reset_n),
 	GALILEI_HSIS_SYSFS_ATTR(pca_oe_en),
+	GALILEI_HSIS_SYSFS_ATTR(cam_strobe),
 	/* pwm */
 	GALILEI_HSIS_SYSFS_ATTR(galileo_mclk),
 	GALILEI_HSIS_SYSFS_ATTR(tosh_mclk),
@@ -302,7 +344,7 @@ static struct p7pwm_conf galilei_conf_pca_clk = {
 	.period_precision = 5,
 	/* Not used in clock mode */
 	.duty_precision = 0,
-	.mode = P7PWM_MODE_CLOCK,
+	.mode = P7PWM_MODE_NORMAL,
 };
 
 static struct p7pwm_conf galilei_conf_clk_in_imu = {
@@ -383,12 +425,6 @@ static struct pinctrl_map galileo2_avicam_pins[] __initdata = {
 	P7_INIT_PINMAP(P7_CAM_0_DATA07),
 	P7_INIT_PINMAP(P7_CAM_0_DATA08),
 	P7_INIT_PINMAP(P7_CAM_0_DATA09),
-	P7_INIT_PINMAP(P7_CAM_0_DATA10),
-	P7_INIT_PINMAP(P7_CAM_0_DATA11),
-	P7_INIT_PINMAP(P7_CAM_0_DATA12),
-	P7_INIT_PINMAP(P7_CAM_0_DATA13),
-	P7_INIT_PINMAP(P7_CAM_0_DATA14),
-	P7_INIT_PINMAP(P7_CAM_0_DATA15),
 };
 
 /* Configure a PWM to output a clock signal with a frequency given in
@@ -539,6 +575,7 @@ static void galileo2_get_timings(struct avi_capture_timings  *t,
 
 static struct avicam_platform_data galileo2_avicam_pdata = {
 	.cam_cap	    = AVI_CAP_CAM_0,
+	.enable_stats       = 1,
 	.interface          = {
 		.itu656	    = 0,
 		.pad_select = 0,
@@ -552,6 +589,7 @@ static struct avicam_platform_data galileo2_avicam_pdata = {
 	.bus_width	    = 10,
 	.subdevs	    = galileo2_tc358746a_subdevs,
 	.measure_to_timings = &galileo2_get_timings,
+	.vb2_cache_flags    = VB2_CACHE_DMA_CONTIG | VB2_CACHE_WRITETHROUGH,
 };
 
 #define GALILEO2_CAM_RAM_SIZE PAGE_ALIGN(7716 * 5364 * 2 * 4)
@@ -1026,6 +1064,9 @@ static struct p7gpio_filter_phase galilei_irq_gpios_filter[] = {
 	}
 };
 
+static unsigned const galilei_irq_gpios[] = {
+	GPIO_CAM_STROBE,  /* FSTROBE interrupt source */
+};
 
 /***********************
  * Init
@@ -1040,7 +1081,9 @@ static void __init galilei_init_mach(void)
 
 	p7_init_mach();
 
-	p7_init_gpio(NULL, 0);
+	/* GPIO init */
+	p7_init_gpio(galilei_irq_gpios,
+		     ARRAY_SIZE(galilei_irq_gpios));
 
 	galilei_hsis.p7rev  = p7_chiprev() + 1;
 	galilei_hsis.pcbrev = galilei_board_get_rev();
@@ -1048,6 +1091,13 @@ static void __init galilei_init_mach(void)
 
 	pr_info("galilei p7rev %d\n", galilei_hsis.p7rev);
 	pr_info("galilei rev %d\n", galilei_hsis.pcbrev);
+
+	/* Remove pull-down from STROBE pin */
+	p7_config_pin(galilei_hsis.cam_strobe, P7CTL_PUD_CFG(HIGHZ));
+
+	/* GPIO keys */
+	p7_init_dev(&p7_gpio_keys_device,
+		    &p7_gpio_keys_platform_data, NULL, 0);
 
 	/* debug uart */
 	p7brd_init_uart(0,0);

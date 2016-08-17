@@ -160,11 +160,18 @@ static struct p7ump_token* p7ump_record_get(struct list_head* rlist,
 	return token;
 }
 
-static void p7ump_record_put(struct list_head* rlist, int secure_id)
+static int p7ump_record_put(struct list_head* rlist, int secure_id)
 {
 	struct p7ump_record* record;
 	struct list_head *pos, *q;
-	ump_dd_handle ump_h = ump_dd_handle_create_from_secure_id(secure_id);
+	ump_dd_handle ump_h;
+
+	ump_h = ump_dd_handle_create_from_secure_id(secure_id);
+	if (ump_h == UMP_DD_HANDLE_INVALID) {
+		/* secure id not found so likely a bad value */
+		return -EINVAL;
+	}
+
 	/* now that we have the handle, we can decrease the reference again */
 	ump_dd_reference_release(ump_h);
 
@@ -180,6 +187,8 @@ static void p7ump_record_put(struct list_head* rlist, int secure_id)
 		}
 	}
 	mutex_unlock(&p7ump_lock);
+
+	return 0;
 }
 
 static long p7ump_ioctl(struct file* filep, unsigned int cmd, unsigned long arg)
@@ -202,8 +211,7 @@ static long p7ump_ioctl(struct file* filep, unsigned int cmd, unsigned long arg)
 	case P7UMP_REL_ID:
 		pid = (int __user *) arg;
 		get_user(id, pid);
-		p7ump_record_put(rlist, id);
-		break;
+		return p7ump_record_put(rlist, id);
 	default:
 		return -EOPNOTSUPP;
 	}

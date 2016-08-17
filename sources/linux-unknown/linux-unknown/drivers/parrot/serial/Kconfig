@@ -1,5 +1,5 @@
 config SERIAL_PARROTX
-	tristate "Parrot5/5+/6/6i/7 serial port support"
+	bool "Parrot5/5+/6/6i/7 serial port support"
 	depends on ARCH_PARROT7
 	select SERIAL_CORE
 	help

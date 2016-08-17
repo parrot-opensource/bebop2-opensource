@@ -1823,6 +1823,8 @@ static inline int avi_m2m_vb2_queue_init(struct vb2_queue *vq,
 					 enum v4l2_buf_type type,
 					 void *priv)
 {
+	struct avi_m2m_dev *avi_m2m = (struct avi_m2m_dev *)priv;
+	struct vb2_dc_conf *alloc_ctx = (struct vb2_dc_conf *)avi_m2m->alloc_ctx;
 	memset(vq, 0, sizeof(*vq));
 	vq->type = type;
 	vq->io_modes = VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
@@ -1830,6 +1832,7 @@ static inline int avi_m2m_vb2_queue_init(struct vb2_queue *vq,
 	vq->buf_struct_size = sizeof(struct v4l2_m2m_buffer);
 	vq->ops = &avi_m2m_video_qops;
 	vq->mem_ops = &vb2_dma_contig_memops;
+	vq->cache_flags = alloc_ctx->cache_flags;
 
 	return vb2_queue_init(vq);
 }
@@ -2097,6 +2100,7 @@ static int __devinit avi_m2m_probe(struct platform_device *pdev)
 {
 	struct avi_m2m_platform_data *pdata;
 	struct avi_m2m_dev *avi_m2m;
+	struct vb2_dc_conf *alloc_ctx;
 	int ret;
 
 	/* Get platform data */
@@ -2118,6 +2122,10 @@ static int __devinit avi_m2m_probe(struct platform_device *pdev)
 	avi_m2m->id = pdev->id;
 	avi_m2m->caps = pdata->caps;
 	avi_m2m->stats_enabled = pdata->enable_stats;
+
+	/* Gives cache flags to stats */
+	avi_m2m->stats.stat_vb2_cache_flags =
+		pdata->stat_vb2_cache_flags;
 
 	/* Init spin lock and mutex */
 	mutex_init(&avi_m2m->mutex);
@@ -2141,12 +2149,14 @@ static int __devinit avi_m2m_probe(struct platform_device *pdev)
 	         video_device_node_name(avi_m2m->vdev));
 
 	/* Init videobuf2 DMA contig context */
-	avi_m2m->alloc_ctx = vb2_dma_contig_init_ctx(&pdev->dev);
-	if (IS_ERR(avi_m2m->alloc_ctx)) {
+	alloc_ctx = vb2_dma_contig_init_ctx(&pdev->dev);
+	if (IS_ERR(alloc_ctx)) {
 		dev_err(&pdev->dev, "Failed to init Videobuf2 DMA contig!\n");
-		ret = PTR_ERR(avi_m2m->alloc_ctx);
+		ret = PTR_ERR(alloc_ctx);
 		goto error;
 	}
+	alloc_ctx->cache_flags = pdata->vb2_cache_flags;
+	avi_m2m->alloc_ctx = (void *)alloc_ctx;
 
 	return 0;
 

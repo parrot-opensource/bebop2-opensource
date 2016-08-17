@@ -24,6 +24,7 @@
 #include <asm/mach-types.h>
 #include <asm/pgtable.h>
 #include <asm/hardware/gic.h>
+#include <asm/system_info.h>
 #include <mach/p7.h>
 #include "common.h"
 #include "system.h"
@@ -51,6 +52,7 @@
 #define PUSH_BUTTON              P7_GPIO_NR(75)
 /* output VSYNC on id pin of usb0 */
 #define MAINCAM_VS_OUTPUT        P7_GPIO_NR(81)
+#define CAM_SYNCH_OUTPUT         P7_GPIO_NR(88)
 #define USB_IRR_PWEN_GPIO        P7_GPIO_NR(91)
 #define USB_IRR_OC_GPIO          P7_GPIO_NR(92)
 #define MAINCAM_BRIDGE_NRST_GPIO P7_GPIO_NR(143)
@@ -77,7 +79,7 @@ static struct p7gpio_filter_phase sicilia_irq_gpios_filter[] = {
 	{
 		P7_GPIO_NR(153),	/* IMU_FSYNC = CAM_HD_VS */
 		P7_GPIO_NR(76),	/* GYRO_INT */
-		5, /* filter */
+		20, /* filter */
 		GPIO_MEASURE_STOP
 	}
 };
@@ -916,6 +918,7 @@ static struct platform_device sicilia_leds_pwm = {
 
 #define SICILIA_SPI_SLAVE_P7MU    2
 
+#if 0
 static struct pinctrl_map sicilia_spi_slave_p7mu_pins[] __initdata = {
 	P7_INIT_PINMAP(P7_SPI_02), /* CLK */
 	P7_INIT_PINMAP(P7_SPI_01), /* MOSI */
@@ -927,7 +930,6 @@ static struct p7spi_swb const sicilia_spi_slave_p7mu_swb[] = {
 	P7SPI_INIT_SWB(00,  P7_SWB_DIR_IN,  P7_SWB_SPI_DATA0),
 	P7SPI_SWB_LAST,
 };
-
 
 static struct p7spis_ctrl_data sicilia_spi_slave_p7mu_cdata = {
 	.common = {
@@ -951,6 +953,7 @@ static P7_DECLARE_SPIS_MASTER(sicilia_spi_master_p7mu_info,
 			      &sicilia_spi_slave_p7mu_cdata,
 			      10 * 1000 * 1000,
 			      SPI_MODE_0|SPI_LSB_FIRST);
+#endif
 
 static struct pinctrl_map sicilia_p7mu_pins[] __initdata = {
 	P7_INIT_PINMAP(P7_REBOOT_P7MU),    /* P7 -> P7MU reset request */
@@ -1126,10 +1129,14 @@ static struct avi_m2m_platform_data sicilia_avi_m2m_pdata[] = {
 	{
 		.caps = AVI_CAPS_ISP,
 		.enable_stats = 1,
+		.stat_vb2_cache_flags = VB2_CACHE_DMA_CONTIG |
+					VB2_CACHE_FLUSH,
 	},
 	{
 		.caps = AVI_CAPS_ISP,
-		.enable_stats = 1,
+		.enable_stats = 0,
+		.vb2_cache_flags = VB2_CACHE_DMA_CONTIG |
+				   VB2_CACHE_FLUSH,
 	},
 	{ .caps = 0 },
 };
@@ -1141,7 +1148,7 @@ static void sicilia_configure_leds(void)
 	pwm = pwm_request(SICILIA_PWM_LED_RED, "sicilia BSP");
 
 	if (!IS_ERR(pwm)) {
-		pwm_config(pwm, 1000000, 2000000);
+		pwm_config(pwm, 2000000, 2000000);
 		pwm_enable(pwm);
 		pwm_free(pwm);
 	}
@@ -1149,7 +1156,7 @@ static void sicilia_configure_leds(void)
 	pwm = pwm_request(SICILIA_PWM_LED_GREEN, "sicilia BSP");
 
 	if (!IS_ERR(pwm)) {
-		pwm_config(pwm, 50000, 2000000);
+		pwm_config(pwm, 0, 2000000);
 		pwm_enable(pwm);
 		pwm_free(pwm);
 	}
@@ -1176,7 +1183,8 @@ static void __init sicilia_init_mach(void)
 
 	p7_init_gpio(NULL, 0);
 
-	pr_info("sicilia rev %d\n", sicilia_board_get_rev());
+	system_rev = sicilia_board_get_rev();
+	pr_info("sicilia rev %d\n", system_rev);
 
 	/* debug uart */
 	p7brd_init_uart(0,0);
@@ -1214,7 +1222,7 @@ static void __init sicilia_init_mach(void)
 	for (i = 0; i < ARRAY_SIZE(sicilia_irq_gpios_filter); i++)
 		p7_gpio_filter_interrupt_register(sicilia_irq_gpios_filter[i]);
 
-	if (sicilia_board_get_rev() == 0) {
+	if (system_rev == 0) {
 		/* HW00 has no 3.3V ADC ref */
 		p7mu_adc_chan_data.channels = &p7mu_adc_channels[1];
 		p7mu_adc_chan_data.num_channels -= 1;
@@ -1228,7 +1236,7 @@ static void __init sicilia_init_mach(void)
 			 sicilia_sdhci0_pins, ARRAY_SIZE(sicilia_sdhci0_pins));
 
 	/* Enable camera power */
-	switch (sicilia_board_get_rev()) {
+	switch (system_rev) {
 	case 0:
 		cam_power_en = CAM_POWER_EN_HW00;
 		break;
@@ -1289,6 +1297,24 @@ static void __init sicilia_init_mach(void)
 	p7brd_export_gpio(P7_GPIO_NR(207), GPIOF_IN, "CAM5_VS");
 	p7brd_export_gpio(P7_GPIO_NR(210), GPIOF_IN, "CAM3_VS");
 	p7brd_export_gpio(P7_GPIO_NR(219), GPIOF_IN, "CAM0_BRIDGE_INT_in");
+
+	/* gpio for cam external synchro */
+	if (sicilia_board_get_rev() >= 3) {
+		/* This gpio will be used to generate a sync signal for eBee.
+		 * It will be raised during 10ms each time sicilia captures
+		 * a frame to record.
+		 */
+		p7brd_export_gpio(CAM_SYNCH_OUTPUT, GPIOF_OUT_INIT_LOW, "CAM_SYNCH");
+		/* This gpio allows to enable this signal when eBee is present,
+		 * or to disable it otherwise
+		 */
+		p7brd_export_gpio(MAINCAM_VS_OUTPUT, GPIOF_OUT_INIT_LOW, "EN_CAM_SYNC");
+	} else {
+		/* This gpio will be used to generate a sync signal for eBee
+		 * by enabling the maincam vsync signal during 10ms.
+		 */
+		p7brd_export_gpio(MAINCAM_VS_OUTPUT, GPIOF_OUT_INIT_LOW, "CAM_SYNCH");
+	}
 
 
 	/*

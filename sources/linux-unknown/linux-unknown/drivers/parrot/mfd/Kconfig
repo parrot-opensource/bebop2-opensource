@@ -22,7 +22,7 @@ config MFD_P7MU_DEBUG
 
 config SICILIA_IRRADIANCE
 	tristate "Sicilia irradiance module"
-	depends on MFD_DIB0700 && LEDS_PCA9633 && TSL2591
+	depends on MFD_DIB0700 && LEDS_PCA9633 && LEDS_NCP5623C && TSL2591
 	default no
 	help
 	 Support for the Parrot Sicilia irradiance module

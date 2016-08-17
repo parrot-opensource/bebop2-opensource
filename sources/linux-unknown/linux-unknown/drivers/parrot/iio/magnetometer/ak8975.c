@@ -433,13 +433,7 @@ static ssize_t show_in_magn_matrix(struct device *dev, struct device_attribute *
   struct iio_dev *indio_dev = dev_get_drvdata(dev);
   struct ak8975_data *data = iio_priv(indio_dev);
 
-#define M data->pdata->orientation
-
-  return sprintf(buf, "%d, %d, %d; %d, %d, %d; %d, %d, %d\n",
-		 M[0][0], M[0][1], M[0][2],
-		 M[1][0], M[1][1], M[1][2],
-		 M[2][0], M[2][1], M[2][2]);
-#undef M
+  return sprintf(buf, "%s", data->pdata->orientation);
 }
 
 #ifdef PARROT_IIO_AK8975_TIMESTAMPS

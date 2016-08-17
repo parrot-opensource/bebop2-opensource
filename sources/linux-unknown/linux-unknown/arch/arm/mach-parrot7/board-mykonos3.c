@@ -239,11 +239,18 @@ static void __init mk3_board_probe(void)
 	if (hwrev < MK3_HW06)
 		panic("unsupported board\n");
 
-	/* Displau revision during boot */
+	/* Display revision during boot */
 	pr_info("**************** HARDWARE HW %02d ***********************\n",
 		hwrev);
 	pr_info("****************   PCB REV %02d   ***********************\n",
 		pcbrev);
+
+	/* Compatibility issue when flashed with SW <= 1.98 and updated to 3.x */
+	if(system_rev != mk3_hsis.hwrev) {
+		pr_warn("system_rev != mk3_hsis.hwrev\n");
+		pr_warn("may be caused by an old bootloader\n");
+		system_rev = mk3_hsis.hwrev;
+	}
 
 	/* Configure HSIS with PCB/HW revision */
 	if (hwrev < MK3_HW08) {
@@ -286,7 +293,7 @@ static void __init milos_board_probe(void)
 	hwrev = MK3_HW11 + pcbrev;
 	mk3_hsis.hwrev = hwrev;
 
-	/* Displau revision during boot */
+	/* Display revision during boot */
 	pr_info("**************** HARDWARE HW %02d ***********************\n",
 		hwrev);
 	pr_info("****************   PCB REV %02d   ***********************\n",
@@ -478,8 +485,19 @@ struct drone_common_gpio mk3_gpios[] = {
 	MK3_GPIO(fsync_gyro_p7, GPIOF_IN, "FSYNC_GYRO_P7"),
 	MK3_GPIO(reset_wifi, GPIOF_OUT_INIT_LOW, "RESET_WIFI"),
 	MK3_GPIO(reset_gnss, GPIOF_OUT_INIT_LOW, "RESET_GNSS"),
-	MK3_GPIO(gps_power_en, GPIOF_OUT_INIT_HIGH, "GPS_POWER_EN"),
 	MK3_GPIO(gps_flash, GPIOF_OUT_INIT_LOW, "GPS_FLASH"),
+	MK3_GPIO(gps_power_en, GPIOF_OUT_INIT_HIGH, "GPS_POWER_EN"),
+	MK3_GPIO(user_on_off, GPIOF_IN, "USER_ON_OFF"),
+	MK3_GPIO(select_alim_us, GPIOF_OUT_INIT_LOW, "SELECT_ALIM_US"),
+	{ .gpio = NULL, }
+};
+
+struct drone_common_gpio milos_gpios[] = {
+	MK3_GPIO(fsync_gyro_p7, GPIOF_IN, "FSYNC_GYRO_P7"),
+	MK3_GPIO(reset_wifi, GPIOF_OUT_INIT_LOW, "RESET_WIFI"),
+	MK3_GPIO(reset_gnss, GPIOF_OUT_INIT_LOW, "RESET_GNSS"),
+	MK3_GPIO(gps_flash, GPIOF_OUT_INIT_HIGH, "GPS_FLASH"),
+	MK3_GPIO(gps_power_en, GPIOF_OUT_INIT_HIGH, "GPS_POWER_EN"),
 	MK3_GPIO(user_on_off, GPIOF_IN, "USER_ON_OFF"),
 	MK3_GPIO(select_alim_us, GPIOF_OUT_INIT_LOW, "SELECT_ALIM_US"),
 	{ .gpio = NULL, }
@@ -556,6 +574,48 @@ static struct platform_device mykonos3_iio_device = {
 static void __init mykonos3_iio_init(void)
 {
 	platform_device_register(&mykonos3_iio_device);
+}
+
+/*****************
+ * Sensor AK8975 *
+ *****************/
+
+#ifdef DRIVER_PARROT_IIO_AK8975
+
+#include <iio/platform_data/ak8975.h>
+
+#define DRONE_MAG_ROTATION_MATRIX\
+	"-0.984807753012208, 0, -0.173648177666930; "\
+	"0, -1, 0; "\
+	"-0.173648177666930, 0, 0.984807753012208\n"
+
+static struct ak8975_platform_data ak8963_pdata = {
+	.orientation = DRONE_MAG_ROTATION_MATRIX,
+	.drdy_gpio = -1, /* GPIO connected to DRDY pin exclusive with I2C irq */
+	.trg_gpio = -1,  /* GPIO connected to TRG pin (AK8963)  */
+};
+#else
+#define IIO_MAGNETOMETER_AK8963 "ak8963"
+#endif
+
+static struct i2c_board_info ak8963_info = {
+	I2C_BOARD_INFO(IIO_MAGNETOMETER_AK8963, 0x0d),
+#ifdef DRIVER_PARROT_IIO_AK8975
+	.platform_data = &ak8963_pdata,
+#endif
+};
+
+static void __init milos_init_ak8963(int i2c_bus, int irq)
+{
+#ifdef DRIVER_PARROT_IIO_AK8975
+	ak8963_info.irq = P7_GPIO_NR(irq);
+	parrot_init_i2c_slave(i2c_bus, &ak8963_info, "Magnetometer",
+			      irq > 0 ? P7_I2C_IRQ : P7_I2C_NOIRQ);
+#else
+	p7brd_export_i2c_hw_infos(i2c_bus, ak8963_info.addr, "Magnetometer",
+				  ak8963_info.type);
+	drone_common_export_gpio(irq, GPIOF_IN, "MAGNETO_INT_P7");
+#endif
 }
 
 /*******
@@ -697,12 +757,17 @@ static void __init mykonos3x_init_mach(enum mk3_hardware_board board)
 
 	/* Init USB */
 	drone_common_init_usb(mk3_hsis.host_mode_on, mk3_hsis.host_mode_3v3,
-			      mk3_hsis.usb0_oc);
+			      mk3_hsis.usb0_oc, 0);
 
 	p7brd_init_usb(1, -1, CI_UDC_DR_HOST);
 
 	/* Init sensors */
-	drone_common_init_ak8963(AK8963_I2C_BUS, mk3_hsis.magneto_int_p7);
+	if (board == MK3X_MILOS)
+		milos_init_ak8963(AK8963_I2C_BUS,
+				mk3_hsis.magneto_int_p7);
+	else
+		drone_common_init_ak8963(AK8963_I2C_BUS,
+				mk3_hsis.magneto_int_p7);
 	drone_common_init_inv_mpu6050(MPU6050_I2C_BUS, mk3_hsis.gyro_int_p7,
 				      FSYNC_GYRO_FILTER, mk3_hsis.clkin_gyro);
 	drone_common_init_ms5607(MS5607_I2C_BUS);
@@ -725,8 +790,14 @@ static void __init mykonos3x_init_mach(enum mk3_hardware_board board)
 	drone_common_init_fan(mk3_hsis.fan);
 
 	/* Export default and custom GPIOs */
-	pr_info("Mykonos3 board : exporting GPIOs\n");
-	drone_common_export_gpios(mk3_gpios);
+
+	if (board == MK3X_MK3) {
+		pr_info("Mykonos3 board : exporting GPIOs\n");
+		drone_common_export_gpios(mk3_gpios);
+	} else {
+		pr_info("Milos board : exporting GPIOs\n");
+		drone_common_export_gpios(milos_gpios);
+	}
 
 	/* Create sysfs entries (in /sys/kernel/hsis/...) */
 	pr_info(

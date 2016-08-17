@@ -18,9 +18,9 @@ LOCAL_ARCHIVE_PATCHES := remove_ARM_set_tls_system_call_override.patch parrot_tr
 
 # Make sure the -C parameter come after
 # $(LINUX_MAKE_ARGS) to override default value
-$(LTTNG_MODULES_BUILD_DIR)/$(LOCAL_MODULE_FILENAME): $(LTTNG_MODULES_BUILD_DIR)/$(LOCAL_MODULE).unpacked
+$(LTTNG_MODULES_BUILD_DIR)/$(LOCAL_MODULE_FILENAME):
 	@echo "Building LTTng modules"
-	$(Q) KERNELDIR=$(LINUX_DIR) make $(LINUX_MAKE_ARGS) -C $(LTTNG_MODULES_SRC_DIR) 
+	$(Q) KERNELDIR=$(LINUX_DIR) make $(LINUX_MAKE_ARGS) -C $(LTTNG_MODULES_SRC_DIR)
 	@echo "Installing LTTng modules"
 	$(Q) KERNELDIR=$(LINUX_DIR) make $(LINUX_MAKE_ARGS) -C $(LTTNG_MODULES_SRC_DIR) modules_install
 	@touch $@

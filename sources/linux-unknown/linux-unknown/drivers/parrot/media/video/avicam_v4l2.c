@@ -1511,8 +1511,7 @@ static int avicam_open(struct file *file)
 	const struct avicam_mbus_desc 	*desc;
 	int				 ret;
 	struct vb2_queue*                q = &avicam->vb_vidq;
-
-	struct avicam_fh               *fh;
+	struct avicam_fh                *fh;
 
 	fh = kzalloc(sizeof(*fh), GFP_KERNEL);
 	if (!fh) {
@@ -1598,8 +1597,9 @@ static int avicam_open(struct file *file)
 	goto unlock;
 
  no_subdev:
-	v4l2_fh_del(&fh->vfh);
 	file->private_data = NULL;
+	v4l2_fh_del(&fh->vfh);
+	v4l2_fh_exit(&fh->vfh);
 	kfree(fh);
 
  unlock:
@@ -1615,14 +1615,28 @@ static int avicam_open(struct file *file)
 
 static int avicam_release(struct file *file)
 {
-	struct avicam		*avicam = video_drvdata(file);
-	int ret = 0;
+	struct avicam *avicam = video_drvdata(file);
+	int            ret = 0;
 
 	mutex_lock(&avicam->lock);
 
 	avicam->use_count--;
-	if (!avicam->use_count)
+	if (!avicam->use_count) {
+		/*
+		 * Release all resources (cleaning/freeing)
+		 * v4l2_fh_release called in vb2_fop_release
+		 */
 		ret = vb2_fop_release(file);
+	}
+	else {
+		ret = v4l2_fh_release(file);
+	}
+
+	/*
+	 * file->private_data can not be reseted before :
+	 * it is used in vb2_fop_release
+	 */
+	file->private_data = NULL;
 
 	mutex_unlock(&avicam->lock);
 	return ret;

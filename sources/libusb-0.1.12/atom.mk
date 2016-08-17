@@ -41,6 +41,11 @@ LOCAL_AUTOTOOLS_MAKE_INSTALL_ARGS := \
 	DESTDIR=$(TARGET_OUT_STAGING)/usr \
 	CROSS=$(TARGET_CROSS)
 
+define LOCAL_AUTOTOOLS_CMD_POST_UNPACK
+	$(Q) cp -af $(PRIVATE_PATH)/config.guess $(PRIVATE_SRC_DIR)/config.guess
+	$(Q) cp -af $(PRIVATE_PATH)/config.sub $(PRIVATE_SRC_DIR)/config.sub
+endef
+
 define LOCAL_AUTOTOOLS_CMD_POST_CONFIGURE
 	$(Q) cp -af $(PRIVATE_PATH)/Makefile_raptor $(PRIVATE_SRC_DIR)/Makefile
 endef

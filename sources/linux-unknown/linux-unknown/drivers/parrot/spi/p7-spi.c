@@ -464,58 +464,6 @@ void p7spi_write_fifo(struct p7spi_core* core, size_t bytes)
 }
 EXPORT_SYMBOL(p7spi_write_fifo);
 
-/*
- * Complete a transfer round and initiate a new one if needed.
- * Should be called after a hardware completion event happened
- * (either FIFO threshold reached, last byte transferred or last
- * instruction completed).
- * This is used in both polling and interrupt mode of operations.
- *
- * At this time:
- *  bytes left to queue:
- *      core->bytes - core->fifo_sz
- *  bytes left to send (i.e., minus bytes still present within fifo) :
- *      core->bytes - (core->fifo_sz - core->thres_sz)
- *  bytes left to dequeue:
- *      core->bytes
- *
- */
-#warning remove me
-void p7spi_process_round(struct p7spi_core* core)
-{
-	size_t const thres = core->thres_sz;
-
-#ifdef DEBUG
-	/*
-	 * Residue bytes transfer should always be carried out using a synchronized
-	 * transfer.
-	 */
-	BUG_ON(core->bytes < (core->fifo_sz + thres));
-#endif
-
-	if (core->rx_buff)
-		/* Fetch input bytes from receive FIFO. */
-		p7spi_readl_fifo(core, thres);
-
-	/* Update count of remaining bytes to dequeue. */
-	core->bytes -= thres;
-
-	/*
-	 * Now start another round... At this time, remaining bytes to
-	 * queue (bytes + thres - fifo) MUST be >= core->thres_sz
-	 * since we perform threshold sized transfers only.
-	 */
-	dev_dbg(p7spi_core_dev(core),
-			"\t\t\t%uB proc round wr[%p] rd[%p]\n",
-			thres,
-			core->tx_buff,
-			core->rx_buff);
-	if (core->tx_buff)
-		/* Feed transmit FIFO. */
-		p7spi_writel_fifo(core, thres);
-}
-EXPORT_SYMBOL(p7spi_process_round);
-
 int p7spi_data_ready(struct p7spi_core const* core, u32 stat)
 {
 	if (! stat)

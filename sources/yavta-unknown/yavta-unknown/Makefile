@@ -1,9 +1,9 @@
 CROSS_COMPILE ?=
 
 CC	:= $(CROSS_COMPILE)gcc
-CFLAGS	?= -O0 -W -Wall -g
+CFLAGS	?= -O2 -W -Wall -Iinclude
 LDFLAGS	?=
-LIBS	:= -lrt
+LIBS	:= -lrt -lpthread
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

@@ -671,20 +671,29 @@ void __init drone_common_init_m2m(struct avi_m2m_platform_data *pdata)
  *******/
 
 void __init drone_common_init_usb(int gpio_on, int gpio_host_mode_3v3,
-				  int gpio_usb0_oc)
+				  int gpio_usb0_oc, int is_host)
 {
+	/* Export USB GPIOs */
+	drone_common_export_gpio(gpio_host_mode_3v3, GPIOF_IN, "HOST_MODE_3V3");
+	drone_common_export_gpio(gpio_usb0_oc, GPIOF_IN, "USB0_OC");
+
 	/* Init EHCI 0
 	 * EHCI controller 0 is by default dual host/device and can be
 	 * forced to device by cmdline option passed by installer
 	 */
-	if (parrot_force_usb_device)
+	if (parrot_force_usb_device) {
 		p7brd_init_usb(0, -1, CI_UDC_DR_DEVICE);
-	else
-		p7brd_init_usb(0, gpio_on, CI_UDC_DR_DUAL_DEVICE);
+		return;
+	}
 
-	/* Export USB GPIOs */
-	drone_common_export_gpio(gpio_host_mode_3v3, GPIOF_IN, "HOST_MODE_3V3");
-	drone_common_export_gpio(gpio_usb0_oc, GPIOF_IN, "USB0_OC");
+	if (is_host && gpio_get_value(gpio_host_mode_3v3)) {
+		pr_warn("Connected as device, don't initialize as host\n");
+		is_host = 0;
+	}
+	p7brd_init_usb(0, gpio_on,
+		       is_host ? CI_UDC_DR_DUAL_HOST :
+		       CI_UDC_DR_DUAL_DEVICE);
+
 }
 
 /*****************
@@ -696,9 +705,9 @@ void __init drone_common_init_usb(int gpio_on, int gpio_host_mode_3v3,
 #include <iio/platform_data/ak8975.h>
 
 #define DRONE_MAG_ROTATION_MATRIX\
-	{{  0, -1,  0},\
-	 {  1,  0,  0},\
-	 {  0,  0,  1} }
+		"0, -1, 0; "\
+		"1, 0, 0; "\
+		"0, 0, 1\n"
 
 static struct ak8975_platform_data ak8963_pdata = {
 	.orientation = DRONE_MAG_ROTATION_MATRIX,

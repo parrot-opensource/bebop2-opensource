@@ -26,6 +26,11 @@
 
 #include "galileo1_reg.h"
 
+static int debug_print;
+
+module_param(debug_print, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(debug_print, "print debug information if > 0");
+
 MODULE_AUTHOR("Eng-Hong SRON <eng-hong.sron@parrot.com>");
 MODULE_DESCRIPTION("Nokia Galileo1 driver");
 MODULE_LICENSE("GPL");
@@ -57,6 +62,13 @@ MODULE_LICENSE("GPL");
 
 #define MIN_VT_SYS_CLK     83330000UL
 #define MAX_VT_SYS_CLK   2080000000UL
+
+/* Temperature sensor output */
+#define TEMP_SENSOR_OUTPUT_MIN           (-20)
+#define TEMP_SENSOR_OUTPUT_MAX           (80)
+#define TEMP_SENSOR_OUTPUT_LOW_CALIB     (25)
+#define TEMP_SENSOR_OUTPUT_HIGH_CALIB    (60)
+#define TEMP_SENSOR_OUTPUT_AVERAGE_CALIB (42)
 
 struct galileo1 {
 	struct v4l2_subdev             sd;
@@ -94,6 +106,8 @@ struct galileo1 {
 	/* Non-Volatile Memory */
 	u8                            *nvm;
 	union nvm_memaddr              nvm_addr;
+	s8                             nvm_temp_h;
+	s8                             nvm_temp_l;
 
 
 	/* Clocks */
@@ -117,8 +131,10 @@ struct galileo1 {
 	struct v4l2_ctrl              *nd;
 	struct v4l2_ctrl              *ms;
 	struct v4l2_ctrl              *gs;
-	struct v4l2_ctrl              *strobe_source;
 	struct v4l2_ctrl              *strobe_width;
+	struct v4l2_ctrl              *strobe_start;
+	struct v4l2_ctrl              *strobe_enable;
+	struct v4l2_ctrl              *temp_sensor_output;
 };
 
 enum mech_shutter_state {
@@ -318,6 +334,58 @@ static int galileo1_get_selection(struct v4l2_subdev *sd,
 	}
 
 	return 0;
+}
+
+/*
+** Only use for DEBUG :
+** print the frame format according to SMIA++ specs
+*/
+static void galileo1_print_frame_format(struct v4l2_subdev *sd)
+{
+	struct galileo1 *galileo1 = to_galileo1(sd);
+	u8              frame_format_model_type, frame_format_model_subtype, descriptors_number;
+	u16             idx;
+	u16             reg;
+	u8              reg1, reg2[4];
+
+	galileo1_read8(galileo1->i2c_sensor, 0x0040, &frame_format_model_type);
+	galileo1_read8(galileo1->i2c_sensor, 0x0041, &frame_format_model_subtype);
+	descriptors_number = (frame_format_model_subtype >> 4) + (frame_format_model_subtype & 0x0F);
+
+	v4l2_info(sd, "frame format model type %#x - subtype %#x\n",
+		frame_format_model_type, frame_format_model_subtype);
+
+	if (frame_format_model_type == 0x01) {
+		for (idx = 0x0042; idx < 0x0042 + 2 * descriptors_number; idx += 0x002) {
+			galileo1_read16(galileo1->i2c_sensor, 0x0040, &reg);
+			v4l2_info(sd, "frame format desciptor %u = %#x\n", (idx - 0x0042)/2, reg);
+		}
+	}
+
+	if (frame_format_model_type == 0x02) {
+		for (idx = 0x0060; idx < 0x0060 + 4 * descriptors_number; idx += 4) {
+			galileo1_read8(galileo1->i2c_sensor, idx, &reg2[0]);
+			galileo1_read8(galileo1->i2c_sensor, idx+1, &reg2[1]);
+			galileo1_read8(galileo1->i2c_sensor, idx+2, &reg2[2]);
+			galileo1_read8(galileo1->i2c_sensor, idx+3, &reg2[3]);
+
+			v4l2_info(sd, "frame format desciptor 4_%u = %#x - %#x - %#x - %#x\n",
+				(idx - 0x0060)/4, reg2[0], reg2[1], reg2[2], reg2[3]);
+		}
+	}
+
+	galileo1_read8(galileo1->i2c_sensor, 0x0011, &reg1);
+	v4l2_info(sd, "SMIA++ rev. 0.%d.\n", reg1);
+	galileo1_read16(galileo1->i2c_sensor, 0x0008, &reg);
+	v4l2_info(sd, "Pedestal register reads %04x\n", reg);
+	galileo1_read8(galileo1->i2c_sensor, 0x1900, &reg1);
+	v4l2_info(sd, "Shading corr. capability reads %04x\n", reg1);
+	galileo1_read8(galileo1->i2c_sensor, 0x1901, &reg1);
+	v4l2_info(sd, "Green imb. capability reads %04x\n", reg1);
+	galileo1_read8(galileo1->i2c_sensor, 0x1902, &reg1);
+	v4l2_info(sd, "Black level capability reads %04x\n", reg1);
+	galileo1_read8(galileo1->i2c_sensor, 0x1903, &reg1);
+	v4l2_info(sd, "Module specific capability reads %04x\n", reg1);
 }
 
 /* Compute VT timing and binning */
@@ -1186,15 +1254,15 @@ static int galileo1_apply_gain(struct v4l2_subdev *sd)
 static int galileo1_apply_flash_strobe(struct v4l2_subdev *sd)
 {
 	struct galileo1                 *galileo1 = to_galileo1(sd);
-	enum v4l2_flash_strobe_source    strobe_source;
 	union global_reset_mode_config1  glbrst_cfg1;
 	struct i2c_client               *i2c = galileo1->i2c_sensor;
+	int strobe_en;
 
-	strobe_source = galileo1->strobe_source->val;
+	strobe_en = galileo1->strobe_enable->val;
 
 	galileo1_read8(i2c, GLOBAL_RESET_MODE_CONFIG1, &glbrst_cfg1._register);
 
-	if (strobe_source == V4L2_FLASH_STROBE_SOURCE_SOFTWARE) {
+	if (!strobe_en) {
 		glbrst_cfg1.flash_strobe = 0;
 		galileo1_write8(i2c,
 				GLOBAL_RESET_MODE_CONFIG1,
@@ -1252,6 +1320,40 @@ static int galileo1_get_lens_position(struct v4l2_subdev *sd, u16 *pos)
 
 	return 0;
 }
+
+static int galileo1_get_temp_sensor_output(struct v4l2_subdev *sd, s8 *output)
+{
+	struct galileo1   *galileo1 = to_galileo1(sd);
+	struct i2c_client *i2c = galileo1->i2c_sensor;
+
+	/*
+	 * In NVM there is two values for temp calibration : 25 and 60 C
+	 * Look for the shift to apply for getting the real value
+	 */
+	s8 shift_temp_h = galileo1->nvm_temp_h - TEMP_SENSOR_OUTPUT_HIGH_CALIB;
+	s8 shift_temp_l = galileo1->nvm_temp_l - TEMP_SENSOR_OUTPUT_LOW_CALIB;
+
+	galileo1_read8(i2c, TEMP_SENSOR_OUTPUT, output);
+
+	/*
+	 * Look for the best shift according average temperature (42) :
+	 * Take the best shift close the calibrated value
+	 */
+
+	if ( (*output - shift_temp_h) > TEMP_SENSOR_OUTPUT_AVERAGE_CALIB)
+		*output -= shift_temp_h;
+	else
+		*output -= shift_temp_l;
+
+	if (*output < TEMP_SENSOR_OUTPUT_MIN)
+		*output = TEMP_SENSOR_OUTPUT_MIN;
+
+	if (*output > TEMP_SENSOR_OUTPUT_MAX)
+		*output = TEMP_SENSOR_OUTPUT_MAX;
+
+	return 0;
+}
+
 
 static int galileo1_apply_focus(struct v4l2_subdev *sd)
 {
@@ -1464,6 +1566,10 @@ static int galileo1_s_stream(struct v4l2_subdev *sd, int enable)
 	galileo1_apply_flash_strobe(sd);
 	galileo1_write8(galileo1->i2c_sensor, MODE_SELECT, 0x01);
 
+	/* Get frame format for debug */
+	if (debug_print > 0)
+		galileo1_print_frame_format(sd);
+
 	return 0;
 
 power_off:
@@ -1572,6 +1678,15 @@ static const struct v4l2_subdev_ops galileo1_ops = {
 	.pad   = &galileo1_pad_ops,
 };
 
+/* Custom ctrls */
+#define V4L2_CID_GALILEO1_ND                 (V4L2_CID_CAMERA_CLASS_BASE + 0x100)
+#define V4L2_CID_GALILEO1_GS                 (V4L2_CID_CAMERA_CLASS_BASE + 0x101)
+#define V4L2_CID_GALILEO1_STROBE_WIDTH       (V4L2_CID_CAMERA_CLASS_BASE + 0x102)
+#define V4L2_CID_GALILEO1_MS                 (V4L2_CID_CAMERA_CLASS_BASE + 0x103)
+#define V4L2_CID_GALILEO1_FSTROBE_START      (V4L2_CID_CAMERA_CLASS_BASE + 0x104)
+#define V4L2_CID_GALILEO1_FSTROBE_ENABLE     (V4L2_CID_CAMERA_CLASS_BASE + 0x105)
+#define V4L2_CID_GALILEO1_TEMP_SENSOR_OUTPUT (V4L2_CID_CAMERA_CLASS_BASE + 0x106)
+
 static int galileo1_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct galileo1 *galileo1 = ctrl_to_galileo1(ctrl);
@@ -1586,16 +1701,13 @@ static int galileo1_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_FOCUS_ABSOLUTE:
 		galileo1_get_lens_position(&galileo1->sd, (u16 *)&ctrl->val);
 		break;
+	case V4L2_CID_GALILEO1_TEMP_SENSOR_OUTPUT:
+		galileo1_get_temp_sensor_output(&galileo1->sd, (s8 *)&ctrl->val);
+		break;
 	}
 
 	return 0;
 }
-
-/* Custom ctrls */
-#define V4L2_CID_GALILEO1_ND           (V4L2_CID_CAMERA_CLASS_BASE + 0x100)
-#define V4L2_CID_GALILEO1_GS           (V4L2_CID_CAMERA_CLASS_BASE + 0x101)
-#define V4L2_CID_GALILEO1_STROBE_WIDTH (V4L2_CID_CAMERA_CLASS_BASE + 0x102)
-#define V4L2_CID_GALILEO1_MS           (V4L2_CID_CAMERA_CLASS_BASE + 0x103)
 
 static int galileo1_s_ctrl(struct v4l2_ctrl *ctrl)
 {
@@ -1616,8 +1728,9 @@ static int galileo1_s_ctrl(struct v4l2_ctrl *ctrl)
 		return galileo1_apply_focus(&galileo1->sd);
 	case V4L2_CID_GALILEO1_ND:
 		return galileo1_apply_nd(&galileo1->sd);
-	case V4L2_CID_FLASH_STROBE_SOURCE:
 	case V4L2_CID_GALILEO1_STROBE_WIDTH:
+	case V4L2_CID_GALILEO1_FSTROBE_START:
+	case V4L2_CID_GALILEO1_FSTROBE_ENABLE:
 		return galileo1_apply_flash_strobe(&galileo1->sd);
 	case V4L2_CID_ANALOGUE_GAIN:
 		return galileo1_apply_gain(&galileo1->sd);
@@ -1674,9 +1787,43 @@ static const struct v4l2_ctrl_config galileo1_ctrl_sw = {
 	.name = "Flash strobe width, in us",
 	.type = V4L2_CTRL_TYPE_INTEGER,
 	.min  = 1,
-	.max  = 50000,
+	.max  = 7000,
 	.step = 1,
 	.def  = 100,
+};
+
+static const struct v4l2_ctrl_config galileo1_ctrl_ss = {
+	.ops  = &galileo1_ctrl_ops,
+	.id   = V4L2_CID_GALILEO1_FSTROBE_START,
+	.name = "Flash strobe start delay, in us",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min  = 0,
+	.max  = 50000,
+	.step = 1,
+	.def  = 0,
+};
+
+static const struct v4l2_ctrl_config galileo1_ctrl_se = {
+	.ops  = &galileo1_ctrl_ops,
+	.id   = V4L2_CID_GALILEO1_FSTROBE_ENABLE,
+	.name = "Flash strobe pulse enable state",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min  = 0,
+	.max  = 1,
+	.step = 1,
+	.def  = 0,
+};
+
+static const struct v4l2_ctrl_config galileo1_ctrl_tso = {
+	.ops  = &galileo1_ctrl_ops,
+	.id   = V4L2_CID_GALILEO1_TEMP_SENSOR_OUTPUT,
+	.name = "Temperature sensor output",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min  = TEMP_SENSOR_OUTPUT_MIN,
+	.max  = TEMP_SENSOR_OUTPUT_MAX,
+	.step = 1,
+	.def  = 0,
+	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
 };
 
 static int galileo1_initialize_controls(struct v4l2_subdev *sd)
@@ -1744,14 +1891,11 @@ static int galileo1_initialize_controls(struct v4l2_subdev *sd)
 	/* Flash strobe width */
 	galileo1->strobe_width = v4l2_ctrl_new_custom(hdl, &galileo1_ctrl_sw, NULL);
 
-	/* Flash Strobe */
-	galileo1->strobe_source =
-		v4l2_ctrl_new_std_menu(hdl,
-				       &galileo1_ctrl_ops,
-				       V4L2_CID_FLASH_STROBE_SOURCE,
-				       V4L2_FLASH_STROBE_SOURCE_EXTERNAL,
-				       ~0x3,
-				       V4L2_FLASH_STROBE_SOURCE_SOFTWARE);
+	/* Flash strobe start */
+	galileo1->strobe_start = v4l2_ctrl_new_custom(hdl, &galileo1_ctrl_ss, NULL);
+
+	/* Flash strobe enable */
+	galileo1->strobe_enable = v4l2_ctrl_new_custom(hdl, &galileo1_ctrl_se, NULL);
 
 	/* Analog Gain
 	 * AGx1.0  = 0x003F
@@ -1763,6 +1907,9 @@ static int galileo1_initialize_controls(struct v4l2_subdev *sd)
 					   &galileo1_ctrl_ops,
 					   V4L2_CID_ANALOGUE_GAIN,
 					   0, 0x2F4, 1, 5 * 0x3F);
+
+	/* Temperature sensor output */
+	galileo1->temp_sensor_output = v4l2_ctrl_new_custom(hdl, &galileo1_ctrl_tso, NULL);
 
 	if (hdl->error) {
 		v4l2_err(sd, "failed to add new ctrls\n");
@@ -2001,6 +2148,10 @@ static int galileo1_probe(struct i2c_client *client,
 
 	if (pdata->set_power)
 		pdata->set_power(GALILEO1_POWER_OFF);
+
+	/* Get temperature sensor calibration */
+	galileo1->nvm_temp_h = *(galileo1->nvm + 0x0D); /* 60 degrees C */
+	galileo1->nvm_temp_l = *(galileo1->nvm + 0x0E); /* 25 degrees C*/
 
 	/* Initialize Control */
 	ret = galileo1_initialize_controls(sd);

@@ -37,6 +37,9 @@ extern struct avi_videomode ntsc_640_video_mode;
 /* OEM FC7100 Vovo truck screen: TRULY SEMICONDUCTORS 2K31715 */
 extern struct avi_videomode tft800480_video_mode;
 
+/* OEM FC7100 Borgward screen */
+extern struct avi_videomode borgward_12_video_mode;
+
 /* RNB6 screen 720x1280 */
 extern struct avi_videomode rnb6_truly_video_mode;
 

@@ -149,10 +149,12 @@ static int p7dev_galileo2db_there(void)
 	return p7_brd_there(&p7dev_galileo2db);
 }
 #else   /* CONFIG_ARCH_PARROT7_P7DEV_GALILEO2 */
+#if 0
 static bool p7dev_galileo2db_there(void)
 {
 	return false;
 }
+#endif
 #endif  /* CONFIG_ARCH_PARROT7_P7DEV_GALILEO2 */
 
 #ifdef CONFIG_ARCH_PARROT7_P7DEV_SICILIA

@@ -620,7 +620,7 @@ static void parrot5_i2cm_irq_(struct parrot5_i2cm_data *drv_data, unsigned int s
 
 			   we assume that if we have tip, we are sending the stop command ...
 			 */
-			if (1 || (status & I2CM_STATUS_BUSY) && !(status & I2CM_STATUS_TIP)) {
+			if (1 || ((status & I2CM_STATUS_BUSY) && !(status & I2CM_STATUS_TIP))) {
 				drv_data->stop_sent = 0;
 				drv_data->state = DATA_W;
 			}

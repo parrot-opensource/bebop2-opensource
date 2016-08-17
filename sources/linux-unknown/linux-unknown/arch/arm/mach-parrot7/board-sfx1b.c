@@ -434,7 +434,7 @@ static struct avicam_platform_data sfx1b_maincam_pdata = {
 		.psync_en   = 1,
 		.psync_rf   = 1,
 	},
-	.bus_width	    = 16,
+	.bus_width	    = 10,
 	.subdevs	    = sfx1b_maincam_tc358746a_subdevs,
 	.measure_to_timings = &sfx1b_galileo1_get_timings,
 	.vb2_cache_flags    = VB2_CACHE_DMA_CONTIG | VB2_CACHE_WRITETHROUGH,
@@ -538,7 +538,7 @@ static void sfx1b_ov_get_timings(struct avi_capture_timings  *t,
 	}
 }
 
-#define OV7740_REFCLK 6500000
+#define OV7740_REFCLK 6000000
 #define TC358746A_P7_TEGRA_REFCLK 26000000
 
 static struct pwm_device *sfx1b_ov7740_pwm[6] = { NULL };
@@ -948,8 +948,13 @@ static void __init sfx1_init_spi_p7mu(void)
 		pr_err(SFX1B_BRD_NAME ": failed to initialize SPI slave.\n");
 }
 
+static unsigned long sfx1b_spi_slave_flir_pinconf[] = {
+       P7CTL_DRV_CFG(2),      /* Drive strength to 7 (CEM), lower is no more functionnal */
+};
+
 static struct pinctrl_map sfx1b_spi_slave_flir_pins[] __initdata = {
 	P7_INIT_PINMAP(P7_SPI_00), /* CLK */
+	P7_INIT_PINCFG(P7_SPI_00, sfx1b_spi_slave_flir_pinconf),
 	P7_INIT_PINMAP(P7_SPI_02), /* MISO */
 	P7_INIT_PINMAP(P7_SPI_03), /* SS */
 };

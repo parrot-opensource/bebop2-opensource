@@ -626,7 +626,7 @@ static void evinrude_configure_leds(void)
 	pwm = pwm_request(HSIS_HWxx_LED_RED_PWM, "evinrude BSP");
 
 	if (!IS_ERR(pwm)) {
-		pwm_config(pwm, 1000000, 2000000);
+		pwm_config(pwm, 0, 2000000);
 		pwm_enable(pwm);
 		pwm_free(pwm);
 	}
@@ -634,7 +634,7 @@ static void evinrude_configure_leds(void)
 	pwm = pwm_request(HSIS_HWxx_LED_GREEN_PWM, "evinrude BSP");
 
 	if (!IS_ERR(pwm)) {
-		pwm_config(pwm, 1000000, 2000000);
+		pwm_config(pwm, 0, 2000000);
 		pwm_enable(pwm);
 		pwm_free(pwm);
 	}
@@ -760,7 +760,7 @@ static void __init evinrude_init_mach(void)
 
 	/* Init USB */
 	drone_common_init_usb(ev_hsis.host_mode_on, ev_hsis.host_mode_3v3,
-			      ev_hsis.usb0_oc);
+			      ev_hsis.usb0_oc, 0);
 	/* Init EHCI 1 */
 	p7brd_init_usb(1, -1, CI_UDC_DR_HOST);
 

@@ -196,6 +196,26 @@ struct avi_videomode tft800480_video_mode = {
 
 };
 
+/* OEM FC7100 BORGWARD screen:  */
+struct avi_videomode borgward_12_video_mode= {
+	.name           = "borgward_12",
+	.xres           = 1360,
+	.yres           = 540,
+
+	.pixclock       = 50000,
+
+	.flags          = AVI_VIDEOMODE_SYNC_ACTIVE_HIGH,
+
+	.hsync_len      = 5,
+	.left_margin    = 25,
+	.right_margin   = 28,
+
+	.vsync_len      = 2,
+	.upper_margin   = 0,
+	.lower_margin   = 0,
+
+};
+
 /*************************************************/
 /********** HDMI OUT section *********************/
 /*************************************************/

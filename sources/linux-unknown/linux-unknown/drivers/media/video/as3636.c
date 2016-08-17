@@ -42,8 +42,8 @@
 
 #define REG_CONTROL                0x04
 #define CONTROL_AFSTROBE           (1 << 1)
-#define CONTROL_MST		   (1 << 2)
-#define CONTROL_RESET		   (1 << 6)
+#define CONTROL_MST                (1 << 2)
+#define CONTROL_RESET              (1 << 6)
 #define CONTROL_STANDBY            (1 << 7)
 
 #define REG_INTERRUPT_MASK         0x05
@@ -102,18 +102,23 @@ const u8 REG_IS_EEPROM[] = {0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0
  * @strobe_source:	Flash strobe source (software or external)
  */
 struct as3636 {
-	struct v4l2_subdev subdev;
-	struct as3636_platform_data *pdata;
+	struct v4l2_subdev             subdev;
+	struct as3636_platform_data   *pdata;
 
-	struct mutex power_lock;
-	int power_count;
+	struct mutex                   power_lock;
+	int                            power_count;
 
 	/* Controls */
-	struct v4l2_ctrl_handler ctrls;
+	struct v4l2_ctrl_handler       ctrls;
 
-	enum v4l2_flash_led_mode led_mode;
-	unsigned int timeout;
-	enum v4l2_flash_strobe_source strobe_source;
+	enum v4l2_flash_led_mode       led_mode;
+	unsigned int                   timeout;
+	enum v4l2_flash_strobe_source  strobe_source;
+	struct v4l2_ctrl              *source;
+	struct v4l2_ctrl              *set_reg;
+	struct v4l2_ctrl              *get_control_reg;
+	struct v4l2_ctrl              *get_interrupt_status_reg;
+	struct v4l2_ctrl              *get_xenon_control_reg;
 };
 
 #define to_as3636(sd) container_of(sd, struct as3636, subdev)
@@ -125,6 +130,9 @@ static int as3636_read(struct as3636 *flash, u8 addr)
 	int rval;
 
 	rval = i2c_smbus_read_byte_data(client, addr);
+
+	if (rval < 0)
+		dev_warn(&client->dev, "Failed to read register 0x%02x.\n", addr);
 
 	dev_dbg(&client->dev, "Read Addr:%02X Val:%02X %s\n", addr, rval,
 		rval < 0 ? "fail" : "ok");
@@ -154,6 +162,9 @@ static int as3636_write(struct as3636 *flash, u8 addr, u8 val)
 	}
 
 	rval = i2c_smbus_write_byte_data(client, addr, val);
+
+	if (rval < 0)
+		dev_warn(&client->dev, "Failed to write register 0x%02x.\n", addr);
 
 	dev_dbg(&client->dev, "Write Addr:%02X Val:%02X %s\n", addr, val,
 		rval < 0 ? "fail" : "ok");
@@ -205,13 +216,13 @@ static int as3636_flash_test(struct as3636 *flash) {
 	int ret;
 
 	ret = as3636_read(flash, REG_XENON_CONTROL);
-	
+
 	if(ret < 0)
 		return ret;
 
 	if(!(ret & XENON_READY))
 		return -EINVAL;
-	
+
 	return as3636_write(flash, REG_XENON_CONTROL, ret | XENON_STROBE);
 }
 
@@ -230,7 +241,9 @@ static int as3636_self_test(struct as3636 *flash) {
 	if (ret < 0)
 		return ret;
 
-	ret = as3636_write(flash, REG_CONTROL, CONTROL_MST);
+	rval = as3636_read(flash, REG_CONTROL);
+
+	ret = as3636_write(flash, REG_CONTROL, rval | CONTROL_MST);
 	if (ret < 0)
 		return ret;
 
@@ -258,6 +271,16 @@ static int as3636_is_flash_ready(struct as3636* flash) {
 	return (val & XENON_READY) ? 1 : 0;
 }
 
+static int as3636_get_fstrobe_mode(struct as3636 *flash) {
+	int val = as3636_read(flash, REG_CONTROL);
+	if (val < 0)
+		return val;
+	if (val & CONTROL_AFSTROBE)
+		return V4L2_FLASH_STROBE_SOURCE_SOFTWARE;
+	else
+		return V4L2_FLASH_STROBE_SOURCE_EXTERNAL;
+}
+
 static int as3636_get_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct as3636 *flash =
@@ -271,23 +294,59 @@ static int as3636_get_ctrl(struct v4l2_ctrl *ctrl)
 		if (value < 0)
 			return value;
 
-		ctrl->cur.val = (value & XENON_STROBE) ? 1 : 0;
+		ctrl->val = (value & XENON_STROBE) ? 1 : 0;
+		ctrl->cur.val = ctrl->val;
 		break;
 	case V4L2_CID_FLASH_READY:
 		value = as3636_is_flash_ready(flash);
 		if(value < 0)
 			return value;
 
-		ctrl->cur.val = value;
 		ctrl->val = value;
+		ctrl->cur.val = ctrl->val;
+		break;
+	case V4L2_CID_FLASH_STROBE_SOURCE:
+		value = as3636_get_fstrobe_mode(flash);
+		if(value < 0)
+			return value;
+
+		ctrl->val = value;
+		ctrl->cur.val = ctrl->val;
 		break;
 	case V4L2_CID_FLASH_CHARGE:
 		value = as3636_read(flash, REG_XENON_CONTROL);
 		if(value < 0)
 			return value;
 
-		ctrl->cur.val = (value & XENON_CHARGE) ? 1 : 0;
 		ctrl->val = (value & XENON_CHARGE) ? 1 : 0;
+		ctrl->cur.val = ctrl->val;
+		break;
+
+	case V4L2_CID_PRIVATE_AS3636_GET_CONTROL:
+		value = as3636_read(flash, REG_CONTROL);
+		if(value < 0)
+			return value;
+
+		ctrl->val = value;
+		ctrl->cur.val = ctrl->val;
+		break;
+
+	case V4L2_CID_PRIVATE_AS3636_GET_INTERRUPT_STATUS:
+		value = as3636_read(flash, REG_INTERRUPT_STATUS);
+		if(value < 0)
+			return value;
+
+		ctrl->val = value;
+		ctrl->cur.val = ctrl->val;
+		break;
+
+	case V4L2_CID_PRIVATE_AS3636_GET_XENON_CONTROL:
+		value = as3636_read(flash, REG_XENON_CONTROL);
+		if(value < 0)
+			return value;
+
+		ctrl->val = value;
+		ctrl->cur.val = ctrl->val;
 		break;
 	}
 
@@ -328,6 +387,34 @@ static int as3636_enable_led(struct as3636 *flash, int on) {
 	return as3636_write(flash, REG_LED_CONTROL, 0x00);
 }
 
+static int as3636_set_fstrobe_mode(struct as3636 *flash, int strobe_source) {
+	int val = as3636_read(flash, REG_CONTROL);
+	if (val < 0)
+		return val;
+
+	if (strobe_source == V4L2_FLASH_STROBE_SOURCE_EXTERNAL)
+		val &= ~CONTROL_AFSTROBE;
+	else
+		val |= CONTROL_AFSTROBE;
+
+	return as3636_write(flash, REG_CONTROL, val);
+}
+
+static int as3636_set_register(struct as3636 *flash)
+{
+	u8 *reg = flash->set_reg->p_new.p_u8;
+	u8  addr = reg[0];
+	u8 value = reg[1];
+
+	if (addr != REG_CONTROL &&
+	    addr != REG_INTERRUPT_STATUS &&
+	    addr != REG_XENON_CONTROL )
+		return -EINVAL;
+
+	return as3636_write(flash, addr, value);
+}
+
+
 static int as3636_set_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct as3636 *flash =
@@ -340,21 +427,32 @@ static int as3636_set_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_FLASH_CHARGE:
 		ctrl->val = 0;
 		return as3636_start_charging(flash);
+	case V4L2_CID_FLASH_STROBE_SOURCE:
+		return as3636_set_fstrobe_mode(flash, ctrl->val);
 	case V4L2_CID_PRIVATE_AS3636_TEST:
 		return as3636_self_test(flash);
 	case V4L2_CID_PRIVATE_AS3636_STDBY:
-		ctrl->val = 0;
 		return as3636_stdby(flash, ctrl->val);
 	case V4L2_CID_FLASH_LED_MODE:
 		if (ctrl->val == V4L2_FLASH_LED_MODE_FLASH) {
 			dev_warn(&client->dev, "Flash LED Mode not supported."
 			      		       "Please use NONE or TORCH\n");
 			return -EINVAL;
-		}	
+		}
 		return as3636_enable_led(flash, ctrl->val);
+
+	case V4L2_CID_PRIVATE_AS3636_SET_REGISTER:
+		return as3636_set_register(flash);
 	}
 
 	return 0;
+}
+
+static inline void as3636_synchronize_ctrl(struct v4l2_ctrl *ctrl)
+{
+	v4l2_ctrl_lock(ctrl);
+	ctrl->cur.val = ctrl->val;
+	v4l2_ctrl_unlock(ctrl);
 }
 
 static const struct v4l2_ctrl_ops as3636_ctrl_ops = {
@@ -372,7 +470,8 @@ static int as3636_setup(struct as3636 *flash)
 	int ret;
 	struct as3636_platform_data *pdata = flash->pdata;
 	u8 switch_sel, charge_voltage;
-	
+	int val;
+
 	ret = as3636_write(flash, REG_CONTROL, CONTROL_RESET);
 	if (ret < 0)
 		return ret;
@@ -404,10 +503,10 @@ static int as3636_setup(struct as3636 *flash)
 	ret = as3636_write(flash, REG_XENON_CONTROL,
 	              ret | (pdata->auto_charge ? XENON_CAR : 0));
 
-        if (ret < 0)
+    if (ret < 0)
 		return ret;
 
-	ret = as3636_write(flash, REG_XENON_CONFIG_C, 
+	ret = as3636_write(flash, REG_XENON_CONFIG_C,
 	                   ((pdata->dcdc_peak-DCDC_PEAK_MIN)/50) << 6);
 
 	if (ret < 0)
@@ -420,6 +519,16 @@ static int as3636_setup(struct as3636 *flash)
 	ret = as3636_write(flash, REG_LED_CONTROL, 0x00); // Disable AF LED.
 	if (ret < 0)
 		return ret;
+
+	ret = as3636_set_fstrobe_mode(flash, V4L2_FLASH_STROBE_SOURCE_SOFTWARE); // Set strobe mode to software by default
+	if (ret < 0)
+		return ret;
+
+	val = as3636_get_fstrobe_mode(flash);
+	flash->source->val = val;
+
+	/* Synchronize control values */
+	as3636_synchronize_ctrl(flash->source);
 
 	return 0;
 }
@@ -616,6 +725,56 @@ static const struct v4l2_ctrl_config ctrl_private_fstrobe = {
 	.def = false,
 };
 
+static const struct v4l2_ctrl_config ctrl_private_set_register = {
+	.id = V4L2_CID_PRIVATE_AS3636_SET_REGISTER,
+	.ops = &as3636_ctrl_ops,
+	.name = "AS3636 - Set register",
+	.type = V4L2_CTRL_TYPE_U8,
+	.min = 0,
+	.max = 0xff,
+	.step = 1,
+	.def = 0,
+	.dims = { 2 },
+	.flags = V4L2_CTRL_FLAG_WRITE_ONLY,
+};
+
+static const struct v4l2_ctrl_config ctrl_private_get_control_register = {
+	.id = V4L2_CID_PRIVATE_AS3636_GET_CONTROL,
+	.ops = &as3636_ctrl_ops,
+	.name = "AS3636 - Control reg",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 0,
+	.max = 0xff,
+	.step = 1,
+	.def = 0,
+	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
+};
+
+static const struct v4l2_ctrl_config ctrl_private_get_inerrupt_status_register = {
+	.id = V4L2_CID_PRIVATE_AS3636_GET_INTERRUPT_STATUS,
+	.ops = &as3636_ctrl_ops,
+	.name = "AS3636 - Interrupt Status reg",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 0,
+	.max = 0xff,
+	.step = 1,
+	.def = 0,
+	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
+};
+
+static const struct v4l2_ctrl_config ctrl_private_get_xenon_control_register = {
+	.id = V4L2_CID_PRIVATE_AS3636_GET_XENON_CONTROL,
+	.ops = &as3636_ctrl_ops,
+	.name = "AS3636 - Xenon Control reg",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 0,
+	.max = 0xff,
+	.step = 1,
+	.def = 0,
+	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
+};
+
+
 /*
  * as3636_init_controls - Create controls
  * @flash: The flash
@@ -630,29 +789,57 @@ static int as3636_init_controls(struct as3636 *flash)
 			  V4L2_CID_FLASH_STROBE, 0, 1, 1, 0);
 
 	ctrl = v4l2_ctrl_new_std(&flash->ctrls, &as3636_ctrl_ops,
-	                         V4L2_CID_FLASH_CHARGE, 0, 1, 1, 0);
+				 V4L2_CID_FLASH_CHARGE, 0, 1, 1, 0);
 
 	if(ctrl != NULL)
 		ctrl->flags |= V4L2_CTRL_FLAG_VOLATILE;
-	
+
 	ctrl = v4l2_ctrl_new_std(&flash->ctrls, &as3636_ctrl_ops,
-	                         
-			  V4L2_CID_FLASH_STROBE_STATUS, 0, 1, 1, 0);
+				 V4L2_CID_FLASH_STROBE_STATUS, 0, 1, 1, 0);
 
 	if(ctrl != NULL)
-		ctrl->flags |= V4L2_CTRL_FLAG_VOLATILE;
-	
+		ctrl->flags |= V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY;
+
 	ctrl = v4l2_ctrl_new_std(&flash->ctrls, &as3636_ctrl_ops,
-	                  V4L2_CID_FLASH_READY, 0, 1, 1, 0);
+				 V4L2_CID_FLASH_READY, 0, 1, 1, 0);
 
 	if(ctrl != NULL)
 		ctrl->flags |= V4L2_CTRL_FLAG_VOLATILE;
 
 	v4l2_ctrl_new_std_menu(&flash->ctrls, &as3636_ctrl_ops,
-	                  V4L2_CID_FLASH_LED_MODE, 2, ~7, V4L2_FLASH_LED_MODE_NONE);
+			       V4L2_CID_FLASH_LED_MODE, 2, ~7, V4L2_FLASH_LED_MODE_NONE);
 
 	v4l2_ctrl_new_custom(&flash->ctrls, &ctrl_private_test, NULL);
 	v4l2_ctrl_new_custom(&flash->ctrls, &ctrl_private_fstrobe, NULL);
+
+	/* Flash Strobe */
+	flash->source = v4l2_ctrl_new_std_menu(&flash->ctrls, &as3636_ctrl_ops,
+					       V4L2_CID_FLASH_STROBE_SOURCE,
+					       V4L2_FLASH_STROBE_SOURCE_EXTERNAL,
+					       ~0x3,
+					       V4L2_FLASH_STROBE_SOURCE_SOFTWARE);
+
+	if(flash->source  != NULL)
+		flash->source->flags |= V4L2_CTRL_FLAG_VOLATILE;
+
+
+	/* SET / GET registers */
+
+	flash->set_reg = v4l2_ctrl_new_custom(&flash->ctrls,
+					      &ctrl_private_set_register,
+					      NULL);
+
+	flash->get_control_reg = v4l2_ctrl_new_custom(&flash->ctrls,
+					      &ctrl_private_get_control_register,
+					      NULL);
+
+	flash->get_interrupt_status_reg = v4l2_ctrl_new_custom(&flash->ctrls,
+							       &ctrl_private_get_inerrupt_status_register,
+							       NULL);
+
+	flash->get_xenon_control_reg = v4l2_ctrl_new_custom(&flash->ctrls,
+							    &ctrl_private_get_xenon_control_register,
+							    NULL);
 
 	flash->subdev.ctrl_handler = &flash->ctrls;
 
@@ -728,6 +915,8 @@ static int as3636_probe(struct i2c_client *client,
 	mutex_init(&flash->power_lock);
 
 	flash->led_mode = V4L2_FLASH_LED_MODE_NONE;
+
+	flash->strobe_source = V4L2_FLASH_STROBE_SOURCE_EXTERNAL;
 
 	if(client->irq > 0) {
 		ret = request_threaded_irq(client->irq,NULL,

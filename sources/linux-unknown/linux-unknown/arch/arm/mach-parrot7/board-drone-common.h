@@ -97,7 +97,7 @@ void __init drone_common_init_m2m(struct avi_m2m_platform_data *pdata);
 /* Initialize USB.
  */
 void __init drone_common_init_usb(int gpio_on, int gpio_host_mode_3v3,
-				  int gpio_usb0_oc);
+				  int gpio_usb0_oc, int is_host);
 
 /* Initialize sensors.
  *  -> drone_common_init_ak8963() for AK8963 magnetometer

@@ -43,7 +43,7 @@
  * a "gcc --combine ... part1.c part2.c part3.c ... " build would.
  */
 
-#define CARPLAY_SPECIFIC_CODE	1 // define for f_serial.c
+#define USE_SERIAL_IAP	1 // define for f_serial.c
 
 #include "composite.c"
 #include "usbstring.c"

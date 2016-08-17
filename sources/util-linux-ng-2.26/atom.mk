@@ -25,6 +25,8 @@ define LOCAL_AUTOTOOLS_CMD_POST_UNPACK
 		$(PRIVATE_SRC_DIR)/libblkid/.MODULE_LICENSE_LGPL2
 	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_LGPL2.libmount \
 		$(PRIVATE_SRC_DIR)/libmount/.MODULE_LICENSE_LGPL2
+	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_LGPL2.libfdisk \
+		$(PRIVATE_SRC_DIR)/libfdisk/.MODULE_LICENSE_LGPL2
 	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_PUBLIC_DOMAIN.at.c            $(PRIVATE_SRC_DIR)/lib
 	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_PUBLIC_DOMAIN.blkdev.c        $(PRIVATE_SRC_DIR)/lib
 	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_PUBLIC_DOMAIN.crc32.c         $(PRIVATE_SRC_DIR)/lib
@@ -34,7 +36,9 @@ define LOCAL_AUTOTOOLS_CMD_POST_UNPACK
 	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_PUBLIC_DOMAIN.md5.c           $(PRIVATE_SRC_DIR)/lib
 	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_PUBLIC_DOMAIN.sysfs.c         $(PRIVATE_SRC_DIR)/lib
 	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_LGPL2.canonicalize.c          $(PRIVATE_SRC_DIR)/lib
+	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_LGPL2.fileutils.c             $(PRIVATE_SRC_DIR)/lib
 	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_LGPL2.randutils.c             $(PRIVATE_SRC_DIR)/lib
+	$(Q) cp -af $(PRIVATE_PATH)/.MODULE_LICENSE_LGPL2.strutils.c              $(PRIVATE_SRC_DIR)/lib
 endef
 
 #list generated with ./configure --help | grep "do not build" | awk '{print "\t"$1" \\" }'
@@ -117,26 +121,20 @@ define LOCAL_AUTOTOOLS_CMD_POST_INSTALL
 	$(Q) install -p -m755 -d $(TARGET_OUT_STAGING)/usr/include/libfdisk
 	$(Q) install -p -m755 -d $(TARGET_OUT_STAGING)/usr/include/libsmartcols
 	$(Q) install -p -m755 -d $(TARGET_OUT_STAGING)/usr/include/uuid
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/libblkid.so.1.1.0 $(TARGET_OUT_STAGING)/lib/
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/libmount.so.1.1.0 $(TARGET_OUT_STAGING)/lib/
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/libfdisk.so.1.1.0 $(TARGET_OUT_STAGING)/lib/
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/libsmartcols.so.1.1.0 $(TARGET_OUT_STAGING)/lib/
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/libuuid.so.1.3.0 $(TARGET_OUT_STAGING)/lib/
-	$(Q) ln -sf libblkid.so.1.1.0 $(TARGET_OUT_STAGING)/lib/libblkid.so.1
-	$(Q) ln -sf libblkid.so.1.1.0 $(TARGET_OUT_STAGING)/lib/libblkid.so
-	$(Q) ln -sf libmount.so.1.1.0 $(TARGET_OUT_STAGING)/lib/libmount.so.1
-	$(Q) ln -sf libmount.so.1.1.0 $(TARGET_OUT_STAGING)/lib/libmount.so
-	$(Q) ln -sf libfdisk.so.1.1.0 $(TARGET_OUT_STAGING)/lib/libfdisk.so.1
-	$(Q) ln -sf libfdisk.so.1.1.0 $(TARGET_OUT_STAGING)/lib/libfdisk.so
-	$(Q) ln -sf libsmartcols.so.1.1.0 $(TARGET_OUT_STAGING)/lib/libsmartcols.so.1
-	$(Q) ln -sf libsmartcols.so.1.1.0 $(TARGET_OUT_STAGING)/lib/libsmartcols.so
-	$(Q) ln -sf libuuid.so.1.3.0 $(TARGET_OUT_STAGING)/lib/libuuid.so.1
-	$(Q) ln -sf libuuid.so.1.3.0 $(TARGET_OUT_STAGING)/lib/libuuid.so
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/pkgconfig/blkid.pc $(TARGET_OUT_STAGING)/lib/pkgconfig/
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/pkgconfig/uuid.pc $(TARGET_OUT_STAGING)/lib/pkgconfig/
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/pkgconfig/mount.pc $(TARGET_OUT_STAGING)/lib/pkgconfig/
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/pkgconfig/fdisk.pc $(TARGET_OUT_STAGING)/lib/pkgconfig/
-	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/lib/pkgconfig/smartcols.pc $(TARGET_OUT_STAGING)/lib/pkgconfig/
+	$(Q) for lib in blkid mount fdisk smartcols uuid; do \
+			__src_dir=$(PRIVATE_SRC_DIR)/install/lib; \
+			__dest_dir=$(TARGET_OUT_STAGING)/lib; \
+			if [ -e "$${__src_dir}/lib$${lib}.a" ]; then \
+				install -p -m755 $${__src_dir}/lib$${lib}.a $${__dest_dir}/; \
+			fi; \
+			install -p -m755 $${__src_dir}/pkgconfig/$${lib}.pc $${__dest_dir}/pkgconfig/; \
+			if ls $${__src_dir}/lib$${lib}.so.*.*.* &>/dev/null; then \
+				__libname=$$(basename $${__src_dir}/lib$${lib}.so.*.*.*); \
+				install -p -m755 $${__src_dir}/$${__libname} $${__dest_dir}/; \
+				ln -sf $${__libname} $${__dest_dir}/$${__libname%.*.*}; \
+				ln -sf $${__libname} $${__dest_dir}/$${__libname%%.*}.so; \
+			fi; \
+		done
 	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/usr/include/blkid/blkid.h $(TARGET_OUT_STAGING)/usr/include/blkid/
 	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/usr/include/libmount/libmount.h $(TARGET_OUT_STAGING)/usr/include/libmount/
 	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/usr/include/libfdisk/libfdisk.h $(TARGET_OUT_STAGING)/usr/include/libfdisk/

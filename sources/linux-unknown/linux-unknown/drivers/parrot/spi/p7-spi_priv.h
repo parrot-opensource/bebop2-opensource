@@ -233,8 +233,6 @@ extern int p7spi_poll_stat(struct p7spi_core const*,
                            int (*check_stat)(struct p7spi_core const*, u32),
                            unsigned long);
 
-extern void p7spi_process_round(struct p7spi_core*);
-
 static inline bool p7spi_has_dma(struct p7spi_core const* core)
 {
 	return core->dma_chan;

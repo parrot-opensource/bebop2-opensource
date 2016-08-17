@@ -485,6 +485,7 @@ static int avi_stats_open(struct file *file)
 {
 	struct avi_stats *stats = video_drvdata(file);
 	struct vb2_queue *q = &stats->vb_vidq;
+	struct vb2_dc_conf *alloc_ctx = (struct vb2_dc_conf *)stats->alloc_ctx;
 
 	mutex_lock(&stats->lock);
 
@@ -502,6 +503,7 @@ static int avi_stats_open(struct file *file)
 	q->ops             = &avi_stats_vqueue_ops;
 	q->drv_priv        = stats;
 	q->buf_struct_size = sizeof(struct avi_vbuf);
+	q->cache_flags     = alloc_ctx->cache_flags;
 
 	vb2_queue_init(q);
 
@@ -551,6 +553,7 @@ int __devinit avi_stats_init(struct avi_stats *stats,
 		},
 	};
 	struct video_device *vdev;
+	struct vb2_dc_conf *alloc_ctx;
 	int ret;
 
 	spin_lock_init(&stats->vbq_lock);
@@ -592,7 +595,9 @@ int __devinit avi_stats_init(struct avi_stats *stats,
 	avi_stats_s_fmt_vid_unlocked(stats, &default_fmt);
 	stats->updated_fmt = 1;
 
-	stats->alloc_ctx = vb2_dma_contig_init_ctx(&vdev->dev);
+	alloc_ctx = vb2_dma_contig_init_ctx(&vdev->dev);
+	alloc_ctx->cache_flags = stats->stat_vb2_cache_flags;
+	stats->alloc_ctx = (void *)alloc_ctx;
 
 	dev_info(vdev->parent,
 	         "stats video device successfuly registered as %s\n",

@@ -1,0 +1,21 @@
+@localstatedir_POST@/log/netdata/*.log {
+	daily
+	missingok
+	rotate 14
+	compress
+	delaycompress
+	notifempty
+	sharedscripts
+	#
+	# if you add netdata to your init.d/system.d
+	# comment su & copytruncate and uncomment postrotate
+	# to have netdata restart when logs are rotated
+	su netdata
+	copytruncate
+	#
+	#postrotate
+	#	if service netdata status > /dev/null ; then \
+	#		service netdata restart > /dev/null; \
+	#	fi;
+	#endscript
+}

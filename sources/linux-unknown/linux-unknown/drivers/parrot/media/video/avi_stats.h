@@ -37,6 +37,7 @@ struct avi_stats {
 	int				 streaming;
 	int				 use_count;
 	u32				 version;
+	enum vb2_cache_flags             stat_vb2_cache_flags;
 };
 
 static inline struct avi_vbuf* to_avi_vbuf(struct vb2_buffer* vb2)

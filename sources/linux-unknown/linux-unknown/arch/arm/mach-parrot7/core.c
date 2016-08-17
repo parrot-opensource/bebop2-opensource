@@ -600,8 +600,8 @@ void platform_cpu_die(unsigned int cpu)
 
 	/* Clean and invalidate all cache hierarchy. */
 	flush_cache_all();
-#warning remove me ?
 #if 0
+#warning remove me ?
 	/* Get out of coherency array. */
     write_actlr(read_actlr() & ~0x41);
     /* Disable data cache. */

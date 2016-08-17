@@ -117,6 +117,9 @@ struct avicam_fh {
 	struct v4l2_fh vfh;
 };
 
+#define to_avicam_fh(fh)	\
+	container_of(fh, struct avicam_fh, vfh)
+
 static inline int avicam_instance(struct avicam *avicam)
 {
 	struct platform_device *pdev;

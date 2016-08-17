@@ -80,6 +80,8 @@ MODULE_LICENSE("GPL");
 #define MT9M021_AE_ROI_Y_SIZE			0x3146
 #define MT9M021_AE_AG_EXPOSURE_HI		0x3166
 #define MT9M021_AE_AG_EXPOSURE_LO		0x3168
+#define MT9M021_AE_MIN_EV_STEP			0x3108
+#define MT9M021_AE_MAX_EV_STEP			0x310A
 #define MT9M021_RESERVED_MFR_3180		0x3180
 #define MT9M021_ANALOG_REG                      0x3ED6
 #define MT9M021_TEMPSENS_CTRL                   0x30B4
@@ -111,6 +113,8 @@ struct mt9m021 {
 	struct v4l2_ctrl             *auto_adg;
 	struct v4l2_ctrl             *gain;
 	struct v4l2_ctrl             *ana_gain;
+	struct v4l2_ctrl             *ae_min_ev_step;
+	struct v4l2_ctrl             *ae_max_ev_step;
 	/* Auto-Exposure Region Of Interest */
 	struct v4l2_ctrl             *ae_roi_x_start;
 	struct v4l2_ctrl             *ae_roi_y_start;
@@ -501,6 +505,8 @@ static int mt9m021_apply_exposure(struct v4l2_subdev *sd)
 	u32                 ae_tgt_luma       = mt9m021->ae_tgt_luma->val;
 	u32                 ae_ag_exposure_hi = mt9m021->ae_ag_exposure_hi->val;
 	u32                 ae_ag_exposure_lo = mt9m021->ae_ag_exposure_lo->val;
+	u32                 ae_min_ev_step    = mt9m021->ae_min_ev_step->val;
+	u32                 ae_max_ev_step    = mt9m021->ae_max_ev_step->val;
 	u32                 ae_roi_x_start    = mt9m021->ae_roi_x_start->val;
 	u32                 ae_roi_y_start    = mt9m021->ae_roi_y_start->val;
 	u32                 ae_roi_x_size     = mt9m021->ae_roi_x_size->val;
@@ -550,6 +556,10 @@ static int mt9m021_apply_exposure(struct v4l2_subdev *sd)
 	mt9m021_write(sd, MT9M021_AE_AG_EXPOSURE_HI, int_time);
 	int_time = (ae_ag_exposure_lo * 1000) / line_duration_ns;
 	mt9m021_write(sd, MT9M021_AE_AG_EXPOSURE_LO, int_time);
+
+	/* AE Ev step size */
+	mt9m021_write(sd, MT9M021_AE_MIN_EV_STEP, ae_min_ev_step);
+	mt9m021_write(sd, MT9M021_AE_MAX_EV_STEP, ae_max_ev_step);
 
 	/* Analogue gain */
 	mt9m021_write(sd, MT9M021_DIGITAL_TEST, dig_test_reg._register);
@@ -731,6 +741,8 @@ static const struct v4l2_subdev_ops mt9m021_ops = {
 #define V4L2_CID_MT9M021_AE_AG_EXPOSURE_HI  (V4L2_CID_CAMERA_CLASS_BASE + 0x10a)
 #define V4L2_CID_MT9M021_AE_AG_EXPOSURE_LO  (V4L2_CID_CAMERA_CLASS_BASE + 0x10b)
 
+#define V4L2_CID_MT9M021_AE_MIN_EV_STEP     (V4L2_CID_CAMERA_CLASS_BASE + 0x10c)
+#define V4L2_CID_MT9M021_AE_MAX_EV_STEP     (V4L2_CID_CAMERA_CLASS_BASE + 0x10d)
 
 static int mt9m021_s_ctrl(struct v4l2_ctrl *ctrl)
 {
@@ -756,6 +768,8 @@ static int mt9m021_s_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MT9M021_AE_ROI_Y_START:
 	case V4L2_CID_MT9M021_AE_ROI_X_SIZE:
 	case V4L2_CID_MT9M021_AE_ROI_Y_SIZE:
+	case V4L2_CID_MT9M021_AE_MIN_EV_STEP:
+	case V4L2_CID_MT9M021_AE_MAX_EV_STEP:
 		return mt9m021_apply_exposure(&mt9m021->sd);
 	}
 
@@ -898,6 +912,29 @@ static const struct v4l2_ctrl_config mt9m021_ctrl_ae_roi_y_size = {
 	.def = 960,
 };
 
+static const struct v4l2_ctrl_config mt9m021_ctrl_ae_min_ev_step = {
+        .ops = &mt9m021_ctrl_ops,
+        .id = V4L2_CID_MT9M021_AE_MIN_EV_STEP,
+        .name = "AE Min EV step size",
+        .type = V4L2_CTRL_TYPE_INTEGER,
+        .min = 1,
+        .max = 0xFF,
+        .step = 1,
+        .def = 0x0080,
+};
+
+static const struct v4l2_ctrl_config mt9m021_ctrl_ae_max_ev_step = {
+        .ops = &mt9m021_ctrl_ops,
+        .id = V4L2_CID_MT9M021_AE_MAX_EV_STEP,
+        .name = "AE Max EV step size",
+        .type = V4L2_CTRL_TYPE_INTEGER,
+        .min = 1,
+        .max = 0xFFFF,
+        .step = 1,
+        .def = 0x0008,
+};
+
+
 static int mt9m021_initialize_controls(struct v4l2_subdev *sd)
 {
 	struct mt9m021           *mt9m021 = to_mt9m021(sd);
@@ -968,6 +1005,15 @@ static int mt9m021_initialize_controls(struct v4l2_subdev *sd)
 	mt9m021->ae_roi_y_size = v4l2_ctrl_new_custom(hdl,
 						&mt9m021_ctrl_ae_roi_y_size,
 						NULL);
+
+	mt9m021->ae_min_ev_step = v4l2_ctrl_new_custom(hdl,
+						&mt9m021_ctrl_ae_min_ev_step,
+						NULL);
+
+	mt9m021->ae_max_ev_step = v4l2_ctrl_new_custom(hdl,
+                                                &mt9m021_ctrl_ae_max_ev_step,
+                                                NULL);
+
 
 	if (hdl->error) {
 		v4l2_err(sd, "failed to add new controls\n");

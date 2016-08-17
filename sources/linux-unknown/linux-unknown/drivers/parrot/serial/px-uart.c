@@ -22,8 +22,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#warning Implement device removal (WARNING: [...] does not have a release() function, it is broken and must be fixed)
-
 #if defined(CONFIG_SERIAL_PARROTX_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
 #define SUPPORT_SYSRQ
 #endif

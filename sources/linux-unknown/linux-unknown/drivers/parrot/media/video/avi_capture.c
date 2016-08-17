@@ -119,11 +119,14 @@ EXPORT_SYMBOL(avi_capture_init);
 
 void avi_capture_destroy(struct avi_capture_context *ctx)
 {
-	if (ctx->stats_segment)
-		avi_segment_teardown(ctx->stats_segment);
-
+	/* interrupt is registered on dma_segment. Disable it first
+	   If not we can do the streamoff on cpu1, disable stat
+	   and got an irq on cpu0.
+	 */
 	avi_segment_teardown(ctx->dma_segment);
 	avi_segment_teardown(ctx->cam_segment);
+	if (ctx->stats_segment)
+		avi_segment_teardown(ctx->stats_segment);
 }
 EXPORT_SYMBOL(avi_capture_destroy);
 

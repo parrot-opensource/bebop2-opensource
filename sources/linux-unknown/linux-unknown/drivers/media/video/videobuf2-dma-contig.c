@@ -492,11 +492,6 @@ static void vb2_dc_put_userptr(void *buf_priv)
 	struct vb2_dc_buf *buf = buf_priv;
 	struct sg_table *sgt = buf->dma_sgt;
 
-	if (buf->vaddr) {
-		iounmap(buf->vaddr);
-		buf->vaddr = NULL;
-	}
-
 	if (sgt) {
 		dma_unmap_sg(buf->dev, sgt->sgl, sgt->orig_nents, buf->dma_dir);
 		if (!vma_is_io(buf->vma))
@@ -615,7 +610,7 @@ static void *vb2_dc_get_userptr(void *alloc_ctx, unsigned long vaddr,
 			buf->dma_addr = vb2_dc_pfn_to_dma(buf->dev, pfn);
 			buf->size = size;
 			kfree(pages);
-			goto done;
+			return buf;
 		}
 
 		pr_err("failed to get user pages\n");
@@ -659,14 +654,6 @@ static void *vb2_dc_get_userptr(void *alloc_ctx, unsigned long vaddr,
 	buf->dma_addr = sg_dma_address(sgt->sgl);
 	buf->size = size;
 	buf->dma_sgt = sgt;
-
- done:
-	// eXom hack: remap the buffers in kernel space
-	buf->vaddr = ioremap(buf->dma_addr, buf->size);
-
-	if (!buf->vaddr) {
-		pr_err("couldn't ioremap userptr buffer\n");
-	}
 
 	return buf;
 

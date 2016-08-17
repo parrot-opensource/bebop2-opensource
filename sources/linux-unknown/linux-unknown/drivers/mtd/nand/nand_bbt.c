@@ -399,6 +399,7 @@ static int read_abs_bbts(struct mtd_info *mtd, uint8_t *buf,
 }
 
 /* Scan a given block full */
+#if 0
 static int scan_block_full(struct mtd_info *mtd, struct nand_bbt_descr *bd,
 			   loff_t offs, uint8_t *buf, size_t readlen,
 			   int scanlen, int len)
@@ -447,6 +448,7 @@ static int scan_block_fast(struct mtd_info *mtd, struct nand_bbt_descr *bd,
 	}
 	return 0;
 }
+#endif
 
 /**
  * create_bbt - [GENERIC] Create a bad block table by scanning the device
@@ -463,10 +465,9 @@ static int create_bbt(struct mtd_info *mtd, uint8_t *buf,
 	struct nand_bbt_descr *bd, int chip)
 {
 	struct nand_chip *this = mtd->priv;
-	int i, numblocks, len, scanlen;
+	int i, numblocks;
 	int startblock;
 	loff_t from;
-	size_t readlen;
 
 	pr_info("Scanning device for bad blocks\n");
 

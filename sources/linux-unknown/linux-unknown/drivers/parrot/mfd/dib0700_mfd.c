@@ -357,8 +357,11 @@ static void dib0700_read_start(struct dib0700_state *st)
 		clear_bit_unlock(USB_ENDP_CTRL_BUSY, &st->flags);
 		wake_up_interruptible(&st->wq_endp0);
 
-		mod_timer(&st->rx_timer,
+		if (result != -ENODEV) {
+			mod_timer(&st->rx_timer,
 				jiffies + st->rx_expires);
+		}
+
 		return;
 	}
 
@@ -584,37 +587,39 @@ static void dib0700_write_start(struct dib0700_state *st)
 		EPIPE:   Stalled endpoint
 		*/
 
-		spin_lock_irqsave(&st->lock, flags);
+		if (result != -ENODEV) {
+			spin_lock_irqsave(&st->lock, flags);
 
-		if (st->tx_retries < TX_MAX_RETRIES) {
-			//Re-submit
-			st->tx_retries++;
-			set_bit(idx, &st->tx_retry);
-		} else {
-			st->tx_retries = 0;
-			clear_bit(idx, &st->tx_retry);
-			st->tx_bytes -= count;
-			st->icount.tx -= count;
-			set_bit(idx, &st->write_urbs_free);
+			if (st->tx_retries < TX_MAX_RETRIES) {
+				//Re-submit
+				st->tx_retries++;
+				set_bit(idx, &st->tx_retry);
+			} else {
+				st->tx_retries = 0;
+				clear_bit(idx, &st->tx_retry);
+				st->tx_bytes -= count;
+				st->icount.tx -= count;
+				set_bit(idx, &st->write_urbs_free);
 
 #if 1	//Debug
-			print_hex_dump(KERN_INFO,"UART TX (dropped)>",
-					DUMP_PREFIX_NONE,
-					16, 1,
-					urb->transfer_buffer,
-					urb->transfer_buffer_length,
-					1);
+				print_hex_dump(KERN_INFO,"UART TX (dropped)>",
+						DUMP_PREFIX_NONE,
+						16, 1,
+						urb->transfer_buffer,
+						urb->transfer_buffer_length,
+						1);
 #endif	//Debug
-		}
-		spin_unlock_irqrestore(&st->lock, flags);
+			}
+			spin_unlock_irqrestore(&st->lock, flags);
 
-		if (st->tx_retries) {
-			mod_timer(&st->tx_timer,
-				jiffies + st->tx_expires);
-		} else {
-			pr_err("[%s] message dropped after "
-				"%d retries\n",
-				__func__, TX_MAX_RETRIES);
+			if (st->tx_retries) {
+				mod_timer(&st->tx_timer,
+					jiffies + st->tx_expires);
+			} else {
+				pr_err("[%s] message dropped after "
+					"%d retries\n",
+					__func__, TX_MAX_RETRIES);
+			}
 		}
 
 		clear_bit_unlock(USB_ENDP_CTRL_BUSY, &st->flags);
@@ -1241,7 +1246,6 @@ static void dib0700_gpio_set(struct gpio_chip *c, unsigned gpio, int v)
 
 static int dib0700_gpio_direction_output(struct gpio_chip *c, unsigned gpio, int v)
 {
-	int ret = 0;
 	struct dib0700_state *st = container_of(c,
 						struct dib0700_state,
 						gpio_chip);
@@ -1459,6 +1463,7 @@ static struct i2c_algorithm dib0700_i2c_algo = {
 	.functionality = dib0700_i2c_func,
 };
 
+#if 0
 static int dib0700_set_i2c_speed(struct dib0700_state *st, u16 scl_kHz)
 {
 	u16 divider;
@@ -1488,6 +1493,7 @@ static int dib0700_set_i2c_speed(struct dib0700_state *st, u16 scl_kHz)
 
 	return ret;
 }
+#endif
 
 /***********************
 	Firmware stuff

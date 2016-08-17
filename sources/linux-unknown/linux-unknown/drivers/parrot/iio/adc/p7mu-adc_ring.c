@@ -83,7 +83,7 @@ static int iio_setup_buffer_postenable(struct iio_dev *indio_dev)
 		if (size <= P7MU_ADC_BUF_MAX)
 			st->chip_info->xfer.len = size;
 		else
-			st->chip_info->xfer.len = 1024;
+			st->chip_info->xfer.len = 8192;
 	}
 	if ((st->chip_info->chan_en_reg_val & 0xf) == 0) {
 		/* start transfert */

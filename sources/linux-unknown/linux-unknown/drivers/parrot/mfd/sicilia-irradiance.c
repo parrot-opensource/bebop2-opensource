@@ -8,7 +8,22 @@
 
 #define DRIVER_NAME "sicilia-irradiance"
 
-static struct led_info pca9633_leds[] = {
+static struct led_info ncp5623c_info[] = {
+	{
+		.name = "irradiance:blue",
+		.default_trigger = "none",
+	},
+	{
+		.name = "irradiance:green",
+		.default_trigger = "none",
+	},
+	{
+		.name = "irradiance:red",
+		.default_trigger = "none",
+	},
+};
+
+static struct led_info pca9633_info[] = {
 	{
 		.name = "irradiance:red",
 		.default_trigger = "none",
@@ -23,14 +38,25 @@ static struct led_info pca9633_leds[] = {
 	},
 };
 
-static struct led_platform_data pca9633_data = {
-	.num_leds = ARRAY_SIZE(pca9633_leds),
-	.leds = pca9633_leds,
+static struct led_platform_data ncp5623c_data = {
+	.num_leds = ARRAY_SIZE(ncp5623c_info),
+	.leds = ncp5623c_info,
 };
 
-static struct i2c_board_info pca9633_board_info = {
-	I2C_BOARD_INFO("pca9633", 0x62),
-	.platform_data = &pca9633_data,
+static struct led_platform_data pca9633_data = {
+	.num_leds = ARRAY_SIZE(pca9633_info),
+	.leds = pca9633_info,
+};
+
+static struct i2c_board_info leds_driver_board_info[] = {
+	{
+		I2C_BOARD_INFO("ncp5623c", 0x39),
+		.platform_data = &ncp5623c_data,
+	},
+	{
+		I2C_BOARD_INFO("pca9633", 0x62),
+		.platform_data = &pca9633_data,
+	}
 };
 
 #define TSL2591_SENSORS_NB 4
@@ -42,7 +68,7 @@ static struct i2c_board_info tsl2591_board_info = {
 	I2C_BOARD_INFO("tsl2591", 0x29),
 };
 
-static struct i2c_client * pca9633_client;
+static struct i2c_client * leds_driver_client;
 static struct i2c_client * tsl2591_client[TSL2591_SENSORS_NB];
 static int dib0700_gpio_base = -1;
 
@@ -52,18 +78,49 @@ static int irradiance_probe(struct usb_interface *intf,
 	int ret = 0;
 	struct i2c_adapter * adapter = NULL;
 	int i, j;
+	struct i2c_msg msg = {0};
+	char temp = 0;
 
 	ret = dib0700_probe(intf, &dib0700_gpio_base);
 	if (ret) {
 		goto dib0700_probe_failed;
 	}
 
-	/* pca9633 leds i2c driver */
+	/* leds i2c driver */
 	adapter = i2c_get_adapter(3);
-	pca9633_client = i2c_new_device(adapter, &pca9633_board_info);
-	if (pca9633_client == NULL) {
+	for (i = 0; i < ARRAY_SIZE(leds_driver_board_info); i++) {
+		/* scan i2c bus */
+		msg.addr = leds_driver_board_info[i].addr;
+		msg.flags = 0;
+		msg.len = 0;
+		msg.buf = NULL;
+
+		ret = i2c_transfer(adapter, &msg, 1);
+
+		if (ret == 1)
+			break;
+
+		msg.flags = I2C_M_RD;
+		msg.len = 1;
+		msg.buf = &temp;
+		ret = i2c_transfer(adapter, &msg, 1);
+
+		if (ret == 1)
+			break;
+	}
+
+	if (i >= ARRAY_SIZE(leds_driver_board_info)) {
+		dev_err(&intf->dev, "no leds driver found\n");
+
 		ret = -ENXIO;
-		goto pca966_probe_failed;
+		goto leds_driver_probe_failed;
+	}
+
+	leds_driver_client =
+		i2c_new_device(adapter, &leds_driver_board_info[i]);
+	if (leds_driver_client == NULL) {
+		ret = -ENXIO;
+		goto leds_driver_probe_failed;
 	}
 
 	/* ts2591 illuminance i2c driver */
@@ -87,8 +144,8 @@ tsl2591_probe_failed:
 	for (j = 0; j < i; j++) {
 		i2c_unregister_device(tsl2591_client[j]);
 	}
-	i2c_unregister_device(pca9633_client);
-pca966_probe_failed:
+	i2c_unregister_device(leds_driver_client);
+leds_driver_probe_failed:
 	dib0700_device_exit(intf);
 dib0700_probe_failed:
 	return ret;
@@ -102,7 +159,7 @@ static void irradiance_device_exit(struct usb_interface *intf)
 		i2c_unregister_device(tsl2591_client[i]);
 	}
 
-	i2c_unregister_device(pca9633_client);
+	i2c_unregister_device(leds_driver_client);
 	if (dib0700_gpio_base != -1)
 		gpio_free(dib0700_gpio_base + GPIO_GNSS_POWER_EN);
 	dib0700_device_exit(intf);

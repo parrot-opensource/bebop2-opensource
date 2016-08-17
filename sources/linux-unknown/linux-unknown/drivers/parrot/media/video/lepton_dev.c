@@ -454,6 +454,9 @@ static int lepton_init(struct lepton_subdev *lepton)
 		}
 	}
 
+	// Save initializing telemetry value (lepton_init_regs)
+	lepton->tele = LEPTON_TELEMETRY_LAST;
+
 	return 0;
 }
 
@@ -631,6 +634,8 @@ static int lepton_s_ctrl(struct v4l2_ctrl *ctrl)
 			break;
 		if (ctrl->val)
 			err = set_telemetry(lepton, ctrl->val - 1);
+
+		lepton->tele =  ctrl->val; // Save the telemetry configuration
 		break;
 	case V4L2_CID_LEPTON_FFC:
 		err = enable_rad(lepton, 1); // Enable radiometry
@@ -731,6 +736,15 @@ static void lepton_free_ctrl(struct lepton_subdev *lepton)
 	v4l2_ctrl_handler_free(&lepton->ctrl_handler);
 }
 
+static int lepton_g_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
+{
+	struct lepton_subdev *lepton = to_lepton(sd);
+
+	param->parm.raw_data[0] = lepton->tele;
+
+	return 0;
+}
+
 static const struct v4l2_subdev_core_ops lepton_core_ops = {
 	.reset          = lepton_reset,
 	.queryctrl      = v4l2_subdev_queryctrl,
@@ -748,6 +762,7 @@ static const struct v4l2_subdev_video_ops lepton_video_ops = {
 	.try_mbus_fmt   = lepton_try_mbus_fmt,
 	.g_mbus_fmt     = lepton_g_mbus_fmt,
 	.s_mbus_fmt     = lepton_s_mbus_fmt,
+	.g_parm         = lepton_g_parm,
 };
 
 static const struct v4l2_subdev_ops lepton_ops = {

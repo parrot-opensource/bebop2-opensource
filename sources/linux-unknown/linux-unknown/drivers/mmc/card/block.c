@@ -447,7 +447,6 @@ static int mmc_blk_ioctl_cmd(struct block_device *bdev,
 	/* Sync some ext_csd cache values after MMC_SWITCH command */
 	if (cmd.opcode == MMC_SWITCH) {
 		int csd_field = (cmd.arg >> 16) & 0xFF;
-		int value = (cmd.arg >> 8) & 0xFF;
 		u8 *ext_csd = NULL;
 
 		ext_csd = kmalloc(512, GFP_KERNEL);
@@ -1428,8 +1427,10 @@ static int mmc_blk_issue_rw_rq(struct mmc_queue *mq, struct request *rqc)
 	return 0;
 }
 
+#ifdef CONFIG_MMC_BLOCK_DEFERRED_RESUME
 static int
 mmc_blk_set_blksize(struct mmc_blk_data *md, struct mmc_card *card);
+#endif
 
 static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 {

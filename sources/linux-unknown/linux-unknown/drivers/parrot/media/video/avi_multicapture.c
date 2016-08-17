@@ -33,10 +33,11 @@
  */
 struct avimulti_buffer {
 	struct vb2_buffer vb;
-	struct list_head list;
-	int       needs_unmap;
-	unsigned done_needed;
-	unsigned done_current;
+	struct list_head  list;
+	int               needs_unmap;
+	unsigned          done_needed;
+	unsigned          done_current;
+	void              *metadata_addr;
 };
 
 /*
@@ -96,6 +97,7 @@ struct avi_multicapt_top {
 	struct video_device              *vdev;
 	struct list_head                 bufqueue;
 	struct list_head                 bufqueue_active;
+	struct list_head                 lookup_address;
 
 	/* serialization lock */
 	struct mutex                     lock;
@@ -113,6 +115,12 @@ struct avi_multicapt_top {
 	 */
 	void                            *alloc_ctx;
 	struct vb2_queue                 vb_vidq;
+};
+
+struct avi_multicapt_lookup_address {
+	struct list_head list;
+	dma_addr_t       dma_addr;
+	void             *metadata_addr;
 };
 
 static struct avimulti_buffer* to_avimulti_buffer(struct vb2_buffer* vb2)
@@ -203,10 +211,59 @@ static int avimulti_queue_setup(struct vb2_queue *vq,
 	return 0;
 }
 
+static void avimulti_get_meta_addr(struct vb2_buffer* vb)
+{
+	struct avi_multicapt_top *multicapt_top = vb2_get_drv_priv(vb->vb2_queue);
+	struct avimulti_buffer *vbuf = to_avimulti_buffer(vb);
+	struct list_head *pos;
+	void * meta_addr = NULL;
+	struct avi_multicapt_lookup_address *lookup;
+	unsigned long flags = 0;
+
+	if (multicapt_top->pdata->enable_metadata) {
+		dma_addr_t dma_addr = vb2_dma_contig_plane_dma_addr(&vbuf->vb, 0);
+
+		spin_lock_irqsave(&multicapt_top->vbq_lock, flags);
+
+		list_for_each(pos, &multicapt_top->lookup_address) {
+			lookup = list_entry(pos, struct avi_multicapt_lookup_address, list);
+			if (lookup->dma_addr == dma_addr) {
+				meta_addr = lookup->metadata_addr;
+				break;
+			}
+		}
+
+		spin_unlock_irqrestore(&multicapt_top->vbq_lock, flags);
+
+		if (meta_addr == NULL) {
+			lookup = kzalloc(sizeof (struct avi_multicapt_lookup_address), GFP_KERNEL);
+
+			if (!lookup) {
+				dev_err(multicapt_top->dev,
+					"alloc failed for lookup address structure\n");
+			} else {
+				meta_addr = ioremap(dma_addr+ avimulti_image_size(multicapt_top),
+						    sizeof(struct avimulti_metadata)*5);
+				lookup->dma_addr = dma_addr;
+				lookup->metadata_addr = meta_addr;
+
+				spin_lock_irqsave(&multicapt_top->vbq_lock, flags);
+				list_add_tail(&lookup->list,  &multicapt_top->lookup_address);
+				spin_unlock_irqrestore(&multicapt_top->vbq_lock, flags);
+			}
+		}
+		vbuf->metadata_addr = meta_addr;
+	}
+
+	return;
+}
+
 static int avimulti_vbuf_prepare(struct vb2_buffer* vb)
 {
 	struct avi_multicapt_top *multicapt_top = vb2_get_drv_priv(vb->vb2_queue);
 	unsigned int size = avimulti_buffer_size(multicapt_top);
+
+	avimulti_get_meta_addr(vb);
 
 	vb2_set_plane_payload(vb, 0, size);
 	vb->v4l2_buf.field = V4L2_FIELD_NONE;
@@ -295,11 +352,7 @@ static void avimulti_done(struct avi_capture_context	*ctx,
 		struct avimulti_metadata metadata;
 		unsigned int index =
 			multicapt->offset_bytes / (pdata->width * pdata->height * CAM_BYTES_PER_PIXEL);
-		u8 *image_base = (u8 *)vb2_plane_vaddr(&vbuf->vb, 0);
-		struct avimulti_metadata *metadata_addr =
-			(struct avimulti_metadata *)(image_base + avimulti_image_size(multicapt_top));
-
-		BUG_ON(image_base == NULL);
+		struct avimulti_metadata *metadata_addr = (struct avimulti_metadata *) vbuf->metadata_addr;
 
 		metadata.timestamp = ktime_get().tv64;
 		metadata.enabled = multicapt->enabled;
@@ -344,17 +397,10 @@ static void avimulti_done(struct avi_capture_context	*ctx,
 static void avimulti_clean_metadata(struct avi_multicapt_top *multicapt_top,
                                     struct avimulti_buffer *vbuf)
 {
-	u8 *metadata_addr;
-
 	if (!multicapt_top->pdata->enable_metadata)
 		return;
 
-	metadata_addr = (u8*)vb2_plane_vaddr(&vbuf->vb, 0);
-	BUG_ON(!metadata_addr);
-
-	metadata_addr += avimulti_image_size(multicapt_top);
-
-	memset(metadata_addr, 0,
+	memset(vbuf->metadata_addr, 0,
 	       sizeof(struct avimulti_metadata) *
 	       multicapt_top->pdata->nb_cameras);
 }
@@ -401,6 +447,7 @@ static void avimulti_next(struct avi_capture_context    *ctx,
 
 			avimulti_clean_metadata(multicapt_top, vbuf);
 		} else {
+			frame->priv = NULL;
 			spin_unlock_irqrestore(&multicapt_top->vbq_lock, flags);
 			return;
 		}
@@ -561,16 +608,9 @@ static int avimulti_streamon(struct vb2_queue* vq, unsigned int count)
 
 		ctx->enabled = 1;
 
-		ret = avi_capture_streamon(&ctx->capture_ctx);
-		if (ret)
-			goto capture_streamon_failed;
-
-		/* Success */
-		ctx->streaming = 1;
 		ret = 0;
 		continue;
 
-	capture_streamon_failed:
 	set_format_failed:
 #ifdef CONFIG_AVICAM_TIMINGS_AUTO
 	bad_resolution:
@@ -583,6 +623,26 @@ static int avimulti_streamon(struct vb2_queue* vq, unsigned int count)
 		ctx->enabled = 0;
 		ctx->streaming = 0;
 		dev_err(multicapt_top->dev, "Couldn't initialize camera %d", i);
+	}
+
+	/* Do all capture streamon in a dedicated loop to prevent crash */
+	for (i = 0; i < pdata->nb_cameras; i++) {
+		struct avi_multicapt_context	*ctx =
+			&multicapt_top->multicapt_contexts[i];
+
+		if (ctx->enabled ) {
+			ret = avi_capture_streamon(&ctx->capture_ctx);
+			if (ret) {
+				v4l2_subdev_call(ctx->subdev, video, s_stream, 0);
+				avi_capture_destroy(&ctx->capture_ctx);
+				ctx->enabled = 0;
+				dev_err(multicapt_top->dev, "Couldn't initialize camera %d", i);
+			}
+			else {
+				/* Success */
+				ctx->streaming = 1;
+			}
+		}
 	}
 
 	multicapt_top->streaming = 1;
@@ -618,6 +678,11 @@ static int avimulti_streamoff(struct vb2_queue* vq)
 
 	spin_unlock_irqrestore(&multicapt_top->vbq_lock, flags);
 
+	/*
+	 * Note : multicapt_top->lookup_address list
+	 * is released through avimulti_buf_cleanup call
+	 */
+
 	for (i = 0; i < multicapt_top->pdata->nb_cameras; i++) {
 		struct avi_multicapt_context *ctx = &multicapt_top->multicapt_contexts[i];
 
@@ -632,14 +697,41 @@ static int avimulti_streamoff(struct vb2_queue* vq)
 	return 0;
 }
 
+static void avimulti_buf_cleanup(struct vb2_buffer *vb)
+{
+	struct avi_multicapt_top *multicapt_top = vb2_get_drv_priv(vb->vb2_queue);
+	struct avimulti_buffer *vbuf = to_avimulti_buffer(vb);
+	struct list_head *pos;
+	struct avi_multicapt_lookup_address *lookup;
+	unsigned long flags = 0;
+
+	dma_addr_t dma_addr = vb2_dma_contig_plane_dma_addr(&vbuf->vb, 0);
+
+	spin_lock_irqsave(&multicapt_top->vbq_lock, flags);
+	list_for_each(pos, &multicapt_top->lookup_address) {
+		lookup = list_entry(pos, struct avi_multicapt_lookup_address, list);
+		if (lookup->dma_addr == dma_addr) {
+			list_del(&lookup->list);
+			break;
+		}
+	}
+	spin_unlock_irqrestore(&multicapt_top->vbq_lock, flags);
+
+	if (lookup->dma_addr == dma_addr) {
+		iounmap(lookup->metadata_addr);
+		kfree(lookup);
+	}
+}
+
 static struct vb2_ops avimulti_qops = {
 	.queue_setup     = avimulti_queue_setup,
-	.buf_prepare	 = avimulti_vbuf_prepare,
+	.buf_prepare     = avimulti_vbuf_prepare,
 	.buf_queue       = avimulti_vbuf_queue,
 	.start_streaming = avimulti_streamon,
 	.stop_streaming  = avimulti_streamoff,
 	.wait_prepare    = vb2_ops_wait_prepare,
 	.wait_finish     = vb2_ops_wait_finish,
+	.buf_cleanup     = avimulti_buf_cleanup,
 };
 
 static int avimulti_open(struct file *file)
@@ -879,6 +971,7 @@ static int __devinit avimulti_probe(struct platform_device *pdev)
 	spin_lock_init(&multicapt_top->vbq_lock);
 	INIT_LIST_HEAD(&multicapt_top->bufqueue);
 	INIT_LIST_HEAD(&multicapt_top->bufqueue_active);
+	INIT_LIST_HEAD(&multicapt_top->lookup_address);
 
 	ret = avimulti_v4l2_init(multicapt_top);
 	if (ret)

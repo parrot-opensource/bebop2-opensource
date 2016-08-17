@@ -91,6 +91,8 @@ obj-$(CONFIG_MACH_PARROT_DRSE)             += board-fc7100-drse.o
 obj-$(CONFIG_MACH_PARROT_EMC)              += board-fc7100-emc.o
 obj-$(CONFIG_MACH_PARROT_NAP)              += board-fc7100-nap.o
 obj-$(CONFIG_MACH_PARROT_VOLVO_TRUCK)      += board-fc7100-volvo-truck.o
+obj-$(CONFIG_MACH_PARROT_VTNA)		   += board-fc7100-vtna.o
+obj-$(CONFIG_MACH_PARROT_BORGWARD)	   += board-fc7100-borgward.o
 obj-$(CONFIG_MACH_PARROT_FC7100_TB)        += board-fc7100-testbench.o
 obj-$(CONFIG_MACH_PARROT_MEZZ_DEV)         += board-fc7100-mezz-dev.o
 
