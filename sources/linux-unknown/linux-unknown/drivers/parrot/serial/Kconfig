@@ -1,0 +1,25 @@
+config SERIAL_PARROTX
+	tristate "Parrot5/5+/6/6i/7 serial port support"
+	depends on ARCH_PARROT7
+	select SERIAL_CORE
+	help
+	  If you have a board based on Parrot5/5+/6/6i/7 SoC you
+	  can enable its onboard serial port by enabling this option.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called px-serial.
+
+config SERIAL_PARROTX_CONSOLE
+	bool "Console on Parrot5/5+ serial port"
+	depends on SERIAL_PARROTX
+	select SERIAL_CORE_CONSOLE
+	help
+	  Select this option if you want to use one of the Parrot5/5+/6/6i/7 serial ports
+	  as console.
+
+config SERIAL_ZPRINT
+	bool "ZPrint transactor support"
+	depends on MACH_PARROT_ZEBU
+	default y
+	help
+	  Enable support for ZPrint transactor output.

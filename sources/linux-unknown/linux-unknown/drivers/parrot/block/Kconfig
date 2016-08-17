@@ -1,0 +1,11 @@
+config BLK_DEV_PHYBRD
+	tristate "RAM block device support for physically independant ram block"
+	depends on BLOCK
+	default MACH_PARROT_ZEBU
+	help
+	  This driver is for Parrot7 Zebu emulation environment. It helps to set up
+	  a file system on a physically independant ram block which allows modification
+	  of file system (ddr partial dump -> file system mount and modification 
+	  on host machine -> ddr reinsertion -> execution resumes) without needing to
+	  restart the linux boot sequence. This will accelerate the linux debugging
+	  process under Zebu environment.

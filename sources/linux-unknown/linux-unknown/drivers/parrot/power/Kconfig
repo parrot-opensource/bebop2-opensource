@@ -1,0 +1,8 @@
+
+config FAKE_BATTERY
+	bool "Fake Android Battery Driver"
+	depends on POWER_SUPPLY
+	help
+	  Fake battery driver for Android battery service
+
+

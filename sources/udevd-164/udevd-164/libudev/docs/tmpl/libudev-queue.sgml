@@ -1,0 +1,140 @@
+<!-- ##### SECTION Title ##### -->
+udev_queue
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### SECTION Image ##### -->
+
+
+<!-- ##### STRUCT udev_queue ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION udev_queue_ref ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_unref ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+
+
+<!-- ##### FUNCTION udev_queue_get_udev ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_new ##### -->
+<para>
+
+</para>
+
+@udev: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_get_udev_is_active ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_get_queue_is_empty ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_get_seqnum_is_finished ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@seqnum: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_get_seqnum_sequence_is_finished ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@start: 
+@end: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_get_queued_list_entry ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_get_failed_list_entry ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_get_kernel_seqnum ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_queue_get_udev_seqnum ##### -->
+<para>
+
+</para>
+
+@udev_queue: 
+@Returns: 
+
+

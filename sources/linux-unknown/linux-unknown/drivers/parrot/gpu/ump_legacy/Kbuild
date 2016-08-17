@@ -1,0 +1,102 @@
+#
+# Copyright (C) 2010-2012 ARM Limited. All rights reserved.
+# 
+# This program is free software and is provided to you under the terms of the GNU General Public License version 2
+# as published by the Free Software Foundation, and any use by you of this program is subject to the terms of such GNU licence.
+# 
+# A copy of the licence is included with the program, and can also be obtained from Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+
+ifneq (,$(filter $(CONFIG_UMP),y m))
+
+DRIVER_DIR=$(KBUILD_SRC)/$(src)
+$(warning DRIVER_DIR = $(DRIVER_DIR))
+
+CONFIG ?= os_memory_64m
+
+# Validate selected config
+# ifneq ($(shell [ -d $(src)/arch-$(CONFIG) ] && [ -f  $(src)/arch-$(CONFIG)/config.h ] && echo "OK"), OK)
+# $(warning Current directory is $(src))
+# $(error No configuration found for config $(CONFIG). Check that arch-$(CONFIG)/config.h exists)
+# else
+# # Link arch to the selected arch-config directory
+# $(shell [ -L $(src)/arch ] && rm $(src)/arch)
+# $(shell ln -sf arch-$(CONFIG) $(src)/arch)
+# $(shell touch $(src)/arch/config.h)
+# endif
+
+UDD_FILE_PREFIX = mali_files/
+
+# Get subversion revision number, fall back to 0000 if no svn info is available
+SVN_REV := $(shell ((svnversion | grep -qv exported && echo -n 'Revision: ' && svnversion) || git svn info | sed -e 's/$$$$/M/' | grep '^Revision: ' || echo ${MALI_RELEASE_NAME}) 2>/dev/null | sed -e 's/^Revision: //')
+
+ccflags-y += -DSVN_REV="$(SVN_REV)"
+ccflags-y += -DSVN_REV_STRING="\"$(SVN_REV)\""
+
+ifneq ($(CONFIG_MALI400_LEGACY),y)
+ccflags-y += -I$(DRIVER_DIR) -I$(DRIVER_DIR)/common -I$(DRIVER_DIR)/linux -I$(DRIVER_DIR)/../mali400/common -I$(DRIVER_DIR)/../mali400/linux -I$(DRIVER_DIR)/../../ump/include/ump -I$(DRIVER_DIR)/include/ump
+else
+ccflags-y += -I$(DRIVER_DIR) -I$(DRIVER_DIR)/common -I$(DRIVER_DIR)/linux -I$(DRIVER_DIR)/../mali400_legacy/common -I$(DRIVER_DIR)/../mali400_legacy/linux -I$(DRIVER_DIR)/include/ump
+endif
+ccflags-y += -DMALI_STATE_TRACKING=0
+ccflags-$(CONFIG_UMP_DEBUG) += -DDEBUG
+
+# For customer releases the Linux Device Drivers will be provided as ARM proprietary and GPL releases:
+# The ARM proprietary product will only include the license/proprietary directory
+# The GPL product will only include the license/gpl directory
+ifneq ($(CONFIG_MALI400_LEGACY),y)
+ifeq ($(wildcard $(DRIVER_DIR)/linux/license/gpl/*),)
+ccflags-y += -I$(DRIVER_DIR)/linux/license/proprietary -I$(DRIVER_DIR)/../mali400/linux/license/proprietary
+else
+ccflags-y += -I$(DRIVER_DIR)/linux/license/gpl -I$(DRIVER_DIR)/../mali400/linux/license/gpl
+endif
+else
+ifeq ($(wildcard $(DRIVER_DIR)/linux/license/gpl/*),)
+ccflags-y += -I$(DRIVER_DIR)/linux/license/proprietary -I$(DRIVER_DIR)/../mali400_legacy/linux/license/proprietary
+else
+ccflags-y += -I$(DRIVER_DIR)/linux/license/gpl -I$(DRIVER_DIR)/../mali400_legacy/linux/license/gpl
+endif
+endif
+
+ifneq ($(CONFIG_MALI400_LEGACY),y)
+ump-y = common/ump_kernel_common.o \
+	common/ump_kernel_descriptor_mapping.o \
+	common/ump_kernel_api.o \
+	common/ump_kernel_ref_drv.o \
+	linux/ump_kernel_linux.o \
+	linux/ump_kernel_memory_backend_os.o \
+	linux/ump_kernel_memory_backend_dedicated.o \
+	linux/ump_memory_backend.o \
+	linux/ump_ukk_wrappers.o \
+	linux/ump_ukk_ref_wrappers.o \
+	linux/ump_osk_atomics.o \
+	linux/ump_osk_low_level_mem.o \
+	linux/ump_osk_misc.o \
+	../mali400/linux/mali_osk_atomics.o \
+	../mali400/linux/mali_osk_locks.o \
+	../mali400/linux/mali_osk_memory.o \
+	../mali400/linux/mali_osk_math.o \
+	../mali400/linux/mali_osk_misc.o
+else
+ump-y = common/ump_kernel_common.o \
+	common/ump_kernel_descriptor_mapping.o \
+	common/ump_kernel_api.o \
+	common/ump_kernel_ref_drv.o \
+	linux/ump_kernel_linux.o \
+	linux/ump_kernel_memory_backend_os.o \
+	linux/ump_kernel_memory_backend_dedicated.o \
+	linux/ump_memory_backend.o \
+	linux/ump_ukk_wrappers.o \
+	linux/ump_ukk_ref_wrappers.o \
+	linux/ump_osk_atomics.o \
+	linux/ump_osk_low_level_mem.o \
+	linux/ump_osk_misc.o \
+	../mali400_legacy/linux/mali_osk_atomics.o \
+	../mali400_legacy/linux/mali_osk_locks.o \
+	../mali400_legacy/linux/mali_osk_memory.o \
+	../mali400_legacy/linux/mali_osk_math.o \
+	../mali400_legacy/linux/mali_osk_misc.o
+endif
+obj-$(CONFIG_UMP) := ump.o
+endif

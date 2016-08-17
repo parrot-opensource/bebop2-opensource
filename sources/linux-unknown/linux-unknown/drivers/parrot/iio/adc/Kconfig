@@ -1,0 +1,53 @@
+#
+# ADC drivers
+#
+menu "Analog to Digital converters"
+
+config P7MU_ADC
+	tristate "P7MU ADC driver"
+	depends on SPI
+	depends on SPI_SLAVE_PARROT7
+	depends on MFD_P7MU
+	select P7_ADC
+        select P7MU_ADC_RING_BUFFER
+	help
+	  Say yes here to build support for the P7MU
+	  SPI/I2C analog to digital converter (ADC).
+
+config P7MU_ADC_RING_BUFFER
+	bool "Analog Devices P7MUADC: use buffer"
+	depends on P7MU_ADC
+	select IIO_BUFFER
+	select IIO_KFIFO_BUF
+	help
+	  Say yes here to include ring buffer support in the P7MUADC driver.
+
+config P7MU_ADC_DEBUG
+	bool "P7 ADC debug"
+	depends on P7MU_ADC
+	help
+	  Say yes here if you have trouble with the P7 ADC driver and want to
+	  debug it.
+
+config P7_TEMPERATURE
+	tristate "P7 temperature driver"
+	select P7MU_ADC
+	help
+	  Say yes here to build support for the thermal sensor.
+
+config P7_TEMPERATURE_FC7100
+	tristate "P7 FC7100 temperature driver"
+	select P7_ADC
+	help
+	  Say yes here to build support for the thermal sensor.
+
+config P7_ADC
+	bool "P7 ADC driver"
+	depends on (P7_TEMPERATURE || P7_TEMPERATURE_FC7100 || P7MU_ADC)
+	help
+	  Say yes here to build support for the P7
+	  analog to digital converter (ADC).
+
+
+endmenu
+

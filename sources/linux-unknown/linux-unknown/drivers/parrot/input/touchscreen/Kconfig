@@ -1,0 +1,21 @@
+config TOUCHSCREEN_ATMEL_MXT
+	tristate "Atmel mXT I2C Touchscreen"
+	depends on I2C && INPUT_TOUCHSCREEN && TI_UB925_LVDS
+	help
+	  Say Y here if you have Atmel mXT series I2C touchscreen,
+	  such as AT42QT602240/ATMXT224, connected to your system.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called atmel_mxt_ts.
+
+config TOUCHSCREEN_ANTEC
+	tristate "Antec Touchscreen"
+	depends on I2C && INPUT_TOUCHSCREEN && MACH_PARROT_ANTEC
+	default m
+	help
+	  Say Y here if you have Antec touchscreen
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called antec_ts.

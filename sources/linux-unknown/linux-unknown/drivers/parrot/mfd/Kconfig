@@ -1,0 +1,33 @@
+config MFD_HAVE_P7MU
+	bool
+	depends on MFD_P7MU && I2C
+	select MFD_CORE
+	select IRQ_DOMAIN
+	default y
+	help
+	 Support for the Parrot Power Management Unit companion chip.
+	 This driver provies common support for accessing the device,
+	 additional drivers must be enabled in order to use the functionality
+	 of the device
+
+config MFD_P7MU
+	bool "Parrot Power Management Unit (PMU) companion chip core support"
+
+config MFD_P7MU_DEBUG
+	bool "Debug Parrot PMU"
+	depends on MFD_P7MU
+	default no
+	help
+	 Build Parrot PMU support with debug enabled
+
+config SICILIA_IRRADIANCE
+	tristate "Sicilia irradiance module"
+	depends on MFD_DIB0700 && LEDS_PCA9633 && TSL2591
+	default no
+	help
+	 Support for the Parrot Sicilia irradiance module
+
+config MFD_DIB0700
+	tristate "DiB700 I2C/UART/GPIO"
+	help
+	 Driver for multi-function devices based on DiBcom DiB0700 - USB bridge

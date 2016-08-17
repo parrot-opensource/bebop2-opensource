@@ -1,0 +1,10 @@
+--- util-linux-2.26-orig/libfdisk/src/gpt.c	2015-04-20 09:59:46.000000000 +0200
++++ util-linux-2.26/libfdisk/src/gpt.c	2015-04-20 10:09:04.000000000 +0200
+@@ -1761,6 +1761,7 @@
+ 	if (gpt_write_header(cxt, gpt->bheader,
+ 			     le64_to_cpu(gpt->pheader->alternative_lba)) != 0)
+ 		goto err1;
++	fsync(cxt->dev_fd);
+ 	if (gpt_write_partitions(cxt, gpt->pheader, gpt->ents) != 0)
+ 		goto err1;
+ 	if (gpt_write_header(cxt, gpt->pheader, GPT_PRIMARY_PARTITION_TABLE_LBA) != 0)

@@ -1,0 +1,60 @@
+menuconfig AVI
+	tristate "Parrot Advanced Video Interface support"
+	default n
+
+config AVI_DEBUG
+	bool "Compile AVI for debugging purposes"
+	depends on AVI
+	default n
+	help
+	  Enable this if you want AVI drivers with debug info
+
+config AVI_DEBUG_LOG
+	bool "Enable debug log"
+	depends on AVI_DEBUG
+	default n
+	help
+	  Enable this if you want AVI drivers to output debug messages and perform
+	  additionnal consistency checks.
+
+config AVI_DEBUGFS
+	tristate "Enable debugging info via debugfs"
+	depends on AVI_DEBUG && DEBUG_FS
+	depends on AVI
+	help
+	  Enable this if you want debugging information using the debug
+	  filesystem (debugfs)
+
+config AVI_LOGGER
+        bool "Log all AVI register access in debugfs"
+	depends on AVI_DEBUGFS
+	default n
+	help
+	  Enable this if you want to have access to a circular buffer holding
+	  all register access (R/W) through the debugfs.
+
+config FB_AVI
+	tristate "Parrot Advanced Video Interface framebuffer support"
+	depends on FB && AVI
+	select FB_CFB_FILLRECT
+	select FB_CFB_COPYAREA
+	select FB_CFB_IMAGEBLIT
+	help
+	  Enable support for AVI framebuffer.
+
+config FB_AVI_PAN_WAITS_FOR_VSYNC
+	bool "Make AVI framebuffer PAN operations wait for VBL by default"
+	depends on FB_AVI
+	default y
+	help
+	  Some userland applications expect the FBIOPAN_DISPLAY ioctl to block
+	  until the PAN operation is effective, i.e. at the next VBL. This
+	  options sets the default, it is configurable at runtime via sysfs.
+
+config VSYNC_GEN_AVI
+       tristate "Parrot Advanced Video Interface vsync generator support"
+       depends on AVI
+       help
+         Enable support for the AVI vsync generator used to synchronize slave
+         cameras.
+

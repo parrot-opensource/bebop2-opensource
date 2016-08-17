@@ -1,0 +1,13 @@
+diff -ru busybox-1.20.2-orig/Makefile busybox-1.20.2/Makefile
+--- busybox-1.20.2-orig/Makefile
++++ busybox-1.20.2/Makefile
+@@ -606,7 +607,7 @@
+       "$@" \
+       "$(CC)" \
+       "$(CFLAGS) $(CFLAGS_busybox)" \
+-      "$(LDFLAGS) $(EXTRA_LDFLAGS)" \
++      "$(LDFLAGS) $(EXTRA_LDFLAGS) $(LDFLAGS_busybox)" \
+       "$(core-y)" \
+       "$(libs-y)" \
+       "$(LDLIBS)"
+

@@ -1,0 +1,10 @@
+config KSZ8851SNL
+    tristate "KSZ8851SNL Ethernet support"
+	depends on ARM && SPI && ETHERNET
+	help
+	  If you have a KSZ8851SNL Ethernet chip on your board say Y.
+	  Otherwise, say N.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called ksz8851snl.
+

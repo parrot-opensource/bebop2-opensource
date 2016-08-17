@@ -1,0 +1,6 @@
+config VIDEO_OV16825
+	tristate "OmniVision OV16825 sensor support"
+	depends on I2C && VIDEO_V4L2
+	---help---
+	  Video4Linux2 sensor-level driver for the OmniVision
+	  OV16825 camera.

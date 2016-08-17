@@ -1,0 +1,7 @@
+config REGULATOR_SWITCH_VOLTAGE
+   bool "Switch voltage regulator"
+   depends on REGULATOR
+   default MMC_SDHCI_ACS3 if ARCH_PARROT7
+   help
+     Switch voltage regulator based on GPIO regulator.
+

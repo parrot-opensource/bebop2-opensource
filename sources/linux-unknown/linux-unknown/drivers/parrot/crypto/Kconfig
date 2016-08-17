@@ -1,0 +1,11 @@
+
+config CRYPTO_DEV_P7
+	tristate "Support for P7 crypto hw accelerator"
+	depends on NET
+	select CRYPTO_BLKCIPHER
+	select CRYPTO_USER_API_HASH
+	select CRYPTO_USER_API_SKCIPHER
+	help
+	  P7 processors have AES module accelerator. Select this if you
+	  want to use the P7 module for AES algorithms.
+

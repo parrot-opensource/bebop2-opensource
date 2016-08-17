@@ -1,0 +1,128 @@
+<!-- ##### SECTION Title ##### -->
+GUdevClient
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### SECTION Image ##### -->
+
+
+<!-- ##### STRUCT GUdevClient ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SIGNAL GUdevClient::uevent ##### -->
+<para>
+
+</para>
+
+@gudevclient: the object which received the signal.
+@arg1: 
+@arg2: 
+
+<!-- ##### ARG GUdevClient:subsystems ##### -->
+<para>
+
+</para>
+
+<!-- ##### STRUCT GUdevClientClass ##### -->
+<para>
+
+</para>
+
+@parent_class: 
+@uevent: 
+
+<!-- ##### ENUM GUdevDeviceType ##### -->
+<para>
+
+</para>
+
+@G_UDEV_DEVICE_TYPE_NONE: 
+@G_UDEV_DEVICE_TYPE_BLOCK: 
+@G_UDEV_DEVICE_TYPE_CHAR: 
+
+<!-- ##### TYPEDEF GUdevDeviceNumber ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION g_udev_client_new ##### -->
+<para>
+
+</para>
+
+@subsystems: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_client_query_by_subsystem ##### -->
+<para>
+
+</para>
+
+@client: 
+@subsystem: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_client_query_by_device_number ##### -->
+<para>
+
+</para>
+
+@client: 
+@type: 
+@number: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_client_query_by_device_file ##### -->
+<para>
+
+</para>
+
+@client: 
+@device_file: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_client_query_by_sysfs_path ##### -->
+<para>
+
+</para>
+
+@client: 
+@sysfs_path: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_client_query_by_subsystem_and_name ##### -->
+<para>
+
+</para>
+
+@client: 
+@subsystem: 
+@name: 
+@Returns: 
+
+

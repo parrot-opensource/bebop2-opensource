@@ -1,0 +1,4 @@
+config ARM_P7_CPUFREQ
+	bool "P7 CPU Frequency scaling support"
+	depends on ARCH_PARROT7
+	select CPU_FREQ

@@ -1,0 +1,152 @@
+<!-- ##### SECTION Title ##### -->
+udev_monitor
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### SECTION Image ##### -->
+
+
+<!-- ##### STRUCT udev_monitor ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION udev_monitor_ref ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_unref ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+
+
+<!-- ##### FUNCTION udev_monitor_get_udev ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_new_from_netlink ##### -->
+<para>
+
+</para>
+
+@udev: 
+@name: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_new_from_socket ##### -->
+<para>
+
+</para>
+
+@udev: 
+@socket_path: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_enable_receiving ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_set_receive_buffer_size ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@size: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_get_fd ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_receive_device ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_filter_add_match_subsystem_devtype ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@subsystem: 
+@devtype: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_filter_add_match_tag ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@tag: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_filter_update ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_monitor_filter_remove ##### -->
+<para>
+
+</para>
+
+@udev_monitor: 
+@Returns: 
+
+

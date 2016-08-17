@@ -1,0 +1,108 @@
+--- libusb-0.1.12/linux.c	2006-03-04 03:52:46.000000000 +0100
++++ libusb-0.1.12/linux.c.new	2014-07-31 09:36:31.430244120 +0200
+@@ -7,16 +7,17 @@
+  */
+ 
+ #include <stdlib.h>	/* getenv, etc */
+ #include <unistd.h>
+ #include <string.h>
+ #include <stdio.h>
+ #include <fcntl.h>
+ #include <errno.h>
++#include <time.h>
+ #include <sys/time.h>
+ #include <dirent.h>
+ 
+ #include "linux.h"
+ #include "usbi.h"
+ 
+ static char usb_path[PATH_MAX + 1] = "";
+ 
+@@ -159,40 +160,42 @@ int usb_control_msg(usb_dev_handle *dev,
+ #define URB_USERCONTEXT_COOKIE		((void *)0x1)
+ 
+ /* Reading and writing are the same except for the endpoint */
+ static int usb_urb_transfer(usb_dev_handle *dev, int ep, int urbtype,
+ 	char *bytes, int size, int timeout)
+ {
+   struct usb_urb urb;
+   int bytesdone = 0, requested;
+-  struct timeval tv, tv_ref, tv_now;
++  struct timeval tv;
++  struct timespec tp_ref, tp_now;
+   struct usb_urb *context;
+   int ret, waiting;
+ 
+   /*
+    * HACK: The use of urb.usercontext is a hack to get threaded applications
+    * sort of working again. Threaded support is still not recommended, but
+    * this should allow applications to work in the common cases. Basically,
+    * if we get the completion for an URB we're not waiting for, then we update
+    * the usercontext pointer to 1 for the other threads URB and it will see
+    * the change after it wakes up from the the timeout. Ugly, but it works.
+    */
+ 
+   /*
+    * Get actual time, and add the timeout value. The result is the absolute
+    * time where we have to quit waiting for an message.
+    */
+-  gettimeofday(&tv_ref, NULL);
+-  tv_ref.tv_sec = tv_ref.tv_sec + timeout / 1000;
+-  tv_ref.tv_usec = tv_ref.tv_usec + (timeout % 1000) * 1000;
+-
+-  if (tv_ref.tv_usec > 1000000) {
+-    tv_ref.tv_usec -= 1000000;
+-    tv_ref.tv_sec++;
++  clock_gettime(CLOCK_MONOTONIC, &tp_ref);
++  //gettimeofday(&tv_ref, NULL);
++  tp_ref.tv_sec = tp_ref.tv_sec + timeout / 1000;
++  tp_ref.tv_nsec = tp_ref.tv_nsec + (timeout % 1000) * 1000000;
++
++  if (tp_ref.tv_nsec > 1000000000) {
++    tp_ref.tv_nsec -= 1000000000;
++    tp_ref.tv_sec++;
+   }
+ 
+   do {
+     fd_set writefds;
+ 
+     requested = size - bytesdone;
+     if (requested > MAX_READ_WRITE)
+       requested = MAX_READ_WRITE;
+@@ -215,26 +218,33 @@ static int usb_urb_transfer(usb_dev_hand
+ 
+     FD_ZERO(&writefds);
+     FD_SET(dev->fd, &writefds);
+ 
+ restart:
+     waiting = 1;
+     context = NULL;
+     while (!urb.usercontext && ((ret = ioctl(dev->fd, IOCTL_USB_REAPURBNDELAY, &context)) == -1) && waiting) {
++
++      /* early abort if there is no device */
++      if (ret == -1 && errno == ENODEV) {
++        break;
++      }
++
+       tv.tv_sec = 0;
+       tv.tv_usec = 1000; // 1 msec
+       select(dev->fd + 1, NULL, &writefds, NULL, &tv); //sub second wait
+ 
+       if (timeout) {
+         /* compare with actual time, as the select timeout is not that precise */
+-        gettimeofday(&tv_now, NULL);
++        clock_gettime(CLOCK_MONOTONIC, &tp_now);
++        //gettimeofday(&tv_now, NULL);
+ 
+-        if ((tv_now.tv_sec > tv_ref.tv_sec) ||
+-            ((tv_now.tv_sec == tv_ref.tv_sec) && (tv_now.tv_usec >= tv_ref.tv_usec)))
++        if ((tp_now.tv_sec > tp_ref.tv_sec) ||
++            ((tp_now.tv_sec == tp_ref.tv_sec) && (tp_now.tv_nsec >= tp_ref.tv_nsec)))
+           waiting = 0;
+       }
+     }
+ 
+     if (context && context != &urb) {
+       context->usercontext = URB_USERCONTEXT_COOKIE;
+       /* We need to restart since we got a successful URB, but not ours */
+       goto restart;

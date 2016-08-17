@@ -1,0 +1,304 @@
+<!-- ##### SECTION Title ##### -->
+GUdevDevice
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### SECTION Image ##### -->
+
+
+<!-- ##### STRUCT GUdevDevice ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### STRUCT GUdevDeviceClass ##### -->
+<para>
+
+</para>
+
+@parent_class: 
+
+<!-- ##### FUNCTION g_udev_device_get_subsystem ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_devtype ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_name ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_number ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_sysfs_path ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_driver ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_action ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_seqnum ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_device_type ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_device_number ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_device_file ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_device_file_symlinks ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_parent ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_parent_with_subsystem ##### -->
+<para>
+
+</para>
+
+@device: 
+@subsystem: 
+@devtype: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_property_keys ##### -->
+<para>
+
+</para>
+
+@device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_has_property ##### -->
+<para>
+
+</para>
+
+@device: 
+@key: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_property ##### -->
+<para>
+
+</para>
+
+@device: 
+@key: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_property_as_int ##### -->
+<para>
+
+</para>
+
+@device: 
+@key: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_property_as_uint64 ##### -->
+<para>
+
+</para>
+
+@device: 
+@key: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_property_as_double ##### -->
+<para>
+
+</para>
+
+@device: 
+@key: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_property_as_boolean ##### -->
+<para>
+
+</para>
+
+@device: 
+@key: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_property_as_strv ##### -->
+<para>
+
+</para>
+
+@device: 
+@key: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_sysfs_attr ##### -->
+<para>
+
+</para>
+
+@device: 
+@name: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_sysfs_attr_as_int ##### -->
+<para>
+
+</para>
+
+@device: 
+@name: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_sysfs_attr_as_uint64 ##### -->
+<para>
+
+</para>
+
+@device: 
+@name: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_sysfs_attr_as_double ##### -->
+<para>
+
+</para>
+
+@device: 
+@name: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_sysfs_attr_as_boolean ##### -->
+<para>
+
+</para>
+
+@device: 
+@name: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_udev_device_get_sysfs_attr_as_strv ##### -->
+<para>
+
+</para>
+
+@device: 
+@name: 
+@Returns: 
+
+

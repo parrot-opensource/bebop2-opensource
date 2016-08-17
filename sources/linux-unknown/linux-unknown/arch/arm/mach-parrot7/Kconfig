@@ -1,0 +1,519 @@
+menu "Parrot 7 platform type"
+	depends on ARCH_PARROT7
+
+config ARCH_PARROT7_COMMON
+	bool
+	default y if ARCH_PARROT7
+	select CPU_V7
+	select HAVE_SMP
+	select LOCAL_TIMERS if SMP
+	select GENERIC_GPIO
+	select ARCH_REQUIRE_GPIOLIB
+	select HAVE_MACH_CLKDEV
+	select COMMON_CLK
+	select CLKDEV_LOOKUP
+	select GENERIC_CLOCKEVENTS
+	select ARM_GIC
+	select VFP
+	select VFPv3
+	select NEON
+	select ARM_AMBA
+	select NEED_MACH_MEMORY_H
+	select USB_ARCH_HAS_EHCI if USB_SUPPORT
+	select MFD_P7MU
+	select I2CM_PARROT7_BUILTIN
+	select I2C
+	select GPIO_PARROT7
+	select REGULATOR
+	select REGULATOR_SWITCH_VOLTAGE
+
+
+config ARCH_PARROT7_BOARD
+	bool
+	default n
+
+config ARCH_PARROT7_NOPLL
+	bool
+	default n
+
+config ARCH_PARROT7_L1PREF
+	bool "L1 cache prefetch hints"
+	default n
+	help
+	  Enable L1 data cache prefetching at core level.
+
+menuconfig ARCH_PARROT7_PL310
+	bool "L2 cache controller"
+	default y
+	select CACHE_L2X0
+	select OUTER_CACHE
+	select OUTER_CACHE_SYNC
+	help
+	  Activate support for Parrot 7 PL310 L2 cache controller.
+
+config ARCH_PARROT7_PL310_BRESP
+	bool "Enable early write response"
+	default y
+	depends on ARCH_PARROT7_PL310
+	help
+	  The AXI protocol specifies that the write response can only be sent back to an AXI master when
+	  the last write data has been accepted. This optimization enables the PL310 to send
+	  the write response of certain write transactions as soon as the store buffer accepts the write
+	  address.
+
+config ARCH_PARROT7_PL310_IPREF
+	bool "Enable instructions prefetch hints"
+	default n
+	depends on ARCH_PARROT7_PL310
+
+config ARCH_PARROT7_PL310_DPREF
+	bool "Enable data prefetch hints"
+	default n
+	depends on ARCH_PARROT7_PL310
+
+config ARCH_PARROT7_PL310_ZEROS
+	bool "Enable full line of zeros enhancement"
+	default n
+	depends on ARCH_PARROT7_PL310
+	help
+	  When the L2CC (L2C-310) AXI slave ports receive a write transaction with AWUSERSx[10],
+	  it indicates that the write actually targets a whole cache line and that all data of this cache line
+	  must be reset to zero. The Cortex-A9 processor is likely to use this feature when a CPU is
+	  executing a memset routine to initialise a particular memory area.
+
+config ARCH_PARROT7_PL310_SPECULATIVE_READ
+	bool "Enable speculative read"
+	default n
+	depends on ARCH_PARROT7_PL310
+	help
+	  When you enable the speculative read feature, using a dedicated software control bit in the
+	  Cortex-A9 MPCore processor, on coherent linefills, the Cortex-A9 SCU speculatively issues
+	  read transactions to the L2C-310 in parallel with its Tag lookup. The SCU indicates these read
+	  transactions by setting ARUSERSx[9] HIGH. These transactions are not AXI-compliant
+	  because the L2C-310 does not return data on speculative reads. It prepares data in its Line Read
+	  Buffers. If the SCU misses, it issues a confirmation linefill to the L2C-310. The confirmation is
+	  a standard AXI transaction that is merged with the previous speculative read in the L2C-310
+	  slave port. This enables the L2C-310 to return data to the level 1 cache sooner for a level 2 cache
+	  hit. If the SCU hits, the speculative read is naturally terminated in L2C-310, either after a certain
+	  number of cycles, or when a resource conflict exists. When a speculative read ends in the
+	  L2C-310 slave ports, either by confirmation or termination, the L2C-310 informs the Cortex-A9
+	  SCU by asserting the SRENDSx and SRIDSx outputs. This represents the AXI ID of the
+	  terminated speculative read. When L2C-310 is not connected to the Cortex-A9 MPCore
+	  processor, you can leave the SRENDSx and SRIDSx outputs unconnected.
+
+          Note
+
+          You must only enable the speculative read feature when both clock enable inputs INCLKEN,
+          and OUTCLKEN of the L2C-310 AXI slave interfaces are tied HIGH.
+
+config ARCH_PARROT7_PL310_STORE_BUFFER_DEVICE_LIMITATION
+	bool "Enable store buffer device limitation"
+	default y
+	depends on ARCH_PARROT7_PL310
+	help
+	  In some systems, write transactions to device memory regions can target slow peripherals.
+          Because the L2C-310 store buffer is shared between all types of bufferable writes,
+          a heavy traffic of Device, writes that progress slowly in the system can affect the performance of normal memory writes
+          if these two types of traffic occur at the same time. To minimize this effect,
+          you can limit the number of device writes in the L2C-310 store buffer so that
+          at least one slot is always available for normal memory traffic.
+          Bit 11 of the Auxiliary Control Register controls this feature.
+
+config ARCH_PARROT7_DEBUG
+	bool "Debug Parrot7 plateforms"
+	default n
+	help
+	  Build Parrot7 chip support with debug enabled.
+
+config ARCH_PARROT7_DEBUG_S2RAM
+	bool "Debug s2ram"
+	default n
+	help
+	  Compute a crc of the ddr before going to suspend. This allow
+		to verify ddr at resume time.
+
+comment "Supported boards"
+
+menuconfig MACH_PARROT_P7DEV
+	bool "P7Dev board"
+	select ARCH_PARROT7_COMMON
+	select GPIO_P7MU_BUILTIN
+
+if MACH_PARROT_P7DEV
+config ARCH_PARROT7_P7DEV_SND_AAI
+   bool "AAI daughter board"
+   depends on SND_AAI
+   select ARCH_PARROT7_BOARD
+   default n
+   help
+     Enable AAI daughter board support
+
+config ARCH_PARROT7_P7DEV_NOR
+    bool "NOR daughter board"
+    depends on MTD_M25P80 && SPI_MASTER_PARROT7
+    select ARCH_PARROT7_BOARD
+    default n
+    help
+      Support for daughter board containing 4 SPI Nor flashes and which may
+      be plugged onto P7Dev motherboard J550 connector.
+
+config ARCH_PARROT7_P7DEV_QUAD_NOR
+	bool "Quad NOR daughter board"
+	depends on MACH_PARROT_P7DEV && MTD_M25P80 && SPI_MASTER_PARROT7
+	select ARCH_PARROT7_BOARD
+	default n
+	help
+	  Support for a daughter board with a flash supporting Quad mode on
+	  connector J1030. Currently, it works only in single mode.
+
+config ARCH_PARROT7_P7DEV_FPGA
+	bool "ISP FPGA daughter board"
+	depends on (CAM_AVI || FB_AVI) && SPI_MASTER_PARROT7
+	select ARCH_PARROT7_BOARD
+	default n
+	help
+	  Support for daughter board ISP implemented into Xilinx Spartan6 FPGA and which may
+	  be plugged onto P7Dev motherboard J100 connector.
+
+config ARCH_PARROT7_P7DEV_CAMERA
+	bool "P7DEV Camera daughter board"
+	depends on CAM_AVI
+	select ARCH_PARROT7_BOARD
+	default n
+	help
+	 Support for camera daughter board reintroduced for parros prototype
+
+config ARCH_PARROT7_P7DEV_SICILIA
+	bool "P7DEV Camera daughter board *with* Sicilia patch"
+	depends on CAM_AVI
+	select ARCH_PARROT7_BOARD
+	default n
+	help
+	 Support for camera daughter board reintroduced for sicilia prototype
+
+menuconfig ARCH_PARROT7_P7DEV_SPI
+	bool "SPI daughter board"
+	select ARCH_PARROT7_BOARD
+
+if ARCH_PARROT7_P7DEV_SPI
+choice
+	prompt "Mode"
+	default ARCH_PARROT7_P7DEV_SPI_SINGLE
+	help
+	  SPI mode for virtual SPI daughter board.
+
+	config ARCH_PARROT7_P7DEV_SPI_SINGLE
+		bool "Single"
+
+	config ARCH_PARROT7_P7DEV_SPI_DUAL
+		bool "Dual"
+
+	config ARCH_PARROT7_P7DEV_SPI_QUAD
+		bool "Quad"
+endchoice
+
+choice
+	prompt "Connector"
+	default ARCH_PARROT7_P7DEV_SPI_J550
+	help
+	  Connector for SPI daughter board
+
+	config ARCH_PARROT7_P7DEV_SPI_J550
+		bool "J550"
+		help
+		  Use J550 connector.
+
+	config ARCH_PARROT7_P7DEV_SPI_J1030
+		bool "J1030"
+		help
+		  Use J1030 connector.
+endchoice
+endif
+
+config ARCH_PARROT7_P7DEV_HDMI
+	bool "HDMI daughter board"
+	select ARCH_PARROT7_BOARD
+	depends on  I2CM_PARROT7
+	default n
+	help
+	  Support for HDMI daughter board connected to P7Dev motherboard J100
+	  connector. It contains:
+	  -two 24bit HDMI outputs,
+	  -one 24bit HDMI input,
+	  -two 8bit HDMI inputs.
+
+config ARCH_PARROT7_P7DEV_RNB6
+	bool "RNB6 daughter board"
+	select ARCH_PARROT7_BOARD
+	depends on I2CM_PARROT7
+	select PARROT_SMSC_USB82514_USB_HUB
+	default n
+	help
+	  Support for RNB6 daughter board connected to P7Dev motherboard J100
+	  connector. It contains:
+	  -one HDMI input,
+	  -one HDMI output,
+	  -one analog video input,
+	  -one camera connectors,
+	  -one LCD panel connector.
+
+config ARCH_PARROT7_P7DEV_WILINK8
+    bool "TI Wilink8 Wifi/BT/GPS daughter board"
+    select ARCH_PARROT7_BOARD
+    default y
+    help
+      Enable support for TI Wilink8 Wifi/BT/GPS.
+
+menuconfig ARCH_PARROT7_P7DEV_TUNER
+	bool "Octopus tuner daughter board"
+	depends on MPEGTS_PARROT7
+	select ARCH_PARROT7_BOARD
+	default n
+	help
+	  Enable Octopus daughter board support.
+
+config ARCH_PARROT7_P7DEV_TUNER_MPGTS_SIZE
+	int "Per Mpeg-TS interface size of dedicated system RAM (kB)"
+	depends on ARCH_PARROT7_P7DEV_TUNER
+	range 4 64536
+	default 292
+
+config ARCH_PARROT7_P7DEV_HX270_SIZE
+	int "Size of Video decoder dedicated system RAM (mB)"
+	depends on UIO_HX270
+	range 0 128
+	default 112
+
+config ARCH_PARROT7_P7DEV_HX280_SIZE
+	int "Size of Video encoder dedicated system RAM (mB)"
+	depends on UIO_HX280
+	range 0 96
+	default 64
+
+endif
+
+
+menuconfig MACH_PARROT_FC7100_FAMILY
+	bool "FC7100 and derivates"
+	select ARCH_PARROT7_COMMON
+
+if MACH_PARROT_FC7100_FAMILY
+
+config MACH_PARROT_FC7100
+	bool "FC7100 workbench"
+	select GPIO_PCA953X
+
+config MACH_PARROT_ANTEC
+	bool "Antec board"
+
+config MACH_PARROT_SOCA
+	bool "Soca board"
+
+config MACH_PARROT_EMC
+	bool "EMC board"
+
+config MACH_PARROT_DTV
+	bool "DTV board"
+
+config MACH_PARROT_RTV
+	bool "RTV board"
+
+config MACH_PARROT_AGU
+	bool "AGU board"
+
+config MACH_PARROT_PORSCHE_RSE
+	bool "Porsche RSE board"
+
+config MACH_PARROT_DRSE
+	bool "Demo RSE board"
+
+config MACH_PARROT_NAP
+	bool "NAP board"
+
+config MACH_PARROT_VOLVO_TRUCK
+	bool "Volvo truck board"
+
+config MACH_PARROT_FC7100_TB
+	bool "FC7100 testbench"
+
+config MACH_PARROT_FC7100_TB_ANDROID
+	bool "FC7100 testbench Android"
+	depends on MACH_PARROT_FC7100_TB
+	default y
+	---help---
+	  Add fake devices to allow Android boot.
+
+config MACH_PARROT_MEZZ_DEV
+	bool "FC7100 MezzDev"
+
+config ARCH_PARROT7_FC7100_HX270_SIZE
+	int "Size of Video decoder dedicated system RAM (mB)"
+	depends on UIO_HX270
+	default 96
+
+config ARCH_PARROT7_FC7100_HX280_SIZE
+	int "Size of Video encoder dedicated system RAM (mB)"
+	depends on UIO_HX280
+	range 0 96
+	default 64
+
+config ARCH_PARROT7_FC7100_MPGTS_SIZE
+	int "Per Mpeg-TS interface size of dedicated system RAM (kB)"
+	range 4 64536
+	default 292
+
+endif
+
+menuconfig MACH_PARROT_DRONE_COMMON
+	bool "Drone common"
+	select ARCH_PARROT7_COMMON
+
+menuconfig MACH_PARROT_MYKONOS3
+	bool "Mykonos3 board"
+	select MACH_PARROT_DRONE_COMMON
+
+menuconfig MACH_PARROT_MILOS
+	bool "Milos board"
+	select MACH_PARROT_MYKONOS3
+
+menuconfig MACH_PARROT_EVINRUDE
+	bool "Evinrude board"
+	select MACH_PARROT_DRONE_COMMON
+
+menuconfig MACH_PARROT_PAROS
+	bool "Paros board"
+	select ARCH_PARROT7_COMMON
+
+menuconfig MACH_PARROT_SICILIA
+	bool "Sicilia board"
+	select ARCH_PARROT7_COMMON
+
+if MACH_PARROT_SICILIA
+
+config ARCH_PARROT7_SICILIA_HX270_SIZE
+	int "Size of Video decoder dedicated system RAM (mB)"
+	default 96
+
+config ARCH_PARROT7_SICILIA_HX280_SIZE
+	int "Size of Video encoder dedicated system RAM (mB)"
+	default 96
+endif
+
+menuconfig MACH_PARROT_SFX1
+	bool "Sfx1 board"
+	select ARCH_PARROT7_COMMON
+
+menuconfig MACH_PARROT_SFX1B
+	bool "Sfx1b board"
+	select ARCH_PARROT7_COMMON
+	select MACH_PARROT_DRONE_COMMON
+
+if (MACH_PARROT_SFX1 || MACH_PARROT_SFX1B)
+config ARCH_PARROT7_SFX1_HX280_SIZE
+    int "Size of Video encoder dedicated system RAM (mB)"
+    depends on UIO_HX280
+    range 0 96
+    default 64
+endif
+
+menuconfig MACH_PARROT_BEBOP
+	bool "Bebop board"
+	select ARCH_PARROT7_COMMON
+
+if MACH_PARROT_BEBOP
+
+config ARCH_PARROT7_BEBOP_HX270_SIZE
+	int "Size of Video decoder dedicated system RAM (mB)"
+	depends on UIO_HX270
+	range 0 128
+	default 112
+
+config ARCH_PARROT7_BEBOP_HX280_SIZE
+	int "Size of Video encoder dedicated system RAM (mB)"
+	depends on UIO_HX280
+	range 0 96
+	default 64
+
+config ARCH_PARROT7_BEBOP_MPGTS_SIZE
+	int "Per Mpeg-TS interface size of dedicated system RAM (kB)"
+	range 4 64536
+	default 292
+endif
+
+menuconfig MACH_PARROT_RNB6
+	bool "RNB6 board"
+	select ARCH_PARROT7_COMMON
+
+
+if MACH_PARROT_RNB6
+
+config ARCH_PARROT7_RNB6_HX280_SIZE
+	int "Size of Video encoder dedicated system RAM (mB)"
+	depends on UIO_HX280
+	range 0 96
+	default 64
+
+config ARCH_PARROT7_RNB6_HX270_SIZE
+	int "Size of Video decoder dedicated system RAM (mB)"
+	depends on UIO_HX270
+	range 0 128
+	default 112
+
+config ARCH_PARROT7_RNB6_MPGTS_SIZE
+	int "Per Mpeg-TS interface size of dedicated system RAM (kB)"
+	range 4 64536
+	default 292
+
+endif
+
+menuconfig MACH_PARROT_ZEBU
+	bool "Parrot 7 Zebu emulated design"
+	select ARCH_PARROT7_COMMON
+
+if MACH_PARROT_ZEBU
+choice
+	prompt "P7 zebu release	"
+	default ARCH_PARROT7_ZEBU_MPW1
+
+config ARCH_PARROT7_ZEBU_MPW1
+	bool "emulate parrot 7 MPW1"
+	help
+		Selects the P7R1 release: from Armadillo to Elephant backends
+
+config ARCH_PARROT7_ZEBU_MPW2
+	bool "emulate parrot 7 MPW2"
+	help
+		Selects the P7R2 release: Furet and Gorilla backends
+
+endchoice
+
+config ARCH_PARROT7_ZEBU_NANDPHYCLK_HZ;
+	int "NAND PHY PLL frequency (Hertz)"
+	default 97500000
+	help
+	  Set Zebu emulated design NAND PHY PLL frequency.
+
+config ARCH_PARROT7_ZEBU_AVILCDCLK_HZ;
+	int "LCD PLL hierarchy frequency (Hertz)"
+	default 156000000
+	help
+	  Set Zebu emulated design AVI LCD PLL hierarchy frequency.
+
+config ARCH_PARROT7_ZEBU_PHYBRD_SIZE
+	int "Size of physical RAM block device (mB)"
+	default 128
+
+config ARCH_PARROT7_ZEBU_HX270_SIZE
+	int "Size of Video decoder dedicated system RAM (mB)"
+	default 96
+
+config ARCH_PARROT7_ZEBU_HX280_SIZE
+	int "Size of Video encoder dedicated system RAM (mB)"
+	default 96
+
+config ARCH_PARROT7_ZEBU_FREQ
+	int "FRequency needed to avoid LPJ calculation"
+	default 780000000
+
+endif
+endmenu

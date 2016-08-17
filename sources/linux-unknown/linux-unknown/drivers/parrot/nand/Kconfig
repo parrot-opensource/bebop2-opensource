@@ -1,0 +1,6 @@
+config MTD_NAND_CAST
+	tristate "Support for CAST NAND Controller"
+	depends on MTD_NAND
+	default MTD_NAND if ARCH_PARROT7
+	help
+	  Enables support for CAST NAND Controller with hardware ECC module.

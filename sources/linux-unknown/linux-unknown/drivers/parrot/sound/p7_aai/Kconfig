@@ -1,0 +1,19 @@
+config SND_AAI
+	tristate "Parrot7 AAI"
+		depends on SND
+		depends on ARCH_PARROT7 || ARCH_VEXPRESS
+		select SND_PCM
+		select SND_HWDEP
+		select SND_DYNAMIC_MINORS
+		help
+			Parrot7 AAI driver.
+			This is specific to Parrot7 architecture.
+
+config SND_AAI_DEBUG
+	bool  "AAI Debug Mode"
+		default 0
+		depends on SND_AAI
+		help
+			Activate AAI debug level messages.
+			Trace AAI registers read/write operations.
+

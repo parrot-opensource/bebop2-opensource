@@ -1,0 +1,20 @@
+#
+# BLDC drivers
+#
+
+config IIO_PARROT_BLDC_CYPRESS
+	tristate "PARROT BLDC CYPRESS IIO driver"
+	depends on I2C && SYSFS
+	select IIO_BUFFER
+	select IIO_TRIGGERED_BUFFER
+	help
+	  Say yes here to build support for the BLDC cypress driver.
+
+config IIO_PARROT_BLDC_CYPRESS_I2C
+	tristate "PARROT BLDC CYPRESS IIO i2c driver"
+	depends on I2C && SYSFS
+	select IIO_PARROT_BLDC_CYPRESS
+	select IIO_BUFFER
+	select IIO_TRIGGERED_BUFFER
+	help
+	  Say yes here to build support for the BLDC cypress i2c driver.

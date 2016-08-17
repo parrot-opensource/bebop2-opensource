@@ -1,0 +1,10 @@
+config RTC_P7MU
+	tristate "Parrot P7MU RTC"
+	depends on RTC_CLASS && MFD_P7MU
+	default MFD_P7MU
+	help
+	  If you say yes here you get support for RTC function Parrot
+	  Power Management Unit companion chip.
+
+	  This driver can also be built as a module. If so, the module
+	  will be called rtc-pxmu.

@@ -1,0 +1,20 @@
+config GPIO_P7MU
+	tristate "Parrot P7MU GPIO"
+	depends on GPIOLIB && MFD_P7MU
+	default m
+	help
+	  Builds the Parrot7 power Management Unit GPIO block driver.
+
+config GPIO_P7MU_BUILTIN
+	bool
+	select GPIO_P7MU
+
+config GPIO_HAVE_PARROT7
+	bool
+	depends on GPIOLIB && ARCH_PARROT7
+	default y
+	help
+	  Builds the Parrot7 GPIO controller driver.
+
+config GPIO_PARROT7
+	bool "Parrot7 GPIO controller"

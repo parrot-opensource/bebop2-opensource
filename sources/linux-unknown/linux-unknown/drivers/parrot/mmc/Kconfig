@@ -1,0 +1,13 @@
+config MMC_SDHCI_ACS3
+   tristate "Arasan SD3.0 / SDIO3.0 / eMMC4.41 driver"
+   depends on MMC && MMC_SDHCI
+   select MMC_SDHCI_IO_ACCESSORS
+   default MMC_SDHCI if ARCH_PARROT7
+   help
+     Support Arasan Chip Systems SD3.0 / SDIO3.0 / eMMC4.41 AHB Host Controller driver.
+
+config MMC_SDHCI_ACS3_DEBUGFS
+	bool "ACS3 TDLs & max clk debugfs"
+	depends on MMC_SDHCI_ACS3
+	default n
+	

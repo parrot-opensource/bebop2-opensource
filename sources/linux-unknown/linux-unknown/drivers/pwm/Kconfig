@@ -1,0 +1,42 @@
+menuconfig PWM
+	bool "Pulse-Width Modulation (PWM) Support"
+	depends on !MACH_JZ4740 && !PUV3_PWM
+	help
+	  Generic Pulse-Width Modulation (PWM) support.
+
+	  In Pulse-Width Modulation, a variation of the width of pulses
+	  in a rectangular pulse signal is used as a means to alter the
+	  average power of the signal. Applications include efficient
+	  power delivery and voltage regulation. In computer systems,
+	  PWMs are commonly used to control fans or the brightness of
+	  display backlights.
+
+	  This framework provides a generic interface to PWM devices
+	  within the Linux kernel. On the driver side it provides an API
+	  to register and unregister a PWM chip, an abstraction of a PWM
+	  controller, that supports one or more PWM devices. Client
+	  drivers can request PWM devices and use the generic framework
+	  to configure as well as enable and disable them.
+
+	  This generic framework replaces the legacy PWM framework which
+	  allows only a single driver implementing the required API. Not
+	  all legacy implementations have been ported to the framework
+	  yet. The framework provides an API that is backward compatible
+	  with the legacy framework so that existing client drivers
+	  continue to work as expected.
+
+	  If unsure, say no.
+
+config PWM_SYSFS
+	bool "Pulse-Width Modulation (PWM) SYSFS Support"
+	depends on PWM
+	default no
+	help
+	  Add SYSFS support to PWM framework
+
+config PWM_SYSFS_DEBUG
+	bool "Pulse-Width Modulation (PWM) SYSFS Support Debug"
+	depends on PWM_SYSFS
+	default no
+	help
+	  Activate DEBUG for SYSFS 

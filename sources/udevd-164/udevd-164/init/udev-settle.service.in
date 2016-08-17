@@ -1,0 +1,10 @@
+[Unit]
+Description=udev Wait for Complete Device Initialization
+DefaultDependencies=no
+After=udev.service
+Before=basic.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=@sbindir@/udevadm settle

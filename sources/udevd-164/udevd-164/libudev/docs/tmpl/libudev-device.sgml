@@ -1,0 +1,263 @@
+<!-- ##### SECTION Title ##### -->
+udev_device
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### SECTION Image ##### -->
+
+
+<!-- ##### STRUCT udev_device ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION udev_device_ref ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_unref ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+
+
+<!-- ##### FUNCTION udev_device_get_udev ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_new_from_syspath ##### -->
+<para>
+
+</para>
+
+@udev: 
+@syspath: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_new_from_devnum ##### -->
+<para>
+
+</para>
+
+@udev: 
+@type: 
+@devnum: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_new_from_subsystem_sysname ##### -->
+<para>
+
+</para>
+
+@udev: 
+@subsystem: 
+@sysname: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_new_from_environment ##### -->
+<para>
+
+</para>
+
+@udev: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_parent ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_parent_with_subsystem_devtype ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@subsystem: 
+@devtype: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_devpath ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_subsystem ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_devtype ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_syspath ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_sysname ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_sysnum ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_devnode ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_devlinks_list_entry ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_properties_list_entry ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_tags_list_entry ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_property_value ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@key: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_driver ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_devnum ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_action ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_sysattr_value ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@sysattr: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_device_get_seqnum ##### -->
+<para>
+
+</para>
+
+@udev_device: 
+@Returns: 
+
+

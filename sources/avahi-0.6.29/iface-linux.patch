@@ -1,0 +1,13 @@
+--- avahi-0.6.29/avahi-core/iface-linux.c	2011-03-08 23:47:21.000000000 +0100
++++ avahi-0.6.29/avahi-core/iface-linux.c	2014-01-28 10:49:49.124590222 +0100
+@@ -203,7 +203,10 @@
+         while (RTA_OK(a, l)) {
+ 
+             switch(a->rta_type) {
++                case IFA_ADDRESS:
+                 case IFA_LOCAL:
++                    if (raddr_valid)
++                        break;
+                     /* Fill in address data */
+ 
+                     if ((raddr.proto == AVAHI_PROTO_INET6 && RTA_PAYLOAD(a) != 16) ||

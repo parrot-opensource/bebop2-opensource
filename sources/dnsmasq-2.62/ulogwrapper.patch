@@ -1,0 +1,11 @@
+--- dnsmasq-2.62/src/dnsmasq.c	2012-06-04 22:40:11.000000000 +0200
++++ dnsmasq-2.62/src/dnsmasq.c	2012-06-04 22:40:11.000000000 +0200
+@@ -387,7 +387,7 @@
+ 	}
+     }
+   
+-   log_err = log_start(ent_pw, err_pipe[1]);
++   //log_err = log_start(ent_pw, err_pipe[1]);
+ 
+    if (!option_bool(OPT_DEBUG)) 
+      {       

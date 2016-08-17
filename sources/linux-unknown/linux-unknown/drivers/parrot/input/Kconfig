@@ -1,0 +1,3 @@
+config VIRTUAL_WAKEUP_BUTTON
+	tristate "Virtual wakeup button"
+	default n

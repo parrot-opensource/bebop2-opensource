@@ -1,0 +1,10 @@
+--- libusb-0.1.12/linux.c	2012-11-14 15:50:18.766822919 +0100
++++ libusb-0.1.12/linux.c.new	2012-11-14 15:50:26.534822825 +0100
+@@ -349,6 +349,7 @@
+ 
+     strncpy(bus->dirname, entry->d_name, sizeof(bus->dirname) - 1);
+     bus->dirname[sizeof(bus->dirname) - 1] = 0;
++	bus->location = strtoul(entry->d_name, NULL, 10);
+ 
+     LIST_ADD(fbus, bus);
+ 

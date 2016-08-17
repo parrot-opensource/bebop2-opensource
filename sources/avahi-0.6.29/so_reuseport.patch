@@ -1,0 +1,11 @@
+--- avahi-0.6.29/avahi-core/socket.c	2015-06-26 09:44:39.000000000 +0200
++++ avahi-0.6.29/avahi-core/socket.c	2015-06-26 09:45:22.000000000 +0200
+@@ -175,7 +175,7 @@
+ 
+ #ifdef SO_REUSEPORT
+     yes = 1;
+-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)) < 0) {
++    if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)) < 0 && errno != ENOPROTOOPT) {
+         avahi_log_warn("SO_REUSEPORT failed: %s", strerror(errno));
+         return -1;
+     }

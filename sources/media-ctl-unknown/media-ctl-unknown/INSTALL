@@ -1,0 +1,26 @@
+Building:
+---------
+
+Useful 'configure' options:
+  --with-kernel-headers=DIR    path of Linux kernel headers,
+                               default /usr/src/kernel-headers.
+
+  --host=TYPE                  host platform for cross-compilation.
+
+
+Building:
+$ autoreconf --install
+$ ./configure [--with-kernel-headers=DIR] [--host=TYPE]
+$ make
+
+
+Installing:
+-----------
+
+$ sudo make install
+
+
+Uninstalling:
+-------------
+
+$ sudo make uninstall

@@ -1,0 +1,6 @@
+config BLACKBERRY
+	tristate "Blackberry usb serial driver"
+	depends on USB_SERIAL
+	-- help
+	Driver which provides access to a blackberry via it's proprietary usb
+	interface using ttys

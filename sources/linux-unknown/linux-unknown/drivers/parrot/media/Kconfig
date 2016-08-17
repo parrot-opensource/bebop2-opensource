@@ -1,0 +1,14 @@
+source "drivers/parrot/media/video/Kconfig"
+
+config MPEGTS_PARROT7
+	tristate "MPEG_TS driver"
+	depends on SPI_MASTER && SPI_PARROT7
+	default m
+	help
+	  Select Parrot7 MPEG_TS driver. Requires the SPI master driver to be
+	  selected to handle common registers.
+
+config MPEGTS_PARROT7_DEBUG
+	bool "debug mode"
+	depends on MPEGTS_PARROT7
+	default n

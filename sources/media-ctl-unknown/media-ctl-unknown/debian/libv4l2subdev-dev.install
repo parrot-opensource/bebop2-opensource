@@ -1,0 +1,5 @@
+usr/include/mediactl/subdev.h
+usr/lib/libv4l2subdev.a
+usr/lib/libv4l2subdev.so
+usr/lib/libv4l2subdev.la
+usr/lib/pkgconfig/libv4l2subdev.pc

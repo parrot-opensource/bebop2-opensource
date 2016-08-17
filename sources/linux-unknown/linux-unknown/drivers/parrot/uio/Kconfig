@@ -1,0 +1,27 @@
+config UIO_HX
+	tristate "On2 / Hantro video userspace driver support"
+    default m if ARCH_PARROT7
+	default no if !ARCH_PARROT7
+	help
+	  Enable support for On2 / Hantro video userspace drivers.
+
+config UIO_HX_DEBUG
+    bool "Enable debug for On2 / Hantro video userspace driver"
+    depends on UIO_HX
+    default no
+	help
+	  Compile On2 / Hantro video userspace drivers with debug enabled.
+
+config UIO_HX270
+	tristate "On2 / Hantro hx270 video decoder support"
+	depends on UIO_HX
+    default UIO_HX
+	help
+      Enable support for On2 / Hantro video decoder.
+
+config UIO_HX280
+	tristate "On2 / Hantro hx280 video encoder support"
+	depends on UIO_HX
+    default UIO_HX
+	help
+      Enable support for On2 / Hantro video encoder.

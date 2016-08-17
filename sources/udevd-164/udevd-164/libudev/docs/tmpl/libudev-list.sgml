@@ -1,0 +1,76 @@
+<!-- ##### SECTION Title ##### -->
+udev_list
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### SECTION Image ##### -->
+
+
+<!-- ##### STRUCT udev_list_entry ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION udev_list_entry_get_next ##### -->
+<para>
+
+</para>
+
+@list_entry: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_list_entry_get_by_name ##### -->
+<para>
+
+</para>
+
+@list_entry: 
+@name: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_list_entry_get_name ##### -->
+<para>
+
+</para>
+
+@list_entry: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_list_entry_get_value ##### -->
+<para>
+
+</para>
+
+@list_entry: 
+@Returns: 
+
+
+<!-- ##### MACRO udev_list_entry_foreach ##### -->
+<para>
+
+</para>
+
+@list_entry: 
+@first_entry: 
+
+

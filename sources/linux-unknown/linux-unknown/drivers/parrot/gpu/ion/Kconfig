@@ -1,0 +1,7 @@
+config ION_PARROT7
+	bool "Parrot7 ION allocator"
+	depends on ION && ARCH_PARROT7
+	default ION
+	help
+	  Enable support for Parrot7 ION allocator.
+

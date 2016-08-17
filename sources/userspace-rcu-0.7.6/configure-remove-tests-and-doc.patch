@@ -1,0 +1,66 @@
+diff -rau userspace-rcu-0.7.6/Makefile.am /home/damien/git_rep/userspace-rcu-0.7.6/Makefile.am
+--- userspace-rcu-0.7.6/Makefile.am	2013-01-09 19:40:51.000000000 +0100
++++ /home/damien/git_rep/userspace-rcu-0.7.6/Makefile.am	2013-01-16 18:29:42.463279523 +0100
+@@ -7,7 +7,7 @@
+ AM_LDFLAGS=-lpthread -version-info $(URCU_LIBRARY_VERSION)
+ AM_CFLAGS=-Wall
+ 
+-SUBDIRS = . doc tests
++SUBDIRS = .
+ 
+ include_HEADERS = urcu.h urcu-bp.h urcu-call-rcu.h urcu-defer.h \
+ 		urcu-pointer.h urcu-qsbr.h urcu-flavor.h
+@@ -28,8 +28,7 @@
+ 		gpl-2.0.txt lgpl-2.1.txt lgpl-relicensing.txt \
+ 		LICENSE compat_arch_x86.c \
+ 		urcu-call-rcu-impl.h urcu-defer-impl.h \
+-		rculfhash-internal.h \
+-		$(top_srcdir)/tests/*.sh
++		rculfhash-internal.h
+ 
+ if COMPAT_ARCH
+ COMPAT=compat_arch_@ARCHTYPE@.c
+diff -rau userspace-rcu-0.7.6/Makefile.in /home/damien/git_rep/userspace-rcu-0.7.6/Makefile.in
+--- userspace-rcu-0.7.6/Makefile.in	2013-01-09 19:42:26.000000000 +0100
++++ /home/damien/git_rep/userspace-rcu-0.7.6/Makefile.in	2013-01-16 18:29:52.051327069 +0100
+@@ -406,7 +406,7 @@
+ # library that use the version-info
+ AM_LDFLAGS = -lpthread -version-info $(URCU_LIBRARY_VERSION)
+ AM_CFLAGS = -Wall
+-SUBDIRS = . doc tests
++SUBDIRS = .
+ include_HEADERS = urcu.h urcu-bp.h urcu-call-rcu.h urcu-defer.h \
+ 		urcu-pointer.h urcu-qsbr.h urcu-flavor.h
+ 
+@@ -426,8 +426,7 @@
+ 		gpl-2.0.txt lgpl-2.1.txt lgpl-relicensing.txt \
+ 		LICENSE compat_arch_x86.c \
+ 		urcu-call-rcu-impl.h urcu-defer-impl.h \
+-		rculfhash-internal.h \
+-		$(top_srcdir)/tests/*.sh
++		rculfhash-internal.h
+ 
+ @COMPAT_ARCH_FALSE@COMPAT = $(am__append_1)
+ @COMPAT_ARCH_TRUE@COMPAT = compat_arch_@ARCHTYPE@.c $(am__append_1)
+diff -rau userspace-rcu-0.7.6/configure /home/damien/git_rep/userspace-rcu-0.7.6/configure
+--- userspace-rcu-0.7.6/configure	2013-01-16 18:38:43.193960853 +0100
++++ /home/damien/git_rep/userspace-rcu-0.7.6/configure	2013-01-17 09:32:38.111973874 +0100
+@@ -12939,7 +12939,7 @@
+ 
+ ac_config_links="$ac_config_links urcu/arch.h:$ARCHSRC urcu/uatomic.h:$UATOMICSRC"
+ 
+-ac_config_files="$ac_config_files Makefile doc/Makefile tests/Makefile liburcu.pc liburcu-bp.pc liburcu-cds.pc liburcu-qsbr.pc liburcu-mb.pc liburcu-signal.pc"
++ac_config_files="$ac_config_files Makefile liburcu.pc liburcu-bp.pc liburcu-cds.pc liburcu-qsbr.pc liburcu-mb.pc liburcu-signal.pc"
+ 
+ cat >confcache <<\_ACEOF
+ # This file is a shell script that caches the results of configure
+@@ -13958,8 +13958,6 @@
+     "urcu/arch.h") CONFIG_LINKS="$CONFIG_LINKS urcu/arch.h:$ARCHSRC" ;;
+     "urcu/uatomic.h") CONFIG_LINKS="$CONFIG_LINKS urcu/uatomic.h:$UATOMICSRC" ;;
+     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+-    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+-    "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
+     "liburcu.pc") CONFIG_FILES="$CONFIG_FILES liburcu.pc" ;;
+     "liburcu-bp.pc") CONFIG_FILES="$CONFIG_FILES liburcu-bp.pc" ;;
+     "liburcu-cds.pc") CONFIG_FILES="$CONFIG_FILES liburcu-cds.pc" ;;
+

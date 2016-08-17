@@ -1,0 +1,38 @@
+diff -ur iptables-1.4.11.1.orig/extensions/libipt_DNAT.c iptables-1.4.11.1/extensions/libipt_DNAT.c
+--- iptables-1.4.11.1.orig/extensions/libipt_DNAT.c	2011-06-08 15:26:17.000000000 +0200
++++ iptables-1.4.11.1/extensions/libipt_DNAT.c	2012-03-09 10:41:19.000000000 +0100
+@@ -167,9 +167,12 @@
+ 	switch (cb->entry->id) {
+ 	case O_TO_DEST:
+ 		if (cb->xflags & F_X_TO_DEST) {
+-			if (!kernel_version)
+-				get_kernel_version();
+-			if (kernel_version > LINUX_VERSION(2, 6, 10))
++			// Parrot SA, 20120309: modified from original iptables-1.4.11.1
++			// symbols problems at run time on kernel_version and get_kernel_version(),
++			// and no doubt we will always be above 2.6.10
++			//if (!kernel_version)
++			//	get_kernel_version();
++			//if (kernel_version > LINUX_VERSION(2, 6, 10))
+ 				xtables_error(PARAMETER_PROBLEM,
+ 					   "DNAT: Multiple --to-destination not supported");
+ 		}
+diff -ur iptables-1.4.11.1.orig/extensions/libipt_SNAT.c iptables-1.4.11.1/extensions/libipt_SNAT.c
+--- iptables-1.4.11.1.orig/extensions/libipt_SNAT.c	2011-06-08 15:26:17.000000000 +0200
++++ iptables-1.4.11.1/extensions/libipt_SNAT.c	2012-03-09 10:41:26.000000000 +0100
+@@ -167,9 +167,12 @@
+ 	switch (cb->entry->id) {
+ 	case O_TO_SRC:
+ 		if (cb->xflags & F_X_TO_SRC) {
+-			if (!kernel_version)
+-				get_kernel_version();
+-			if (kernel_version > LINUX_VERSION(2, 6, 10))
++			// Parrot SA, 20120309: modified from original iptables-1.4.11.1
++			// symbols problems at run time on kernel_version and get_kernel_version(),
++			// and no doubt we will always be above 2.6.10
++			//if (!kernel_version)
++			//	get_kernel_version();
++			//if (kernel_version > LINUX_VERSION(2, 6, 10))
+ 				xtables_error(PARAMETER_PROBLEM,
+ 					   "SNAT: Multiple --to-source not supported");
+ 		}

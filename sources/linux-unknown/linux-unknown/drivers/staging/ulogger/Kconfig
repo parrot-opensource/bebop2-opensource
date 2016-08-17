@@ -1,0 +1,26 @@
+config ULOGGER
+	boolean "Ulogger, a fork of Android Logger with a few additional features"
+	default n
+
+if ULOGGER
+config ULOGGER_BUF_SHIFT
+	int "Ulogger static log buffer size (17 => 128KB, 18 => 256KB)"
+	range 16 20
+	default 18
+	help
+	  Select ulogger static log (ulog_main) buffer size as a power of 2.
+	  Examples:
+		     18 => 256 KB
+		     17 => 128 KB
+		     16 => 64 KB
+	             15 => 32 KB
+
+config ULOGGER_USE_MONOTONIC_CLOCK
+	bool "Use raw monotonic clock"
+	default n
+	help
+	  Use raw monotonic clock (CLOCK_MONOTONIC_RAW) for timestamps instead
+	  of kernel wallclock. Note that this clock may differ from the one used
+	  in printk messages.
+
+endif # ULOGGER

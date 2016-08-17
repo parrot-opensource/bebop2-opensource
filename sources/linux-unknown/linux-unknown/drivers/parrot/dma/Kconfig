@@ -1,0 +1,7 @@
+config DMA_PARROT7
+	bool "Parrot7 PL330 DMA controller workarounds"
+    depends on PL330_DMA
+	default ARCH_VEXPRESS_P7FPGA || ARCH_PARROT7
+	help
+      	Enable workarounds for Parrot7 only implementation of PL330 based DMA controller.
+

@@ -1,0 +1,29 @@
+menu "Parrot7 GPU"
+
+config GPU_PARROT7
+	tristate "Parrot7 GPU support"
+	default n
+	---help---
+        This will just enable support for Mali 200 GPU. 
+        It requires Mali-200 of Mali-400 ARM drivers to be enabled.
+
+config UMP_PARROT7
+	tristate "Parrot7 UMP interface"
+	depends on UMP
+	default n
+	---help---
+        Driver to allow memory sharing between APIs by tracking UMP memory tokens.
+	Used with Mali200 GPU. 
+
+comment "ARM UMP memory sharing driver"
+source "drivers/parrot/gpu/ump/Kconfig"
+
+comment "ARM Mali200 driver"
+source "drivers/parrot/gpu/mali200/Kconfig"
+
+comment "ARM Mali400 driver"
+source "drivers/parrot/gpu/mali400/Kconfig"
+
+endmenu
+
+source "drivers/parrot/gpu/ion/Kconfig"

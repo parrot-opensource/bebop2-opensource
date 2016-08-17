@@ -1,0 +1,10 @@
+#
+# IIO imu drivers configuration
+#
+# When adding new entries keep the list in alphabetical order
+
+menu "Inertial measurement units"
+
+source "drivers/parrot/iio/imu/inv_mpu6050/Kconfig"
+
+endmenu

@@ -1,0 +1,4 @@
+config LTTNG_DEBUGFS
+	tristate "LTTng debugfs"
+		help
+			LTTng debugfs

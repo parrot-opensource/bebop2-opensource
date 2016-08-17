@@ -1,0 +1,28 @@
+--- libusb-0.1.12/configure	2006-03-04 03:54:28.000000000 +0100
++++ libusb-0.1.12/configure.new	2009-04-21 09:37:10.000000000 +0200
+@@ -19250,6 +19250,25 @@
+ echo "${ECHO_T}Darwin and/or MacOS 10" >&6
+     OSLIBS="-Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation -Wl,-prebind"
+     ;;
++  arm-*-eabi)
++    cat >>confdefs.h <<\_ACEOF
++#define LINUX_API 1
++_ACEOF
++
++    cat >>confdefs.h <<\_ACEOF
++#define BSD_API 0
++_ACEOF
++
++    cat >>confdefs.h <<\_ACEOF
++#define DARWIN_API 0
++_ACEOF
++
++    LINUX_API=1
++    os_support=linux
++    echo "$as_me:$LINENO: result: Linux" >&5
++echo "${ECHO_T}Linux" >&6
++    OSLIBS=""
++    ;;
+   *)
+     echo "$as_me:$LINENO: result: unknown operating system" >&5
+ echo "${ECHO_T}unknown operating system" >&6

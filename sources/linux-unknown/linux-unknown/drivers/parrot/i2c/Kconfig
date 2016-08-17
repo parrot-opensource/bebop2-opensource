@@ -1,0 +1,49 @@
+config I2CM_PARROT7
+	tristate "Parrot7 I2C master driver"
+	depends on I2C
+	default n
+	default m if (ARCH_VEXPRESS_P7FPGA)
+	help
+	Select Parrot7 I2C master driver.
+
+config I2CM_PARROT7_BUILTIN
+	bool
+	select I2CM_PARROT7
+
+config I2CM_PARROT7_DEBUG
+	bool "Parrot I2C master driver debug"
+	depends on I2CM_PARROT7
+	default n
+	help
+	Add debug informations, only available on legacy driver at the moment
+
+config I2CM_PARROT7_DEBUGFS
+	bool "Parrot I2C master debugfs interface"
+	depends on (I2CM_PARROT7 && DEBUG_FS)
+	default n
+	help
+	Creates a debugfs interface for easily changing the I2C bus speed.
+
+config PLDS_I2CS
+       tristate "I2CS PLDS block layer driver"
+       default n
+       help
+         I2CS PLDS block layer driver for DVD player, can be used with 
+         /dev/plds peripheral
+
+config TI_UB925_LVDS
+	bool "TI DS90UB925Q LVDS Serializer support"
+	depends on I2C
+	default n
+	help
+	Enable support for TI DS90UB925Q LVDS serialized, including I2C and
+	interrupt pass through.
+
+
+config PARROT_SMSC_USB82514_USB_HUB
+	bool "SMSC USB82514 USB HUB"
+	depends on I2C
+	help
+		Automotive Grade USB 2.0 Hi-Speed 4-Port Hub
+
+source "drivers/parrot/i2c/muxes/Kconfig"

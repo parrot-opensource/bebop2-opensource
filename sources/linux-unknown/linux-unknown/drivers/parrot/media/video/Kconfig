@@ -1,0 +1,150 @@
+config AVI_V4L2
+	tristate "AVI V4L2 interface"
+	depends on AVI
+	depends on VIDEO_V4L2
+	default n
+	help
+	  Build the AVI V4L2 interface layer.
+
+config AVI_V4L2_DEV
+       tristate "AVI V4L2 device interface"
+       depends on AVI_V4L2
+       default n
+       help
+         Build the AVI V4L2 device interface
+
+config AVI_V4L2_ISP
+	tristate "AVI V4L2 ISP interface"
+	depends on AVI_V4L2
+	default n
+	help
+	  Build the AVI V4L2 ISP interface
+
+config AVI_V4L2_GST_COLORSPACE_HACK
+	bool "Hack for Gstreamer colorspace bad handling"
+	default y
+	depends on AVI_V4L2
+	help
+	  gstreamer v4l2sink and src do not handle the colorspace
+	  correctly, they set bad values in the pix structure
+	  (actually, they don't set anything, they use whatever they
+	  get in g_fmt). Since we cannot trust the value we try
+	  to guess the colorspace
+
+config CAM_AVI
+	tristate "Parrot Advanced Video Interface camif support"
+	depends on AVI_V4L2
+	select VIDEOBUF2_DMA_CONTIG
+	select CAM_AVI_DUMMY
+	help
+	  Support for the camera interface in the Parrot AVI IP
+
+config AVICAM_TIMINGS_AUTO
+	bool "Automatic timings detection on avicam input"
+	depends on CAM_AVI
+	default n
+	help
+	  This option enables the automatic detection of timings on
+	  avicam input instead of getting format from v4l2-subdev
+
+config AVICAM_INSTANT_STREAMOFF
+	bool "Force avicam streamoff to be instantaneous"
+	depends on CAM_AVI
+	default n
+	help
+	  This option will not wait for remaining frames during streamoff
+	  and instead will force the AVI to shutdown instantaneously.
+	  It is useful for low-framerate modes.
+
+config AVICAM_USE_ISP
+	bool "Enable ISP V4L2 controls in avicam interface"
+	depends on CAM_AVI && AVI_V4L2_ISP
+	default n
+	help
+	  This option add many controls to V4L2 interface in order to control
+	  internal ISP chain of Parrot7.
+
+config CAM_AVI_DUMMY
+	tristate "Parrot AVI dummy cam driver"
+	depends on AVI && CAM_AVI
+	help
+	  Support for the dummy avi cam driver
+
+config AVI_CAPTURE_TEST
+	tristate "Parrot Advanced Video Interface capture test driver"
+	depends on CAM_AVI
+	default n
+	help
+	  Support for capture
+
+config AVI_MULTICAPTURE
+	tristate "Parrot Advanced Video Interface Multiple capture"
+	depends on CAM_AVI
+	default n
+	help
+	  Support for multiple captures
+
+config VIDOUT_AVI
+	tristate "Parrot Advanced Video Interface video output overlays support"
+	depends on AVI_V4L2
+	select VIDEOBUF2_DMA_CONTIG
+	default n
+	help
+	  Enable support for AVI video output overlays.
+
+	  You can turn debug traces on/off with module option debug=0
+	  or debug=1.
+	  You can turn off dual channel usage for semi-planar with
+	  monochannel=1 (test purpose)
+
+config R2R_AVI
+	tristate "Parrot Advanced Video Interface RAM to RAM support"
+	depends on AVI
+	help
+	  Enable support for AVI RAM to RAM.
+
+config M2M_AVI
+	tristate "V4L2 MEM2MEM interface"
+	depends on AVI_V4L2
+	select VIDEOBUF2_DMA_CONTIG
+	select V4L2_MEM2MEM_DEV
+	help
+	  V4L2 MEM2MEM interface
+
+config M2M_AVI_USE_ISP
+	bool "Enable ISP V4L2 controls in MEM2MEM interface"
+	depends on M2M_AVI && AVI_V4L2_ISP
+	default n
+	help
+	  This option add many controls to V4L2 interface in order to control
+	  internal ISP chain of Parrot7.
+
+config R2R_AVI_TEST_MULTI
+	tristate "Test module for AVI RAM to RAM with multiple clients support"
+	depends on R2R_AVI && AVI_DEBUG && DEBUG_FS
+	default n
+	help
+	  Test module for AVI RAM to RAM with multiple clients support.
+
+config R2R_AVI_TEST_MULTI_NUMBER
+	int "Number of clients"
+	depends on R2R_AVI_TEST_MULTI
+	default 3
+	help
+	  Number of clients: minimum 1, maximum 6, default 3
+
+config R2R_AVI_TEST_MULTI_RESMEM
+	int "Size of reserved memory per client (MegaBytes)"
+	depends on R2R_AVI_TEST_MULTI
+	default 64
+	help
+	  Size of reserved memory per client in MegaBytes, default 64 MB.
+
+config CAM_LEPTON
+	tristate "Lepton camera support"
+	depends on SPI_MASTER && I2C
+	select VIDEOBUF2_DMA_CONTIG
+	default n
+	help
+	  This enables the Lepton camera driver
+

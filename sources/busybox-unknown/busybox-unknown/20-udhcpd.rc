@@ -1,0 +1,9 @@
+on post-fs-data
+	mkdir /var/lib/misc
+	copy /etc/udhcpd.leases /var/lib/misc/udhcpd.leases
+
+service udhcpd /usr/bin/ulogwrapper /usr/sbin/udhcpd -f -S
+	class main
+	user root
+	group inet
+	disabled

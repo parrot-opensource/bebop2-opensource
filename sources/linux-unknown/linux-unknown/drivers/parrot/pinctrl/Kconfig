@@ -1,0 +1,7 @@
+config PINCTRL_PARROT7
+	bool
+	depends on ARCH_PARROT7
+	select PINCTRL
+	select PINMUX
+	select PINCONF
+	default y

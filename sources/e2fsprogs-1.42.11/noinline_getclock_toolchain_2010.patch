@@ -1,0 +1,12 @@
+diff -ur e2fsprogs-1.41.14-orig/lib/uuid/gen_uuid.c e2fsprogs-1.41.14/lib/uuid/gen_uuid.c
+--- e2fsprogs-1.41.14-orig/lib/uuid/gen_uuid.c	2009-08-13 03:39:57.000000000 +0200
++++ e2fsprogs-1.41.14/lib/uuid/gen_uuid.c	2013-01-18 14:31:47.707007029 +0100
+@@ -302,6 +302,7 @@
+ /* Assume that the gettimeofday() has microsecond granularity */
+ #define MAX_ADJUSTMENT 10
+ 
++__attribute__ ((noinline))
+ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
+ 		     uint16_t *ret_clock_seq, int *num)
+ {
+Seulement dans e2fsprogs-1.41.14/lib/uuid: .gen_uuid.c.swp

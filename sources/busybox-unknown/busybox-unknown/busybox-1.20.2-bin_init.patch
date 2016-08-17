@@ -1,0 +1,107 @@
+diff -Naur busybox-1.20.2/examples/inittab busybox-1.20.2-bin_init/examples/inittab
+--- busybox-1.20.2/examples/inittab	2012-06-26 15:35:45.000000000 +0200
++++ busybox-1.20.2-bin_init/examples/inittab	2013-06-27 13:23:31.512026808 +0200
+@@ -42,7 +42,7 @@
+ #         ::ctrlaltdel:/sbin/reboot
+ #         ::shutdown:/sbin/swapoff -a
+ #         ::shutdown:/bin/umount -a -r
+-#         ::restart:/sbin/init
++#         ::restart:/bin/init
+ #
+ # if it detects that /dev/console is _not_ a serial console, it will
+ # also run:
+@@ -81,7 +81,7 @@
+ #::respawn:/sbin/getty 57600 ttyS2
+ 
+ # Stuff to do when restarting the init process
+-::restart:/sbin/init
++::restart:/bin/init
+ 
+ # Stuff to do before rebooting
+ ::ctrlaltdel:/sbin/reboot
+diff -Naur busybox-1.20.2/init/bootchartd.c busybox-1.20.2-bin_init/init/bootchartd.c
+--- busybox-1.20.2/init/bootchartd.c	2012-06-26 15:35:45.000000000 +0200
++++ busybox-1.20.2-bin_init/init/bootchartd.c	2013-06-27 13:23:49.608026470 +0200
+@@ -332,7 +332,7 @@
+ //usage:     "\nstart: start background logging; with PROG, run PROG, then kill logging with USR1"
+ //usage:     "\nstop: send USR1 to all bootchartd processes"
+ //usage:     "\ninit: start background logging; stop when getty/xdm is seen (for init scripts)"
+-//usage:     "\nUnder PID 1: as init, then exec $bootchart_init, /init, /sbin/init"
++//usage:     "\nUnder PID 1: as init, then exec $bootchart_init, /init, /bin/init"
+ 
+ int bootchartd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+ int bootchartd_main(int argc UNUSED_PARAM, char **argv)
+@@ -443,8 +443,8 @@
+ 		if (bootchart_init)
+ 			execl(bootchart_init, bootchart_init, NULL);
+ 		execl("/init", "init", NULL);
+-		execl("/sbin/init", "init", NULL);
+-		bb_perror_msg_and_die("can't execute '%s'", "/sbin/init");
++		execl("/bin/init", "init", NULL);
++		bb_perror_msg_and_die("can't execute '%s'", "/bin/init");
+ 	}
+ 
+ 	if (cmd == CMD_START && argv[2]) { /* "start PROG ARGS" */
+diff -Naur busybox-1.20.2/init/init.c busybox-1.20.2-bin_init/init/init.c
+--- busybox-1.20.2/init/init.c	2012-06-26 15:35:45.000000000 +0200
++++ busybox-1.20.2-bin_init/init/init.c	2013-06-27 13:24:40.884025513 +0200
+@@ -9,7 +9,7 @@
+  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
+  */
+ 
+-//applet:IF_INIT(APPLET(init, BB_DIR_SBIN, BB_SUID_DROP))
++//applet:IF_INIT(APPLET(init, BB_DIR_BIN, BB_SUID_DROP))
+ //applet:IF_FEATURE_INITRD(APPLET_ODDNAME(linuxrc, init, BB_DIR_ROOT, BB_SUID_DROP, linuxrc))
+ 
+ //kbuild:lib-$(CONFIG_INIT) += init.o
+@@ -1233,7 +1233,7 @@
+ //usage:	"	::ctrlaltdel:/sbin/reboot\n"
+ //usage:	"	::shutdown:/sbin/swapoff -a\n"
+ //usage:	"	::shutdown:/bin/umount -a -r\n"
+-//usage:	"	::restart:/sbin/init\n"
++//usage:	"	::restart:/bin/init\n"
+ //usage:	"\n"
+ //usage:	"if it detects that /dev/console is _not_ a serial console, it will also run:\n"
+ //usage:	"\n"
+@@ -1280,7 +1280,7 @@
+ //usage:	"			the specified task completes. 'once' actions are asynchronous,\n"
+ //usage:	"			therefore, init does not wait for them to complete. 'restart' is\n"
+ //usage:	"			the action taken to restart the init process. By default this should\n"
+-//usage:	"			simply run /sbin/init, but can be a script which runs pivot_root or it\n"
++//usage:	"			simply run /bin/init, but can be a script which runs pivot_root or it\n"
+ //usage:	"			can do all sorts of other interesting things. The 'ctrlaltdel' init\n"
+ //usage:	"			actions are run when the system detects that someone on the system\n"
+ //usage:	"			console has pressed the CTRL-ALT-DEL key combination. Typically one\n"
+@@ -1338,7 +1338,7 @@
+ //usage:	"	#::respawn:/sbin/getty 57600 ttyS2\n"
+ //usage:	"	\n"
+ //usage:	"	# Stuff to do when restarting the init process\n"
+-//usage:	"	::restart:/sbin/init\n"
++//usage:	"	::restart:/bin/init\n"
+ //usage:	"	\n"
+ //usage:	"	# Stuff to do before rebooting\n"
+ //usage:	"	::ctrlaltdel:/sbin/reboot\n"
+diff -Naur busybox-1.20.2/selinux/sestatus.c busybox-1.20.2-bin_init/selinux/sestatus.c
+--- busybox-1.20.2/selinux/sestatus.c	2012-06-26 15:35:45.000000000 +0200
++++ busybox-1.20.2-bin_init/selinux/sestatus.c	2013-06-27 13:24:12.192026049 +0200
+@@ -98,7 +98,7 @@
+ 		if (ENABLE_FEATURE_CLEAN_UP)
+ 			freecon(con);
+ 	}
+-	/* /sbin/init context */
++	/* /bin/init context */
+ 	if (getpidcon(1, &con) == 0) {
+ 		printf(COL_FMT "%s\n", "Init context:", con);
+ 		if (ENABLE_FEATURE_CLEAN_UP)
+diff -Naur busybox-1.20.2/testsuite/parse.tests busybox-1.20.2-bin_init/testsuite/parse.tests
+--- busybox-1.20.2/testsuite/parse.tests	2012-06-26 15:35:45.000000000 +0200
++++ busybox-1.20.2-bin_init/testsuite/parse.tests	2013-06-27 13:23:21.284026999 +0200
+@@ -72,7 +72,7 @@
+ [tty4][][askfirst][-/bin/sh]
+ [tty4][][respawn][/sbin/getty 38400 tty5]
+ [tty5][][respawn][/sbin/getty 38400 tty6]
+-[][][restart][/sbin/init]
++[][][restart][/bin/init]
+ [][][ctrlaltdel][/sbin/reboot]
+ [][][shutdown][/bin/umount -a -r]
+ [][][shutdown][/sbin/swapoff -a]

@@ -1,0 +1,119 @@
+<!-- ##### SECTION Title ##### -->
+udev
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### SECTION Image ##### -->
+
+
+<!-- ##### STRUCT udev ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION udev_ref ##### -->
+<para>
+
+</para>
+
+@udev: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_unref ##### -->
+<para>
+
+</para>
+
+@udev: 
+
+
+<!-- ##### FUNCTION udev_new ##### -->
+<para>
+
+</para>
+
+@void: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_set_log_fn ##### -->
+<para>
+
+</para>
+
+@udev: 
+@struct udev *udev, int priority, const char *file, int line, const char *fn, const char *format, va_list args: 
+
+
+<!-- ##### FUNCTION udev_get_log_priority ##### -->
+<para>
+
+</para>
+
+@udev: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_set_log_priority ##### -->
+<para>
+
+</para>
+
+@udev: 
+@priority: 
+
+
+<!-- ##### FUNCTION udev_get_sys_path ##### -->
+<para>
+
+</para>
+
+@udev: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_get_dev_path ##### -->
+<para>
+
+</para>
+
+@udev: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_get_userdata ##### -->
+<para>
+
+</para>
+
+@udev: 
+@Returns: 
+
+
+<!-- ##### FUNCTION udev_set_userdata ##### -->
+<para>
+
+</para>
+
+@udev: 
+@userdata: 
+
+

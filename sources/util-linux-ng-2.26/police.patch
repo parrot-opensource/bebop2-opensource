@@ -1,0 +1,46 @@
+# Instead on linking with libcommon.la that contains GPL code, only link with
+# needed objects with LGPL or PUBLIC DOMAIN code.
+# This will prevent police to report GPL contamination in libblkid.so
+diff -ru util-linux-2.24.2-orig/libblkid/src/Makemodule.am util-linux-2.24.2/libblkid/src/Makemodule.am
+--- util-linux-2.24.2-orig/libblkid/src/Makemodule.am	2014-04-24 09:37:04.354704196 +0200
++++ util-linux-2.24.2/libblkid/src/Makemodule.am	2015-01-13 10:52:34.251786048 +0100
+@@ -108,7 +108,7 @@
+ endif
+ 
+ nodist_libblkid_la_SOURCES = libblkid/src/blkid.h
+-libblkid_la_LIBADD = libcommon.la
++libblkid_la_LIBADD =
+ 
+ libblkid_la_DEPENDENCIES = \
+ 	libcommon.la \
+diff -ru util-linux-2.24.2-orig/Makefile.in util-linux-2.24.2/Makefile.in
+--- util-linux-2.24.2-orig/Makefile.in	2014-04-24 11:25:31.182271348 +0200
++++ util-linux-2.24.2/Makefile.in	2015-01-13 11:01:00.077850250 +0100
+@@ -967,7 +967,17 @@
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/superblocks/libblkid_la-xfs.lo \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/superblocks/libblkid_la-zfs.lo \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/topology/libblkid_la-topology.lo \
+-@BUILD_LIBBLKID_TRUE@	$(am__objects_2)
++@BUILD_LIBBLKID_TRUE@	$(am__objects_2) \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-at.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-blkdev.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-canonicalize.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-crc32.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-crc64.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-env.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-linux_version.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-md5.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-fileutils.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libcommon_la-sysfs.lo
+ nodist_libblkid_la_OBJECTS =
+ libblkid_la_OBJECTS = $(am_libblkid_la_OBJECTS) \
+ 	$(nodist_libblkid_la_OBJECTS)
+@@ -3548,7 +3557,7 @@
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/topology/topology.h \
+ @BUILD_LIBBLKID_TRUE@	$(am__append_15)
+ @BUILD_LIBBLKID_TRUE@nodist_libblkid_la_SOURCES = libblkid/src/blkid.h
+-@BUILD_LIBBLKID_TRUE@libblkid_la_LIBADD = libcommon.la \
++@BUILD_LIBBLKID_TRUE@libblkid_la_LIBADD = \
+ @BUILD_LIBBLKID_TRUE@	$(am__append_16)
+ @BUILD_LIBBLKID_TRUE@libblkid_la_DEPENDENCIES = libcommon.la \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/blkid.sym \

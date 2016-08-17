@@ -1,0 +1,29 @@
+config PWM_P7MU
+	tristate "Parrot P7MU PWM"
+	depends on PWM && MFD_P7MU
+	select HAVE_PWM
+	default m
+	help
+	  Builds the Parrot7 power Management Unit PWM blocks driver.
+
+config PWM_P7MU_DEBUG
+	bool "Debug P7MU PWM"
+	depends on PWM_P7MU
+	default no
+	help
+	  Build Parrot7 power Management Unit PWM blocks driver with debug enabled
+
+config PWM_PARROT7
+	tristate "Parrot7 PWM driver (Pulse Width Modulation)"
+	depends on PWM
+	select HAVE_PWM
+	default m
+	help
+	  Enables support for Parrot7 PWM driver
+
+config PWM_PARROT7_DEBUG
+	bool "Debug PARROT7 PWM"
+	depends on PWM_PARROT7
+	default no
+	help
+	  Build Parrot7 PWM block driver with debug enabled

@@ -1,0 +1,9 @@
+config SND_SOC_PARROT_FC7100
+	tristate "Support for the Parrot FC7100 board"
+	depends on I2C && MACH_PARROT_FC7100_FAMILY
+	select SND_SOC_WAU8822
+	select SND_SOC_WM8594
+	select SND_SOC_ADAU1977
+	help
+	  Say Y if you want to add support for the Parrot FC7100
+	  board.

@@ -1,0 +1,20 @@
+--- avahi-0.6.29/avahi-daemon/Makefile.in	2011-03-09 00:52:47.000000000 +0100
++++ avahi-0.6.29/avahi-daemon/Makefile.in	2015-03-16 11:15:18.099226503 +0100
+@@ -256,7 +256,6 @@
+ 	org.freedesktop.Avahi.HostNameResolver.xml \
+ 	org.freedesktop.Avahi.RecordBrowser.xml
+ am__dist_pkgdata_DATA_DIST = avahi-service.dtd
+-am__dist_service_DATA_DIST = ssh.service sftp-ssh.service
+ DATA = $(dist_dbusservice_DATA) $(dist_dbussystemservices_DATA) \
+ 	$(dist_introspection_DATA) $(dist_pkgdata_DATA) \
+ 	$(dist_service_DATA) $(pkgsysconf_DATA) \
+@@ -554,9 +553,6 @@
+ @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi-daemon.conf \
+ @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	hosts
+ 
+-@HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@dist_service_DATA = \
+-@HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	ssh.service \
+-@HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	sftp-ssh.service
+ 
+ @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@dist_pkgdata_DATA = \
+ @HAVE_LIBDAEMON_TRUE@@HAVE_XML_TRUE@	avahi-service.dtd

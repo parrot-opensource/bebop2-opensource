@@ -1,0 +1,5 @@
+usr/include/mediactl/media.h
+usr/lib/libmediactl.a
+usr/lib/libmediactl.so
+usr/lib/libmediactl.la
+usr/lib/pkgconfig/libmediactl.pc

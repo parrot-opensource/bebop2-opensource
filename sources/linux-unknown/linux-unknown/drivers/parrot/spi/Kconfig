@@ -1,0 +1,51 @@
+config SPI_PARROT7
+	tristate "Parrot7 SPI kernel driver"
+	depends on SPI
+	default n
+	default m if (ARCH_PARROT7 || ARCH_VEXPRESS_P7FPGA)
+	help
+	  Select Parrot7 SPI hardware driver.
+
+config SPI_MASTER_PARROT7
+	tristate "Parrot7 SPI master driver"
+	depends on SPI_MASTER && SPI_PARROT7
+	default m
+	help
+	  Select Parrot7 SPI master driver.
+
+config SPI_MASTER_PARROT7_TEST
+	tristate "Parrot7 SPI master test"
+	depends on SPI_MASTER_PARROT7
+	default n
+	help
+	  Test module, sends or receives some data on a master spi.
+
+config SPI_MASTER_PARROT7_LOOPBACK_TEST
+	tristate "Enable loopback test module"
+	depends on SPI_MASTER_PARROT7
+	default n
+	help
+	  Test module to test SPI slave using the loopback.
+
+config SPI_MASTER_SPARTAN6
+	tristate "Parrot7 SPI Spartan6 FPGA"
+	depends on SPI_MASTER_PARROT7
+	select SPI_SPIDEV
+	default n
+	help
+	 Enables spidev's interface to Spartan6 FPGA.
+
+config SPI_SLAVE_PARROT7
+	tristate "Parrot7 SPI slave driver"
+	depends on SPI_MASTER && SPI_PARROT7
+	default m
+	help
+	Select Parrot7 SPI slave driver. Requires the master driver to be 
+	selected to handle common registers.
+
+config SPI_SLAVE_PARROT7_LOOPBACK_TEST
+	tristate "Enable loopback test module"
+	depends on SPI_SLAVE_PARROT7
+	default n
+	help
+	  Test module to test SPI slave using the loopback.

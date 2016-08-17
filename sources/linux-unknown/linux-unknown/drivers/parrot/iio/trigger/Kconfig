@@ -1,0 +1,19 @@
+#
+# Industrial I/O standalone triggers
+#
+# When adding new entries keep the list in alphabetical order
+
+menu "Triggers - standalone"
+
+config PARROT_IIO_HRTIMER_TRIGGER
+	tristate "Generic hrtimer trigger"
+	depends on SYSFS
+	select HIGH_RES_TIMERS
+	help
+	  Provides support for using a high resolution timer as an IIO
+	  trigger.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called iio-trig-hrtimer.
+
+endmenu

@@ -1,0 +1,7 @@
+config I2C_MUX_PARROT7
+       tristate "Parrot I2C master multiplexer"
+       depends on I2C_MUX && I2CM_PARROT7
+       help
+         This driver will create I2C adapters to access multiple buses from the
+         same master trough multiplexed pin configurations (e.g. I2C_2_CLKa,
+         I2C_2_CLKb etc...).
