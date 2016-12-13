@@ -1,5 +1,5 @@
 Open Source Software used in **Parrot Bebop2**.  
-Firmware version: **3.9.0**  
+Firmware version: **4.0.0**  
 Unless stated otherwise, later versions of the firmware
 use these same software modules.
 
@@ -22,7 +22,7 @@ You can download Open Source Archives from following table:
 |GPL2|[dnsmasq](sources/dnsmasq-2.66)
 |GPL2|[e2fsprogs](sources/e2fsprogs-1.42.11)
 |GPL2|[iptables](sources/iptables-1.4.11.1)
-|GPL2|[linux](sources/linux-unknown)
+|GPL2|[linux](sources/linux-3.4.11)
 |GPL2|[lttng-modules](sources/lttng-modules-unknown)
 |GPL2|[lttng-tools](sources/lttng-tools-2.1.1)
 |GPL2|[udevadm](sources/udevadm-164)

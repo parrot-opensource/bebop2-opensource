@@ -29,7 +29,6 @@ LOCAL_AUTOTOOLS_CONFIGURE_ARGS := \
 	--with-distro=none \
 	--with-avahi-user=avahi \
 	--with-avahi-group=avahi \
-	--with-systemdsystemunitdir=$(TARGET_OUT_STAGING)/lib/systemd/system/ \
 	--enable-libdaemon \
 	--enable-shared=yes \
 	--enable-static=no \

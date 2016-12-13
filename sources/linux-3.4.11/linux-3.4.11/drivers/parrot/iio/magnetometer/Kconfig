@@ -1,0 +1,33 @@
+#
+# Magnetometer sensors
+#
+# When adding new entries keep the list in alphabetical order
+
+menu "Magnetometers"
+
+config PARROT_IIO_AK8975
+	tristate "Asahi Kasei AK8975 3-Axis Magnetometer"
+	depends on I2C && SYSFS && GPIOLIB && !AK8975
+	select IIO_BUFFER
+	select IIO_TRIGGERED_BUFFER
+	help
+	  Say yes here to build support for Asahi Kasei AK8975 3-Axis
+	  Magnetometer. This driver can also support AK8963, if i2c
+	  device name is identified as ak8963.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called ak8975.
+
+
+config PARROT_IIO_AK8975_TIMESTAMPS
+	bool "AK8975: allow display of timestamps"
+	depends on PARROT_IIO_AK8975
+	default n
+
+config PARROT_AK8963_NOTRIGGER
+	bool "AK8975: synchronous i2c acces with mykonos3 iio device"
+	depends on PARROT_IIO_AK8975
+	select PARROT_IIO_MYKONOS3
+	default n
+
+endmenu

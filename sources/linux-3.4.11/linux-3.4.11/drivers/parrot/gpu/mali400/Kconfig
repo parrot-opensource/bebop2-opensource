@@ -1,0 +1,111 @@
+config MALI400
+	tristate "Mali-300/400/450 support"
+	depends on ARM
+	depends on GPU_PARROT7
+	select DMA_SHARED_BUFFER
+	select MALI400_SUPPORT
+	---help---
+	  This enables support for the ARM Mali-300, Mali-400, and Mali-450
+	  GPUs.
+
+	  To compile this driver as a module, choose M here: the module will be
+	  called mali.
+
+config MALI400_LEGACY
+	bool "Legacy driver for mali400"
+	depends on MALI400
+	---help---
+	  This enables the use of an older version of the mali driver
+	  to be compatible with android 2.3
+
+config MALI400_SUPPORT
+	bool "Support for mali 400"
+	depends on MALI400
+
+config MALI450
+	bool "Enable Mali-450 support"
+	depends on MALI400
+	---help---
+	  This enables support for Mali-450 specific features.
+
+config MALI400_DEBUG
+	bool "Enable debug in Mali driver"
+	depends on MALI400
+	---help---
+	  This enabled extra debug checks and messages in the Mali driver.
+
+config MALI400_PROFILING
+	bool "Enable Mali profiling"
+	depends on MALI400
+	select TRACEPOINTS
+	default y
+	---help---
+	  This enables gator profiling of Mali GPU events.
+
+config MALI400_INTERNAL_PROFILING
+	bool "Enable internal Mali profiling API"
+	depends on MALI400_PROFILING
+	default n
+	---help---
+	  This enables the internal legacy Mali profiling API.
+
+config MALI400_UMP
+	bool "Enable UMP support"
+	depends on MALI400
+	---help---
+	  This enables support for the UMP memory sharing API in the Mali driver.
+
+config MALI400_POWER_PERFORMANCE_POLICY
+	bool "Enable Mali power performance policy"
+	depends on ARM
+	default n
+	---help---
+	  This enables support for dynamic performance scaling of Mali with the goal of lowering power consumption.
+
+config MALI400_RT_WORKER
+	bool "Enable real-time worker in Mali driver"
+	depends on MALI400
+	---help---
+	  This allow to configure real-time priority for Mali worker thread and avoid to be locked by others real-time threads.
+
+config MALI400_RT_WORKER_PRIORITY
+	int "Real-time priority for Mali 400 worker"
+	depends on MALI400_RT_WORKER
+	default 1
+	range 1 99
+	---help---
+	  This parameter defines the real-time property for the worker used for
+	  async task in the Mali driver.
+	  This priority will be used as a SCHED_FIFO priority, 1 the lowest priority
+	  and 99 as the highest prority.
+
+config MALI_DMA_BUF_MAP_ON_ATTACH
+	bool "Map dma-buf attachments on attach"
+	depends on MALI400 && DMA_SHARED_BUFFER
+	default y
+	---help---
+	  This makes the Mali driver map dma-buf attachments after doing
+	  attach. If this is not set the dma-buf attachments will be mapped for
+	  every time the GPU need to access the buffer.
+
+	  Mapping for each access can cause lower performance.
+
+config MALI_SHARED_INTERRUPTS
+	bool "Support for shared interrupts"
+	depends on MALI400
+	default n
+	---help---
+	  Adds functionality required to properly support shared interrupts.  Without this support,
+	  the device driver will fail during insmod if it detects shared interrupts.  This also
+	  works when the GPU is not using shared interrupts, but might have a slight performance
+	  impact.
+
+config MALI_PMU_PARALLEL_POWER_UP
+	bool "Power up Mali PMU domains in parallel"
+	depends on MALI400
+	default n
+	---help---
+	  This makes the Mali driver power up all PMU power domains in parallel, instead of
+	  powering up domains one by one, with a slight delay in between. Powering on all power
+	  domains at the same time may cause peak currents higher than what some systems can handle.
+	  These systems must not enable this option.

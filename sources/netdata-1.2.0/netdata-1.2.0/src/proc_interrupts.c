@@ -137,20 +137,14 @@ int do_proc_interrupts(int update_every, unsigned long long dt) {
 	// --------------------------------------------------------------------
 
 	st = rrdset_find_bytype("system", "interrupts");
-	if(!st) {
-		st = rrdset_create("system", "interrupts", NULL, "interrupts", NULL, "System interrupts", "interrupts/s", 1000, update_every, RRDSET_TYPE_STACKED);
-
-		for(l = 0; l < lines ;l++) {
-			struct interrupt *irr = irrindex(irrs, l, cpus);
-			if(!irr->used) continue;
-			rrddim_add(st, irr->id, irr->name, 1, 1, RRDDIM_INCREMENTAL);
-		}
-	}
+	if(!st) st = rrdset_create("system", "interrupts", NULL, "interrupts", NULL, "System interrupts", "interrupts/s", 1000, update_every, RRDSET_TYPE_STACKED);
 	else rrdset_next(st);
 
 	for(l = 0; l < lines ;l++) {
 		struct interrupt *irr = irrindex(irrs, l, cpus);
 		if(!irr->used) continue;
+		if(!rrddim_find(st, irr->id))
+			rrddim_add(st, irr->id, irr->name, 1, 1, RRDDIM_INCREMENTAL);
 		rrddim_set(st, irr->id, irr->total);
 	}
 	rrdset_done(st);
@@ -168,18 +162,14 @@ int do_proc_interrupts(int update_every, unsigned long long dt) {
 				snprintfz(name, 256, "cpu%d_interrupts", c);
 				snprintfz(title, 256, "CPU%d Interrupts", c);
 				st = rrdset_create("cpu", id, name, "interrupts", "cpu.interrupts", title, "interrupts/s", 2000 + c, update_every, RRDSET_TYPE_STACKED);
-
-				for(l = 0; l < lines ;l++) {
-					struct interrupt *irr = irrindex(irrs, l, cpus);
-					if(!irr->used) continue;
-					rrddim_add(st, irr->id, irr->name, 1, 1, RRDDIM_INCREMENTAL);
-				}
 			}
 			else rrdset_next(st);
 
 			for(l = 0; l < lines ;l++) {
 				struct interrupt *irr = irrindex(irrs, l, cpus);
 				if(!irr->used) continue;
+				if(!rrddim_find(st, irr->id))
+					rrddim_add(st, irr->id, irr->name, 1, 1, RRDDIM_INCREMENTAL);
 				rrddim_set(st, irr->id, irr->value[c]);
 			}
 			rrdset_done(st);
