@@ -1,5 +1,5 @@
 Open Source Software used in **Parrot Bebop2**.  
-Firmware version: **4.0.3**  
+Firmware version: **4.0.4**  
 Unless stated otherwise, later versions of the firmware
 use these same software modules.
 
@@ -30,7 +30,6 @@ You can download Open Source Archives from following table:
 |GPL2|[udevd_init](sources/udevd_init-164)
 |GPL2|[util-linux-ng](sources/util-linux-ng-2.26)
 |GPL2|[wireless_tools](sources/wireless_tools-29)
-|GPL3|[netdata](sources/netdata-1.2.0)
 |LGPL|[libc-arm-2012-03-fix](sources/libc-arm-2012-03-fix-unknown)
 |LGPL|[libconfig](sources/libconfig-1.5)
 |LGPL|[lttng-ust](sources/lttng-ust-2.1.1)

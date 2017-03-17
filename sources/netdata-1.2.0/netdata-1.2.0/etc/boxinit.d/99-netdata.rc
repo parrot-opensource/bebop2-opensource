@@ -1,8 +1,0 @@
-# .rc file for running netdata as a service -*- mode:conf -*-
-
-on post-fs-data
-	mkdir /var/cache/netdata/
-
-service netdata /usr/bin/ulogwrapper /usr/sbin/netdata -nd
-	class main
-	user root
