@@ -1,5 +1,5 @@
 Open Source Software used in **Parrot Bebop2**.  
-Firmware version: **4.0.4**  
+Firmware version: **4.0.5**  
 Unless stated otherwise, later versions of the firmware
 use these same software modules.
 
