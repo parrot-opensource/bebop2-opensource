@@ -15,6 +15,13 @@ config UMP_PARROT7
         Driver to allow memory sharing between APIs by tracking UMP memory tokens.
 	Used with Mali200 GPU. 
 
+config UMP_PARROT7_AUTOLOAD
+	bool "Enable Parrot7 UMP interface mapping autoload"
+	depends on UMP_PARROT7
+	default n
+	---help---
+	      Allow the Parrot7 UMP interface to automatically create a mapping when trying to access a non-existent one.
+
 comment "ARM UMP memory sharing driver"
 source "drivers/parrot/gpu/ump/Kconfig"
 

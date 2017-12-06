@@ -35,8 +35,8 @@ MODULE_LICENSE("GPL");
 #define SENSOR_WIDTH   7728
 #define SENSOR_HEIGHT  5368
 
-#define GALIELO2_FPS           2 /* shift the FPS to reach the wanted value */
-#define GALIELO2_BINING_MIN_Y 42 /* Value to adjust with analyzer */
+#define GALIELO2_BINING_MIN_Y    38
+#define GALIELO2_BINING_MIN_X   512
 
 /* Clocks */
 #define GALILEO2_MIN_REFCLK          6000000UL
@@ -122,8 +122,9 @@ struct galileo2 {
 	struct v4l2_ctrl              *nd;
 	struct v4l2_ctrl              *ms;
 	struct v4l2_ctrl              *gs;
-	struct v4l2_ctrl              *strobe_source;
 	struct v4l2_ctrl              *strobe_width;
+	struct v4l2_ctrl              *strobe_start;
+	struct v4l2_ctrl              *strobe_enable;
 	struct v4l2_ctrl              *temp_sensor_output;
 };
 
@@ -381,13 +382,19 @@ static int galileo2_calc_vt(struct v4l2_subdev *sd)
 	galileo2->y_binning = c->height / fmt->height;
 	galileo2->y_binning = min(galileo2->y_binning, 8U);
 
+	if (galileo2->x_binning == 0)
+		galileo2->x_binning = 1;
+
+	if (galileo2->y_binning == 0)
+		galileo2->y_binning = 1;
+
 	/* Video Timing is working on binned pixels
-	 *   min_vt_line_blanking_pck is 512
-	 *   min_vt_frame_blanking_line is 38
+	 *   min_vt_line_blanking_pck is GALIELO2_BINING_MIN_X
+	 *   min_vt_frame_blanking_line is GALIELO2_BINING_MIN_Y
 	 */
-	vt->width  = (c->width  / galileo2->x_binning) + 512;
+	vt->width  = (c->width  / galileo2->x_binning) + GALIELO2_BINING_MIN_X;
 	vt->height = div_u64((u64) galileo2->vtclk * fi->numerator,
-			     vt->width * (fi->denominator + GALIELO2_FPS));
+			     vt->width * fi->denominator);
 
 	min_vt_height = c->height / galileo2->y_binning + GALIELO2_BINING_MIN_Y;
 
@@ -441,6 +448,12 @@ static int galileo2_set_selection(struct v4l2_subdev *sd,
 	galileo2->y_binning = c->height / fmt->height;
 	galileo2->y_binning = min(galileo2->y_binning, 8U);
 
+	if (galileo2->x_binning == 0)
+		galileo2->x_binning = 1;
+
+	if (galileo2->y_binning == 0)
+		galileo2->y_binning = 1;
+
 	galileo2_write16(i2c, GROUPED_PARAMETER_HOLD, 0x1);
 
 	galileo2_write16(i2c, X_ADDR_START, c->left);
@@ -453,8 +466,16 @@ static int galileo2_set_selection(struct v4l2_subdev *sd,
 	galileo2_write16(i2c, DIGITAL_CROP_IMAGE_HEIGHT,
 			      c->height / galileo2->y_binning);
 
-	galileo2_write8(i2c, BINNING_TYPE, galileo2->x_binning << 4 |
-					   galileo2->y_binning);
+	/* Binning */
+	if (galileo2->x_binning == 1 && galileo2->y_binning == 1) {
+		galileo2_write8(i2c, BINNING_MODE, 0x0);
+		galileo2_write8(i2c, BINNING_TYPE, 0x0);
+	} else {
+		galileo2_write8(i2c, BINNING_MODE, 0x1);
+		galileo2_write8(i2c, BINNING_TYPE,
+				galileo2->x_binning << 4 |
+				galileo2->y_binning);
+	}
 
 	galileo2_write16(i2c, GROUPED_PARAMETER_HOLD, 0x0);
 
@@ -565,19 +586,19 @@ static int galileo2_pll_config(struct v4l2_subdev *sd)
 			break;
 	}
 
-	galileo2->pll1.pll_multiplier = index ;
+	galileo2->pll1.pll_multiplier = index;
 
 	/*
-	 * VT pixel clock is around 82 MHz (4.1 GHz / 5 / 10)
+	 * VT pixel clock is around 102 MHz (4.1 GHz / 4 / 10)
 	 */
-	galileo2->pll1.vt_sys_clk_div = 5;
+	galileo2->pll1.vt_sys_clk_div = 4;
 	galileo2->pll1.vt_pix_clk_div = 10;
 
 	/*
 	 * OP clock is adapted according to number of used lanes (2 or 4)
 	 */
-	galileo2->pll1.op_sys_clk_div =  (pdata->lanes == 2) ? 1 : 4;
-	galileo2->pll1.op_pix_clk_div = 8;
+	galileo2->pll1.op_sys_clk_div =  (pdata->lanes == 2) ? 2 : 4;
+	galileo2->pll1.op_pix_clk_div = 6;
 
 	/* Refresh clock frequencies */
 	galileo2->vtclk =
@@ -976,7 +997,7 @@ static int galileo2_apply_ms(struct v4l2_subdev *sd)
 				     + sdelay_ctrl);
 
 	tgrst_interval_ctrl = vt->height + trdout_ctrl + galileo2->trdy_ctrl
-		+ sdelay_ctrl + 512;
+		+ sdelay_ctrl + GALIELO2_BINING_MIN_X;
 	galileo2_write16(i2c_sensor, TGRST_INTERVAL_CTRL, tgrst_interval_ctrl);
 
 	galileo2_write8(i2c_sensor, GLOBAL_RESET_MODE_CONFIG1,
@@ -1027,15 +1048,15 @@ static int galileo2_apply_gain(struct v4l2_subdev *sd)
 static int galileo2_apply_flash_strobe(struct v4l2_subdev *sd)
 {
 	struct galileo2                 *galileo2 = to_galileo2(sd);
-	enum v4l2_flash_strobe_source    strobe_source;
 	union global_reset_mode_config1  glbrst_cfg1;
 	struct i2c_client               *i2c = galileo2->i2c_sensor;
+	int strobe_en;
 
-	strobe_source = galileo2->strobe_source->val;
+	strobe_en = galileo2->strobe_enable->val;
 
 	galileo2_read8(i2c, GLOBAL_RESET_MODE_CONFIG1, &glbrst_cfg1._register);
 
-	if (strobe_source == V4L2_FLASH_STROBE_SOURCE_SOFTWARE) {
+	if (!strobe_en) {
 		glbrst_cfg1.flash_strobe = 0;
 		galileo2_write8(i2c,
 				GLOBAL_RESET_MODE_CONFIG1,
@@ -1492,8 +1513,8 @@ static int galileo2_s_stream(struct v4l2_subdev *sd, int enable)
 	galileo2_set_shutter(sd);
 	galileo2_apply_hflip(sd);
 	galileo2_apply_vflip(sd);
-	galileo2_apply_nd(sd);
 	galileo2_apply_ms(sd);
+	galileo2_apply_nd(sd);
 	galileo2_apply_flash_strobe(sd);
 	galileo2_write8(galileo2->i2c_sensor, MODE_SELECT, 0x01);
 
@@ -1514,12 +1535,13 @@ static int galileo2_g_frame_interval(struct v4l2_subdev *sd,
 static int galileo2_s_frame_interval(struct v4l2_subdev *sd,
 				     struct v4l2_subdev_frame_interval *fi)
 {
-	struct galileo2   *galileo2 = to_galileo2(sd);
-	struct i2c_client *i2c      = galileo2->i2c_sensor;
-	struct v4l2_rect  *vt       = &galileo2->video_timing;
-	struct v4l2_rect  *c        = &galileo2->crop;
-	struct v4l2_fract *cur_fi   = &galileo2->frame_interval;
-	u32                min_vt_height;
+	struct galileo2           *galileo2 = to_galileo2(sd);
+	struct i2c_client         *i2c      = galileo2->i2c_sensor;
+	struct v4l2_rect          *vt       = &galileo2->video_timing;
+	struct v4l2_rect          *c        = &galileo2->crop;
+	struct v4l2_fract         *cur_fi   = &galileo2->frame_interval;
+	struct v4l2_mbus_framefmt *fmt      = &galileo2->format;
+	u32                        min_vt_height;
 
 	*cur_fi = fi->interval;
 
@@ -1528,23 +1550,74 @@ static int galileo2_s_frame_interval(struct v4l2_subdev *sd,
 	if (!galileo2->streaming)
 		return 0;
 
+	/* We bin as much as possible before scaling */
+	galileo2->x_binning = c->width / fmt->width;
+	galileo2->x_binning = min(galileo2->x_binning, 2U);
+
+	galileo2->y_binning = c->height / fmt->height;
+	galileo2->y_binning = min(galileo2->y_binning, 8U);
+
+	if (galileo2->x_binning == 0)
+		galileo2->x_binning = 1;
+
+	if (galileo2->y_binning == 0)
+		galileo2->y_binning = 1;
+
 	/* We are already streaming, so we try to adjust the vertical blanking
 	 * in order to match the frame rate.
 	 */
+	vt->width  = (c->width  / galileo2->x_binning) + GALIELO2_BINING_MIN_X;
 	vt->height = div_u64((u64) galileo2->vtclk * cur_fi->numerator,
-			     vt->width * (cur_fi->denominator + GALIELO2_FPS));
+			     vt->width * cur_fi->denominator);
 
 	/* In case min_vt_frame_blanking is not met, we adjust the frame rate */
 	min_vt_height = c->height / galileo2->y_binning + GALIELO2_BINING_MIN_Y;
 
-	if (vt->height < min_vt_height) {
+	if (vt->height < min_vt_height)
 		vt->height = min_vt_height;
-		/* Refresh FPS */
-		cur_fi->denominator = galileo2->vtclk;
-		cur_fi->numerator   = vt->width * vt->height;
+
+	/* Refresh FPS */
+	cur_fi->denominator = galileo2->vtclk;
+	cur_fi->numerator   = vt->width * vt->height;
+
+	galileo2_write16(i2c, X_OUTPUT_SIZE, fmt->width);
+	galileo2_write16(i2c, Y_OUTPUT_SIZE, fmt->height);
+	galileo2_write16(i2c, OUTPUT_IMAGE_WIDTH,  fmt->width);
+
+	galileo2_write16(i2c, GROUPED_PARAMETER_HOLD, 0x1);
+
+	galileo2_write16(i2c, X_ADDR_START, c->left);
+	galileo2_write16(i2c, Y_ADDR_START, c->top);
+	galileo2_write16(i2c, X_ADDR_END,   c->left + c->width  - 1);
+	galileo2_write16(i2c, Y_ADDR_END,   c->top  + c->height - 1);
+
+	galileo2_write16(i2c, DIGITAL_CROP_IMAGE_WIDTH,
+			 c->width / galileo2->x_binning);
+	galileo2_write16(i2c, DIGITAL_CROP_IMAGE_HEIGHT,
+			 c->height / galileo2->y_binning);
+
+	/* Binning */
+	if (galileo2->x_binning == 1 && galileo2->y_binning == 1) {
+		galileo2_write8(i2c, BINNING_MODE, 0x0);
+		galileo2_write8(i2c, BINNING_TYPE, 0x0);
+	} else {
+		galileo2_write8(i2c, BINNING_MODE, 0x1);
+		galileo2_write8(i2c, BINNING_TYPE,
+				galileo2->x_binning << 4 |
+				galileo2->y_binning);
 	}
 
+	galileo2_write16(i2c, GROUPED_PARAMETER_HOLD, 0x0);
+
 	galileo2_write16(i2c, VT_FRAME_LENGTH_LINES, vt->height);
+
+	galileo2_write16(i2c, VT_LINE_LENGTH_PCK, vt->width);
+
+	/* Refresh line_duration */
+	galileo2->line_duration_ns = div_u64((u64) vt->width * 1000000000,
+					     galileo2->vtclk);
+
+	galileo2_apply_ms(sd);
 
 	return 0;
 }
@@ -1600,10 +1673,12 @@ static const struct v4l2_subdev_ops galileo2_ops = {
 };
 
 /* Custom ctrls */
-#define V4L2_CID_GALILEO2_ND           (V4L2_CID_CAMERA_CLASS_BASE + 0x100)
-#define V4L2_CID_GALILEO2_GS           (V4L2_CID_CAMERA_CLASS_BASE + 0x101)
-#define V4L2_CID_GALILEO2_STROBE_WIDTH (V4L2_CID_CAMERA_CLASS_BASE + 0x102)
-#define V4L2_CID_GALILEO2_MS           (V4L2_CID_CAMERA_CLASS_BASE + 0x103)
+#define V4L2_CID_GALILEO2_ND             (V4L2_CID_CAMERA_CLASS_BASE + 0x100)
+#define V4L2_CID_GALILEO2_GS             (V4L2_CID_CAMERA_CLASS_BASE + 0x101)
+#define V4L2_CID_GALILEO2_STROBE_WIDTH   (V4L2_CID_CAMERA_CLASS_BASE + 0x102)
+#define V4L2_CID_GALILEO2_MS             (V4L2_CID_CAMERA_CLASS_BASE + 0x103)
+#define V4L2_CID_GALILEO2_FSTROBE_START  (V4L2_CID_CAMERA_CLASS_BASE + 0x104)
+#define V4L2_CID_GALILEO2_FSTROBE_ENABLE (V4L2_CID_CAMERA_CLASS_BASE + 0x105)
 #define V4L2_CID_GALILEO2_TEMP_SENSOR_OUTPUT \
 	(V4L2_CID_CAMERA_CLASS_BASE + 0x106)
 
@@ -1649,8 +1724,9 @@ static int galileo2_s_ctrl(struct v4l2_ctrl *ctrl)
 		return galileo2_apply_focus(&galileo2->sd);
 	case V4L2_CID_GALILEO2_ND:
 		return galileo2_apply_nd(&galileo2->sd);
-	case V4L2_CID_FLASH_STROBE_SOURCE:
 	case V4L2_CID_GALILEO2_STROBE_WIDTH:
+	case V4L2_CID_GALILEO2_FSTROBE_START:
+	case V4L2_CID_GALILEO2_FSTROBE_ENABLE:
 		return galileo2_apply_flash_strobe(&galileo2->sd);
 	case V4L2_CID_ANALOGUE_GAIN:
 		return galileo2_apply_gain(&galileo2->sd);
@@ -1710,6 +1786,28 @@ static const struct v4l2_ctrl_config galileo2_ctrl_sw = {
 	.max  = 50000,
 	.step = 1,
 	.def  = 100,
+};
+
+static const struct v4l2_ctrl_config galileo2_ctrl_ss = {
+	.ops  = &galileo2_ctrl_ops,
+	.id   = V4L2_CID_GALILEO2_FSTROBE_START,
+	.name = "Flash strobe start delay, in us",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min  = 0,
+	.max  = 50000,
+	.step = 1,
+	.def  = 0,
+};
+
+static const struct v4l2_ctrl_config galileo2_ctrl_se = {
+	.ops  = &galileo2_ctrl_ops,
+	.id   = V4L2_CID_GALILEO2_FSTROBE_ENABLE,
+	.name = "Flash strobe pulse enable state",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min  = 0,
+	.max  = 1,
+	.step = 1,
+	.def  = 0,
 };
 
 static const struct v4l2_ctrl_config galileo2_ctrl_tso = {
@@ -1786,14 +1884,13 @@ static int galileo2_initialize_controls(struct v4l2_subdev *sd)
 	galileo2->strobe_width = v4l2_ctrl_new_custom(hdl,
 						      &galileo2_ctrl_sw, NULL);
 
-	/* Flash Strobe */
-	galileo2->strobe_source =
-		v4l2_ctrl_new_std_menu(hdl,
-				       &galileo2_ctrl_ops,
-				       V4L2_CID_FLASH_STROBE_SOURCE,
-				       V4L2_FLASH_STROBE_SOURCE_EXTERNAL,
-				       ~0x3,
-				       V4L2_FLASH_STROBE_SOURCE_SOFTWARE);
+	/* Flash strobe start */
+	galileo2->strobe_start = v4l2_ctrl_new_custom(hdl,
+						      &galileo2_ctrl_ss, NULL);
+
+	/* Flash strobe enable */
+	galileo2->strobe_enable = v4l2_ctrl_new_custom(hdl,
+						       &galileo2_ctrl_se, NULL);
 
 	/* Analog gain
 	** value based on 'raytrix driver' and checked by i2c sniffing on phone

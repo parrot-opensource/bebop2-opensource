@@ -123,6 +123,8 @@ enum {
 #define HSIS_HWxx_PWM__SERVO5_PWM	P7_PWM_06
 #define HSIS_HWxx_PWM__SERVO6_PWM	P7_PWM_01
 
+#define HSIS_HWxx__RC_PWM       7
+
 /* Fan */
 #define HSIS_HWxx__FANS_EN		85
 
@@ -340,6 +342,11 @@ static struct p7pwm_conf ev_conf_motor = {
 	.mode		  = P7PWM_MODE_NORMAL
 };
 
+/* PWM for rc input*/
+static struct p7pwm_conf ev_conf_rc = {
+	.mode		  = P7PWM_MODE_PPM_RX
+};
+
 static struct p7pwm_pdata ev_pwm_pdata = {
 	.conf = {
 		[HSIS_HWxx__CAMERA_H_MCLK] = &ev_conf_clock,
@@ -354,6 +361,8 @@ static struct p7pwm_pdata ev_pwm_pdata = {
 		[HSIS_HWxx__SERVO4_PWM]    = &ev_conf_motor,
 		[HSIS_HWxx__SERVO5_PWM]    = &ev_conf_motor,
 		[HSIS_HWxx__SERVO6_PWM]    = &ev_conf_motor,
+		/* RC in */
+		[HSIS_HWxx__RC_PWM]        = &ev_conf_rc,
 		/* Leds */
 		[HSIS_HWxx_LED_RED_PWM]     = &ev_conf_pwm_leds,
 		[HSIS_HWxx_LED_GREEN_PWM]   = &ev_conf_pwm_leds,
@@ -389,6 +398,7 @@ static struct pinctrl_map ev_pwm_pins[] __initdata = {
 	P7_INIT_PINMAP(HSIS_HWxx_PWM__SERVO4_PWM),
 	P7_INIT_PINMAP(HSIS_HWxx_PWM__SERVO5_PWM),
 	P7_INIT_PINMAP(HSIS_HWxx_PWM__SERVO6_PWM),
+	P7_INIT_PINMAP(P7_PWM_07),
 	/* Leds */
 	P7_INIT_PINMAP(P7_PWM_08),
 	P7_INIT_PINCFG(P7_PWM_08, ev_led_pinconfig),
@@ -541,6 +551,54 @@ static struct platform_device ev_hdmi_pdev = {
 	.id   = 0,
 };
 
+/* CAM0 */
+static unsigned long ev_cam_h_cam0_pinconf[] = {
+	P7CTL_SMT_CFG(OFF) /* no shimmt trigger */
+};
+
+/* Horizontal camera (on CAM0) */
+static struct pinctrl_map cam_h_mt9f002_evinrude_pins[] __initdata = {
+	P7_INIT_PINMAP(P7_CAM_0_CLK),
+	P7_INIT_PINMAP(P7_CAM_0_HS),
+	P7_INIT_PINCFG(P7_CAM_0_HS, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_VS),
+	P7_INIT_PINCFG(P7_CAM_0_VS, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA08),
+	P7_INIT_PINCFG(P7_CAM_0_DATA08, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA09),
+	P7_INIT_PINCFG(P7_CAM_0_DATA09, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA10),
+	P7_INIT_PINCFG(P7_CAM_0_DATA10, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA11),
+	P7_INIT_PINCFG(P7_CAM_0_DATA11, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA12),
+	P7_INIT_PINCFG(P7_CAM_0_DATA12, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA13),
+	P7_INIT_PINCFG(P7_CAM_0_DATA13, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA14),
+	P7_INIT_PINCFG(P7_CAM_0_DATA14, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA15),
+	P7_INIT_PINCFG(P7_CAM_0_DATA15, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA16),
+	P7_INIT_PINCFG(P7_CAM_0_DATA16, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA17),
+	P7_INIT_PINCFG(P7_CAM_0_DATA17, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA18),
+	P7_INIT_PINCFG(P7_CAM_0_DATA18, ev_cam_h_cam0_pinconf),
+	P7_INIT_PINMAP(P7_CAM_0_DATA19),
+	P7_INIT_PINCFG(P7_CAM_0_DATA19, ev_cam_h_cam0_pinconf),
+};
+
+static union avi_cam_interface cam_h_interface_evinrude = {
+	.itu656     = 0,
+	.pad_select = 1,
+	.ivs	    = 1,
+	.ihs	    = 1,
+	.ipc	    = 0,
+	.psync_en   = 1,
+	.psync_rf   = 1,
+};
+
 /***************
  * GPIO export *
  ***************/
@@ -578,9 +636,7 @@ struct drone_common_hsis_sysfs_attr ev_hsis_sysfs[] = {
 #ifndef DRIVER_VIDEO_MT9V117
 	EV_HSIS_SYSFS_ATTR(camera_v_mclk),
 #endif
-#ifndef DRIVER_VIDEO_MT9F002
 	EV_HSIS_SYSFS_ATTR(camera_h_mclk),
-#endif
 	EV_HSIS_SYSFS_ATTR(camera_v_pwdn),
 	EV_HSIS_SYSFS_ATTR(camera_h_pwdn),
 	EV_HSIS_SYSFS_ATTR(clkin_gyro),
@@ -645,8 +701,10 @@ static int evinrude_rst_notify_sys(struct notifier_block *this,
 		unsigned long code, void *unused)
 {
 	/* reset wifi chip, otherwise sometimes it doesn't work after reboot */
-	if (gpio_is_valid(ev_hsis.reset_wifi))
+	if (gpio_is_valid(ev_hsis.reset_wifi)) {
 		gpio_set_value(ev_hsis.reset_wifi, 1);
+		msleep(50);
+	}
 
 	return 0;
 }
@@ -738,7 +796,8 @@ static void __init evinrude_init_mach(void)
 	drone_common_init_cam_v_mt9v117(ev_hsis.camera_v_mclk,
 					ev_hsis.camera_v_pwdn);
 	drone_common_init_cam_h_mt9f002(ev_hsis.camera_h_mclk,
-					ev_hsis.camera_h_pwdn);
+					ev_hsis.camera_h_pwdn, &cam_h_interface_evinrude,
+					cam_h_mt9f002_evinrude_pins, ARRAY_SIZE(cam_h_mt9f002_evinrude_pins));
 
 	/* Init MEM2MEM (use default) */
 	drone_common_init_m2m(NULL);

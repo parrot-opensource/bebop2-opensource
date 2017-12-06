@@ -121,7 +121,7 @@ static int check_pattern(uint8_t *buf, int len, int paglen, struct nand_bbt_desc
 	}
 	return 0;
 }
-
+#if 0
 /**
  * check_short_pattern - [GENERIC] check if a pattern is in the buffer
  * @buf: the buffer to search
@@ -143,6 +143,7 @@ static int check_short_pattern(uint8_t *buf, struct nand_bbt_descr *td)
 	}
 	return 0;
 }
+#endif
 
 /**
  * add_marker_len - compute the length of the marker in data area

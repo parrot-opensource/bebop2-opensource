@@ -49,6 +49,7 @@ struct ulogger_log {
 	size_t			w_off;	/* current write head offset */
 	size_t			head;	/* new readers start here */
 	size_t			size;	/* size of the log */
+	size_t			dropped;/* number of globally dropped entries */
 };
 
 /*
@@ -63,6 +64,7 @@ struct ulogger_reader {
 	size_t			r_off;	/* current read head offset */
 	bool			r_all;	/* reader can read all entries */
 	int			r_ver;	/* reader ABI version */
+	size_t			r_dropped; /* dropped entries for reader */
 };
 
 /* ulogger_offset - returns index 'n' into the log via (optimized) modulus */
@@ -165,6 +167,63 @@ static ssize_t copy_header_to_user(int ver, struct ulogger_entry *entry,
 	}
 
 	return copy_to_user(buf, hdr, hdr_len);
+}
+
+/*
+ * do_read_drop_summary_to_user - provides a summary of dropped log entries to
+ * user-space buffer 'buf'.
+ *
+ * Caller must hold log->mutex.
+ */
+static ssize_t do_read_drop_summary(struct ulogger_log *log,
+				    struct ulogger_reader *reader,
+				    char __user *buf,
+				    size_t count)
+{
+	int ret;
+	size_t hdrlen;
+	char msgbuf[128];
+	struct ulogger_entry *entry;
+	struct ulogger_entry summary, scratch;
+
+	/*
+	 * First, copy the header to userspace, using the version of
+	 * the header requested
+	 */
+	entry = get_entry_header(log, reader->r_off, &scratch);
+
+	/* build a fake log entry indicating how many entries were dropped */
+	memcpy(&summary, entry, sizeof(summary));
+	summary.pid = 0;
+	summary.tid = 0;
+
+	ret = snprintf(msgbuf, sizeof(msgbuf),
+		       /* <pname>\0<tname>\0<priority:4><tag>\0<message> */
+		       "%c%c%c%c%culog%c%d log entries dropped\n",
+		       '\0',       /* empty process name, no thread (pid=tid) */
+		       4, 0, 0, 0, /* WARN prio level */
+		       '\0',       /* tag trailing null byte */
+		       (int)reader->r_dropped);
+
+	if ((ret < 0) || (ret >= sizeof(msgbuf)))
+		return -EFAULT;
+
+	summary.len = ret+1; /* count trailing null byte */
+	hdrlen = get_user_hdr_len(reader->r_ver);
+
+	if (count < hdrlen + summary.len)
+		return -EINVAL;
+
+	if (copy_header_to_user(reader->r_ver, &summary, buf))
+		return -EFAULT;
+
+	buf += hdrlen;
+
+	if (copy_to_user(buf, msgbuf, summary.len))
+		return -EFAULT;
+
+	reader->r_dropped = 0;
+	return hdrlen + summary.len;
 }
 
 /*
@@ -303,6 +362,15 @@ start:
 		goto start;
 	}
 
+	/*
+	 * If this reader has missed dropped entries, return a fake generated
+	 * log entry with drop information.
+	 */
+	if (unlikely((reader->r_dropped > 0))) {
+		ret = do_read_drop_summary(log, reader, buf, count);
+		goto out;
+	}
+
 	/* get the size of the next entry */
 	ret = get_user_hdr_len(reader->r_ver) +
 		get_entry_msg_len(log, reader->r_off);
@@ -326,17 +394,20 @@ out:
  *
  * Caller must hold log->mutex.
  */
-static size_t get_next_entry(struct ulogger_log *log, size_t off, size_t len)
+static size_t get_next_entry(struct ulogger_log *log, size_t off, size_t len,
+			     size_t *dropped)
 {
-	size_t count = 0;
+	size_t count = 0, entries = 0;
 
 	do {
 		size_t nr = sizeof(struct ulogger_entry) +
 			get_entry_msg_len(log, off);
 		off = ulogger_offset(log, off + nr);
 		count += nr;
+		entries++;
 	} while (count < len);
 
+	*dropped = entries;
 	return off;
 }
 
@@ -379,16 +450,21 @@ static inline int is_between(size_t a, size_t b, size_t c)
  */
 static void fix_up_readers(struct ulogger_log *log, size_t len)
 {
-	size_t old = log->w_off;
+	size_t old = log->w_off, dropped;
 	size_t new = ulogger_offset(log, old + len);
 	struct ulogger_reader *reader;
 
-	if (is_between(old, new, log->head))
-		log->head = get_next_entry(log, log->head, len);
+	if (is_between(old, new, log->head)) {
+		log->head = get_next_entry(log, log->head, len, &dropped);
+		log->dropped += dropped;
+	}
 
 	list_for_each_entry(reader, &log->readers, list)
-		if (is_between(old, new, reader->r_off))
-			reader->r_off = get_next_entry(log, reader->r_off, len);
+		if (is_between(old, new, reader->r_off)) {
+			reader->r_off = get_next_entry(log, reader->r_off, len,
+						       &dropped);
+			reader->r_dropped += dropped;
+		}
 }
 
 /*
@@ -473,11 +549,11 @@ ssize_t ulogger_aio_write(struct kiocb *iocb, const struct iovec *iov,
 	pcomm[commlen] = '\0';
 	plen = strlen(pcomm)+1;
 	if (header.pid != header.tid) {
-	    memcpy(tcomm, current->comm, commlen);
-	    tcomm[commlen] = '\0';
-	    tlen = strlen(tcomm)+1;
+		memcpy(tcomm, current->comm, commlen);
+		tcomm[commlen] = '\0';
+		tlen = strlen(tcomm)+1;
 	} else {
-	    tlen = 0;
+		tlen = 0;
 	}
 
 	header.sec = now.tv_sec;
@@ -507,8 +583,8 @@ ssize_t ulogger_aio_write(struct kiocb *iocb, const struct iovec *iov,
 	do_write_log(log, pcomm, plen);
 	prefix = plen;
 	if (tlen) {
-	    do_write_log(log, tcomm, tlen);
-	    prefix += tlen;
+		do_write_log(log, tcomm, tlen);
+		prefix += tlen;
 	}
 
 	while (nr_segs-- > 0) {
@@ -556,7 +632,8 @@ static int ulogger_open(struct inode *inode, struct file *file)
 
 	if (file_private_data_has_miscdevice_pointer()) {
 		/* file->private_data points to our misc struct */
-		log = container_of(file->private_data, struct ulogger_log, misc);
+		log = container_of(file->private_data, struct ulogger_log,
+				   misc);
 	} else {
 		/* slower version for older kernels, requires mutex locking */
 		log = get_log_from_minor(MINOR(inode->i_rdev));
@@ -580,6 +657,7 @@ static int ulogger_open(struct inode *inode, struct file *file)
 
 		rt_mutex_lock(&log->mutex);
 		reader->r_off = log->head;
+		reader->r_dropped = log->dropped;
 		list_add_tail(&reader->list, &log->readers);
 		rt_mutex_unlock(&log->mutex);
 
@@ -659,7 +737,8 @@ static long ulogger_set_version(struct ulogger_reader *reader, void __user *arg)
 	return 0;
 }
 
-static long ulogger_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+static long ulogger_ioctl(struct file *file, unsigned int cmd,
+			  unsigned long arg)
 {
 	struct ulogger_log *log = file_get_log(file);
 	struct ulogger_reader *reader;
@@ -705,9 +784,12 @@ static long ulogger_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 			ret = -EBADF;
 			break;
 		}
-		list_for_each_entry(reader, &log->readers, list)
+		list_for_each_entry(reader, &log->readers, list) {
 			reader->r_off = log->w_off;
+			reader->r_dropped = 0;
+		}
 		log->head = log->w_off;
+		log->dropped = 0;
 		ret = 0;
 		break;
 	case ULOGGER_GET_VERSION:
@@ -765,6 +847,7 @@ static struct ulogger_log log_main = {
 	.mutex = __RT_MUTEX_INITIALIZER(log_main.mutex),
 	.w_off = 0,
 	.head = 0,
+	.dropped = 0,
 	.size = sizeof(_buf_log_main),
 };
 
@@ -808,13 +891,13 @@ static int init_log(struct ulogger_log *log)
 
 	ret = misc_register(&log->misc);
 	if (unlikely(ret)) {
-		printk(KERN_ERR "ulogger: failed to register misc "
-		       "device for log '%s'!\n", log->misc.name);
+		pr_err("failed to register misc device for log '%s'!\n",
+		       log->misc.name);
 		return ret;
 	}
 
-	printk(KERN_INFO "ulogger: created %luK log '%s'\n",
-	       (unsigned long) log->size >> 10, log->misc.name);
+	pr_info("created %luK log '%s'\n",
+		(unsigned long) log->size >> 10, log->misc.name);
 
 	return 0;
 }
@@ -847,7 +930,8 @@ static ssize_t ulogger_show_logs(struct device *dev,
 /*
  * Dynamically allocate and register a new log device.
  */
-static ssize_t ulogger_add_log(struct device *dev, struct device_attribute *attr,
+static ssize_t ulogger_add_log(struct device *dev,
+			       struct device_attribute *attr,
 			       const char *buf, size_t count)
 {
 	char namebuf[16];
@@ -882,8 +966,7 @@ static ssize_t ulogger_add_log(struct device *dev, struct device_attribute *attr
 	buffer = vmalloc(size);
 
 	if (!log || !buffer) {
-		printk(KERN_ERR "ulogger: failed to allocate log '%s' size %u\n",
-		       name, size);
+		pr_err("failed to allocate log '%s' size %u\n", name, size);
 		ret = -ENOMEM;
 		goto fail;
 	}
@@ -923,7 +1006,7 @@ static ssize_t ulogger_add_log(struct device *dev, struct device_attribute *attr
 	return count;
 
 bad_spec:
-	printk(KERN_ERR "ulogger: invalid buffer specification\n");
+	pr_err("invalid buffer specification\n");
 fail:
 	kfree(name);
 	kfree(log);

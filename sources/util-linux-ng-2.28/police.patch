@@ -1,0 +1,467 @@
+diff --git a/Makefile.in b/Makefile.in
+index d8ba10a..f4dc799 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -900,7 +900,10 @@ am__libblkid_la_SOURCES_DIST = include/list.h libblkid/src/blkidP.h \
+ 	libblkid/src/topology/topology.h libblkid/src/topology/dm.c \
+ 	libblkid/src/topology/evms.c libblkid/src/topology/ioctl.c \
+ 	libblkid/src/topology/lvm.c libblkid/src/topology/md.c \
+-	libblkid/src/topology/sysfs.c
++	libblkid/src/topology/sysfs.c lib/blkdev.c \
++	lib/canonicalize.c lib/crc32.c lib/env.c \
++	lib/fileutils.c lib/linux_version.c lib/md5.c lib/randutils.c \
++	lib/strutils.c lib/sysfs.c
+ am__dirstamp = $(am__leading_dot)dirstamp
+ am__objects_1 =
+ @BUILD_LIBBLKID_TRUE@@LINUX_TRUE@am__objects_2 = libblkid/src/topology/libblkid_la-dm.lo \
+@@ -990,7 +993,17 @@ am__objects_1 =
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/superblocks/libblkid_la-xfs.lo \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/superblocks/libblkid_la-zfs.lo \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/topology/libblkid_la-topology.lo \
+-@BUILD_LIBBLKID_TRUE@	$(am__objects_2)
++@BUILD_LIBBLKID_TRUE@	$(am__objects_2) \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-blkdev.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-canonicalize.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-crc32.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-env.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-fileutils.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-linux_version.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-md5.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-randutils.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-strutils.lo \
++@BUILD_LIBBLKID_TRUE@	lib/libblkid_la-sysfs.lo
+ nodist_libblkid_la_OBJECTS =
+ libblkid_la_OBJECTS = $(am_libblkid_la_OBJECTS) \
+ 	$(nodist_libblkid_la_OBJECTS)
+@@ -1042,7 +1055,10 @@ am__libfdisk_la_SOURCES_DIST = include/list.h libfdisk/src/fdiskP.h \
+ 	libfdisk/src/table.c libfdisk/src/iter.c libfdisk/src/script.c \
+ 	libfdisk/src/version.c libfdisk/src/sun.c libfdisk/src/sgi.c \
+ 	libfdisk/src/dos.c libfdisk/src/bsd.c libfdisk/src/gpt.c \
+-	$(top_builddir)/libfdisk/src/libfdisk.h
++	$(top_builddir)/libfdisk/src/libfdisk.h lib/blkdev.c \
++	lib/canonicalize.c lib/crc32.c lib/env.c \
++	lib/fileutils.c lib/linux_version.c lib/md5.c lib/randutils.c \
++	lib/strutils.c lib/sysfs.c
+ @BUILD_LIBFDISK_TRUE@am_libfdisk_la_OBJECTS =  \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/libfdisk_la-init.lo \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/libfdisk_la-test.lo \
+@@ -1062,7 +1078,17 @@ am__libfdisk_la_SOURCES_DIST = include/list.h libfdisk/src/fdiskP.h \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/libfdisk_la-dos.lo \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/libfdisk_la-bsd.lo \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/libfdisk_la-gpt.lo \
+-@BUILD_LIBFDISK_TRUE@	$(am__objects_1)
++@BUILD_LIBFDISK_TRUE@	$(am__objects_1) \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-blkdev.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-canonicalize.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-crc32.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-env.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-fileutils.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-linux_version.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-md5.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-randutils.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-strutils.lo \
++@BUILD_LIBFDISK_TRUE@	lib/libfdisk_la-sysfs.lo
+ nodist_libfdisk_la_OBJECTS =
+ libfdisk_la_OBJECTS = $(am_libfdisk_la_OBJECTS) \
+ 	$(nodist_libfdisk_la_OBJECTS)
+@@ -3835,11 +3861,15 @@ test_canonicalize_CFLAGS = $(AM_CFLAGS) -DTEST_PROGRAM_CANONICALIZE
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/superblocks/zfs.c \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/topology/topology.c \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/topology/topology.h \
+-@BUILD_LIBBLKID_TRUE@	$(am__append_18)
++@BUILD_LIBBLKID_TRUE@	$(am__append_18) lib/blkdev.c \
++@BUILD_LIBBLKID_TRUE@	lib/canonicalize.c lib/crc32.c \
++@BUILD_LIBBLKID_TRUE@	lib/env.c lib/fileutils.c \
++@BUILD_LIBBLKID_TRUE@	lib/linux_version.c lib/md5.c \
++@BUILD_LIBBLKID_TRUE@	lib/randutils.c lib/strutils.c \
++@BUILD_LIBBLKID_TRUE@	lib/sysfs.c
+ @BUILD_LIBBLKID_TRUE@nodist_libblkid_la_SOURCES = libblkid/src/blkid.h
+-@BUILD_LIBBLKID_TRUE@libblkid_la_LIBADD = libcommon.la \
+-@BUILD_LIBBLKID_TRUE@	$(am__append_19)
+-@BUILD_LIBBLKID_TRUE@libblkid_la_DEPENDENCIES = libcommon.la \
++@BUILD_LIBBLKID_TRUE@libblkid_la_LIBADD = $(am__append_19)
++@BUILD_LIBBLKID_TRUE@libblkid_la_DEPENDENCIES =  \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/libblkid.sym \
+ @BUILD_LIBBLKID_TRUE@	libblkid/src/blkid.h.in $(am__append_20)
+ @BUILD_LIBBLKID_TRUE@libblkid_la_CFLAGS = $(AM_CFLAGS) $(SOLIB_CFLAGS) \
+@@ -4081,41 +4111,34 @@ test_canonicalize_CFLAGS = $(AM_CFLAGS) -DTEST_PROGRAM_CANONICALIZE
+ # libfdisk.h is generated, so it's stored in builddir!
+ @BUILD_LIBFDISK_TRUE@fdiskincdir = $(includedir)/libfdisk
+ @BUILD_LIBFDISK_TRUE@nodist_fdiskinc_HEADERS = $(top_builddir)/libfdisk/src/libfdisk.h
+-@BUILD_LIBFDISK_TRUE@libfdisk_la_SOURCES = \
+-@BUILD_LIBFDISK_TRUE@	include/list.h \
+-@BUILD_LIBFDISK_TRUE@	\
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/fdiskP.h \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/init.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/test.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/ask.c \
++@BUILD_LIBFDISK_TRUE@libfdisk_la_SOURCES = include/list.h \
++@BUILD_LIBFDISK_TRUE@	libfdisk/src/fdiskP.h libfdisk/src/init.c \
++@BUILD_LIBFDISK_TRUE@	libfdisk/src/test.c libfdisk/src/ask.c \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/alignment.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/label.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/utils.c \
++@BUILD_LIBFDISK_TRUE@	libfdisk/src/label.c libfdisk/src/utils.c \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/context.c \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/parttype.c \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/partition.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/table.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/iter.c \
++@BUILD_LIBFDISK_TRUE@	libfdisk/src/table.c libfdisk/src/iter.c \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/script.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/version.c \
+-@BUILD_LIBFDISK_TRUE@	\
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/sun.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/sgi.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/dos.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/bsd.c \
+-@BUILD_LIBFDISK_TRUE@	libfdisk/src/gpt.c \
+-@BUILD_LIBFDISK_TRUE@	$(nodist_fdiskinc_HEADERS)
+-
++@BUILD_LIBFDISK_TRUE@	libfdisk/src/version.c libfdisk/src/sun.c \
++@BUILD_LIBFDISK_TRUE@	libfdisk/src/sgi.c libfdisk/src/dos.c \
++@BUILD_LIBFDISK_TRUE@	libfdisk/src/bsd.c libfdisk/src/gpt.c \
++@BUILD_LIBFDISK_TRUE@	$(nodist_fdiskinc_HEADERS) \
++@BUILD_LIBFDISK_TRUE@	lib/blkdev.c lib/canonicalize.c \
++@BUILD_LIBFDISK_TRUE@	lib/crc32.c lib/env.c \
++@BUILD_LIBFDISK_TRUE@	lib/fileutils.c lib/linux_version.c \
++@BUILD_LIBFDISK_TRUE@	lib/md5.c lib/randutils.c lib/strutils.c \
++@BUILD_LIBFDISK_TRUE@	lib/sysfs.c
+ @BUILD_LIBFDISK_TRUE@nodist_libfdisk_la_SOURCES = libfdisk/src/fdiskP.h
+-@BUILD_LIBFDISK_TRUE@libfdisk_la_LIBADD = libcommon.la libuuid.la \
+-@BUILD_LIBFDISK_TRUE@	$(am__append_62)
++@BUILD_LIBFDISK_TRUE@libfdisk_la_LIBADD = libuuid.la $(am__append_62)
+ @BUILD_LIBFDISK_TRUE@libfdisk_la_CFLAGS = $(AM_CFLAGS) $(SOLIB_CFLAGS) \
+ @BUILD_LIBFDISK_TRUE@	-I$(ul_libuuid_incdir) \
+ @BUILD_LIBFDISK_TRUE@	-I$(ul_libfdisk_incdir) \
+ @BUILD_LIBFDISK_TRUE@	-I$(top_srcdir)/libfdisk/src \
+ @BUILD_LIBFDISK_TRUE@	$(am__append_64)
+-@BUILD_LIBFDISK_TRUE@libfdisk_la_DEPENDENCIES = libcommon.la \
+-@BUILD_LIBFDISK_TRUE@	libuuid.la libfdisk/src/libfdisk.sym \
++@BUILD_LIBFDISK_TRUE@libfdisk_la_DEPENDENCIES = libuuid.la \
++@BUILD_LIBFDISK_TRUE@	libfdisk/src/libfdisk.sym \
+ @BUILD_LIBFDISK_TRUE@	libfdisk/src/libfdisk.h.in \
+ @BUILD_LIBFDISK_TRUE@	$(am__append_63)
+ @BUILD_LIBFDISK_TRUE@libfdisk_la_LDFLAGS = $(SOLIB_LDFLAGS) \
+@@ -5103,15 +5126,35 @@ libblkid/src/topology/libblkid_la-md.lo:  \
+ libblkid/src/topology/libblkid_la-sysfs.lo:  \
+ 	libblkid/src/topology/$(am__dirstamp) \
+ 	libblkid/src/topology/$(DEPDIR)/$(am__dirstamp)
+-
+-libblkid.la: $(libblkid_la_OBJECTS) $(libblkid_la_DEPENDENCIES) $(EXTRA_libblkid_la_DEPENDENCIES) 
+-	$(AM_V_CCLD)$(libblkid_la_LINK) $(am_libblkid_la_rpath) $(libblkid_la_OBJECTS) $(libblkid_la_LIBADD) $(LIBS)
+ lib/$(am__dirstamp):
+ 	@$(MKDIR_P) lib
+ 	@: > lib/$(am__dirstamp)
+ lib/$(DEPDIR)/$(am__dirstamp):
+ 	@$(MKDIR_P) lib/$(DEPDIR)
+ 	@: > lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-blkdev.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-canonicalize.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-crc32.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-env.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-fileutils.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-linux_version.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-md5.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-randutils.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-strutils.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libblkid_la-sysfs.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++
++libblkid.la: $(libblkid_la_OBJECTS) $(libblkid_la_DEPENDENCIES) $(EXTRA_libblkid_la_DEPENDENCIES) 
++	$(AM_V_CCLD)$(libblkid_la_LINK) $(am_libblkid_la_rpath) $(libblkid_la_OBJECTS) $(libblkid_la_LIBADD) $(LIBS)
+ lib/libcommon_la-blkdev.lo: lib/$(am__dirstamp) \
+ 	lib/$(DEPDIR)/$(am__dirstamp)
+ lib/libcommon_la-canonicalize.lo: lib/$(am__dirstamp) \
+@@ -5211,6 +5254,26 @@ libfdisk/src/libfdisk_la-bsd.lo: libfdisk/src/$(am__dirstamp) \
+ 	libfdisk/src/$(DEPDIR)/$(am__dirstamp)
+ libfdisk/src/libfdisk_la-gpt.lo: libfdisk/src/$(am__dirstamp) \
+ 	libfdisk/src/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-blkdev.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-canonicalize.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-crc32.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-env.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-fileutils.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-linux_version.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-md5.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-randutils.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-strutils.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
++lib/libfdisk_la-sysfs.lo: lib/$(am__dirstamp) \
++	lib/$(DEPDIR)/$(am__dirstamp)
+ 
+ libfdisk.la: $(libfdisk_la_OBJECTS) $(libfdisk_la_DEPENDENCIES) $(EXTRA_libfdisk_la_DEPENDENCIES) 
+ 	$(AM_V_CCLD)$(libfdisk_la_LINK) $(am_libfdisk_la_rpath) $(libfdisk_la_OBJECTS) $(libfdisk_la_LIBADD) $(LIBS)
+@@ -7001,6 +7064,18 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/eject-monotonic.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/fsck-monotonic.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/idcache.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-at.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-blkdev.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-canonicalize.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-crc32.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-crc64.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-env.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-fileutils.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-linux_version.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-md5.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-randutils.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-strutils.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libblkid_la-sysfs.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libcommon_la-blkdev.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libcommon_la-canonicalize.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libcommon_la-color-names.Plo@am__quote@
+@@ -7028,6 +7103,18 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libcommon_la-sysfs.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libcommon_la-timeutils.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libcommon_la-ttyutils.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-at.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-blkdev.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-canonicalize.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-crc32.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-crc64.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-env.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-fileutils.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-linux_version.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-md5.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-randutils.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-strutils.Plo@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libfdisk_la-sysfs.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libmount_la-monotonic.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libtcolors_la-color-names.Plo@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libtcolors_la-colors.Plo@am__quote@
+@@ -7999,6 +8086,76 @@ libblkid/src/topology/libblkid_la-sysfs.lo: libblkid/src/topology/sysfs.c
+ @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+ @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o libblkid/src/topology/libblkid_la-sysfs.lo `test -f 'libblkid/src/topology/sysfs.c' || echo '$(srcdir)/'`libblkid/src/topology/sysfs.c
+ 
++lib/libblkid_la-blkdev.lo: lib/blkdev.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-blkdev.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-blkdev.Tpo -c -o lib/libblkid_la-blkdev.lo `test -f 'lib/blkdev.c' || echo '$(srcdir)/'`lib/blkdev.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-blkdev.Tpo lib/$(DEPDIR)/libblkid_la-blkdev.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/blkdev.c' object='lib/libblkid_la-blkdev.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-blkdev.lo `test -f 'lib/blkdev.c' || echo '$(srcdir)/'`lib/blkdev.c
++
++lib/libblkid_la-canonicalize.lo: lib/canonicalize.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-canonicalize.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-canonicalize.Tpo -c -o lib/libblkid_la-canonicalize.lo `test -f 'lib/canonicalize.c' || echo '$(srcdir)/'`lib/canonicalize.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-canonicalize.Tpo lib/$(DEPDIR)/libblkid_la-canonicalize.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/canonicalize.c' object='lib/libblkid_la-canonicalize.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-canonicalize.lo `test -f 'lib/canonicalize.c' || echo '$(srcdir)/'`lib/canonicalize.c
++
++lib/libblkid_la-crc32.lo: lib/crc32.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-crc32.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-crc32.Tpo -c -o lib/libblkid_la-crc32.lo `test -f 'lib/crc32.c' || echo '$(srcdir)/'`lib/crc32.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-crc32.Tpo lib/$(DEPDIR)/libblkid_la-crc32.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/crc32.c' object='lib/libblkid_la-crc32.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-crc32.lo `test -f 'lib/crc32.c' || echo '$(srcdir)/'`lib/crc32.c
++
++lib/libblkid_la-env.lo: lib/env.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-env.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-env.Tpo -c -o lib/libblkid_la-env.lo `test -f 'lib/env.c' || echo '$(srcdir)/'`lib/env.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-env.Tpo lib/$(DEPDIR)/libblkid_la-env.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/env.c' object='lib/libblkid_la-env.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-env.lo `test -f 'lib/env.c' || echo '$(srcdir)/'`lib/env.c
++
++lib/libblkid_la-fileutils.lo: lib/fileutils.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-fileutils.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-fileutils.Tpo -c -o lib/libblkid_la-fileutils.lo `test -f 'lib/fileutils.c' || echo '$(srcdir)/'`lib/fileutils.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-fileutils.Tpo lib/$(DEPDIR)/libblkid_la-fileutils.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/fileutils.c' object='lib/libblkid_la-fileutils.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-fileutils.lo `test -f 'lib/fileutils.c' || echo '$(srcdir)/'`lib/fileutils.c
++
++lib/libblkid_la-linux_version.lo: lib/linux_version.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-linux_version.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-linux_version.Tpo -c -o lib/libblkid_la-linux_version.lo `test -f 'lib/linux_version.c' || echo '$(srcdir)/'`lib/linux_version.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-linux_version.Tpo lib/$(DEPDIR)/libblkid_la-linux_version.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/linux_version.c' object='lib/libblkid_la-linux_version.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-linux_version.lo `test -f 'lib/linux_version.c' || echo '$(srcdir)/'`lib/linux_version.c
++
++lib/libblkid_la-md5.lo: lib/md5.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-md5.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-md5.Tpo -c -o lib/libblkid_la-md5.lo `test -f 'lib/md5.c' || echo '$(srcdir)/'`lib/md5.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-md5.Tpo lib/$(DEPDIR)/libblkid_la-md5.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/md5.c' object='lib/libblkid_la-md5.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-md5.lo `test -f 'lib/md5.c' || echo '$(srcdir)/'`lib/md5.c
++
++lib/libblkid_la-randutils.lo: lib/randutils.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-randutils.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-randutils.Tpo -c -o lib/libblkid_la-randutils.lo `test -f 'lib/randutils.c' || echo '$(srcdir)/'`lib/randutils.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-randutils.Tpo lib/$(DEPDIR)/libblkid_la-randutils.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/randutils.c' object='lib/libblkid_la-randutils.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-randutils.lo `test -f 'lib/randutils.c' || echo '$(srcdir)/'`lib/randutils.c
++
++lib/libblkid_la-strutils.lo: lib/strutils.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-strutils.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-strutils.Tpo -c -o lib/libblkid_la-strutils.lo `test -f 'lib/strutils.c' || echo '$(srcdir)/'`lib/strutils.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-strutils.Tpo lib/$(DEPDIR)/libblkid_la-strutils.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/strutils.c' object='lib/libblkid_la-strutils.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-strutils.lo `test -f 'lib/strutils.c' || echo '$(srcdir)/'`lib/strutils.c
++
++lib/libblkid_la-sysfs.lo: lib/sysfs.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -MT lib/libblkid_la-sysfs.lo -MD -MP -MF lib/$(DEPDIR)/libblkid_la-sysfs.Tpo -c -o lib/libblkid_la-sysfs.lo `test -f 'lib/sysfs.c' || echo '$(srcdir)/'`lib/sysfs.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libblkid_la-sysfs.Tpo lib/$(DEPDIR)/libblkid_la-sysfs.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/sysfs.c' object='lib/libblkid_la-sysfs.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libblkid_la_CFLAGS) $(CFLAGS) -c -o lib/libblkid_la-sysfs.lo `test -f 'lib/sysfs.c' || echo '$(srcdir)/'`lib/sysfs.c
++
+ lib/libcommon_la-blkdev.lo: lib/blkdev.c
+ @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_la_CFLAGS) $(CFLAGS) -MT lib/libcommon_la-blkdev.lo -MD -MP -MF lib/$(DEPDIR)/libcommon_la-blkdev.Tpo -c -o lib/libcommon_la-blkdev.lo `test -f 'lib/blkdev.c' || echo '$(srcdir)/'`lib/blkdev.c
+ @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libcommon_la-blkdev.Tpo lib/$(DEPDIR)/libcommon_la-blkdev.Plo
+@@ -8314,6 +8471,76 @@ libfdisk/src/libfdisk_la-gpt.lo: libfdisk/src/gpt.c
+ @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+ @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o libfdisk/src/libfdisk_la-gpt.lo `test -f 'libfdisk/src/gpt.c' || echo '$(srcdir)/'`libfdisk/src/gpt.c
+ 
++lib/libfdisk_la-blkdev.lo: lib/blkdev.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-blkdev.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-blkdev.Tpo -c -o lib/libfdisk_la-blkdev.lo `test -f 'lib/blkdev.c' || echo '$(srcdir)/'`lib/blkdev.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-blkdev.Tpo lib/$(DEPDIR)/libfdisk_la-blkdev.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/blkdev.c' object='lib/libfdisk_la-blkdev.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-blkdev.lo `test -f 'lib/blkdev.c' || echo '$(srcdir)/'`lib/blkdev.c
++
++lib/libfdisk_la-canonicalize.lo: lib/canonicalize.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-canonicalize.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-canonicalize.Tpo -c -o lib/libfdisk_la-canonicalize.lo `test -f 'lib/canonicalize.c' || echo '$(srcdir)/'`lib/canonicalize.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-canonicalize.Tpo lib/$(DEPDIR)/libfdisk_la-canonicalize.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/canonicalize.c' object='lib/libfdisk_la-canonicalize.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-canonicalize.lo `test -f 'lib/canonicalize.c' || echo '$(srcdir)/'`lib/canonicalize.c
++
++lib/libfdisk_la-crc32.lo: lib/crc32.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-crc32.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-crc32.Tpo -c -o lib/libfdisk_la-crc32.lo `test -f 'lib/crc32.c' || echo '$(srcdir)/'`lib/crc32.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-crc32.Tpo lib/$(DEPDIR)/libfdisk_la-crc32.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/crc32.c' object='lib/libfdisk_la-crc32.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-crc32.lo `test -f 'lib/crc32.c' || echo '$(srcdir)/'`lib/crc32.c
++
++lib/libfdisk_la-env.lo: lib/env.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-env.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-env.Tpo -c -o lib/libfdisk_la-env.lo `test -f 'lib/env.c' || echo '$(srcdir)/'`lib/env.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-env.Tpo lib/$(DEPDIR)/libfdisk_la-env.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/env.c' object='lib/libfdisk_la-env.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-env.lo `test -f 'lib/env.c' || echo '$(srcdir)/'`lib/env.c
++
++lib/libfdisk_la-fileutils.lo: lib/fileutils.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-fileutils.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-fileutils.Tpo -c -o lib/libfdisk_la-fileutils.lo `test -f 'lib/fileutils.c' || echo '$(srcdir)/'`lib/fileutils.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-fileutils.Tpo lib/$(DEPDIR)/libfdisk_la-fileutils.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/fileutils.c' object='lib/libfdisk_la-fileutils.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-fileutils.lo `test -f 'lib/fileutils.c' || echo '$(srcdir)/'`lib/fileutils.c
++
++lib/libfdisk_la-linux_version.lo: lib/linux_version.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-linux_version.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-linux_version.Tpo -c -o lib/libfdisk_la-linux_version.lo `test -f 'lib/linux_version.c' || echo '$(srcdir)/'`lib/linux_version.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-linux_version.Tpo lib/$(DEPDIR)/libfdisk_la-linux_version.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/linux_version.c' object='lib/libfdisk_la-linux_version.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-linux_version.lo `test -f 'lib/linux_version.c' || echo '$(srcdir)/'`lib/linux_version.c
++
++lib/libfdisk_la-md5.lo: lib/md5.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-md5.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-md5.Tpo -c -o lib/libfdisk_la-md5.lo `test -f 'lib/md5.c' || echo '$(srcdir)/'`lib/md5.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-md5.Tpo lib/$(DEPDIR)/libfdisk_la-md5.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/md5.c' object='lib/libfdisk_la-md5.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-md5.lo `test -f 'lib/md5.c' || echo '$(srcdir)/'`lib/md5.c
++
++lib/libfdisk_la-randutils.lo: lib/randutils.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-randutils.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-randutils.Tpo -c -o lib/libfdisk_la-randutils.lo `test -f 'lib/randutils.c' || echo '$(srcdir)/'`lib/randutils.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-randutils.Tpo lib/$(DEPDIR)/libfdisk_la-randutils.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/randutils.c' object='lib/libfdisk_la-randutils.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-randutils.lo `test -f 'lib/randutils.c' || echo '$(srcdir)/'`lib/randutils.c
++
++lib/libfdisk_la-strutils.lo: lib/strutils.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-strutils.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-strutils.Tpo -c -o lib/libfdisk_la-strutils.lo `test -f 'lib/strutils.c' || echo '$(srcdir)/'`lib/strutils.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-strutils.Tpo lib/$(DEPDIR)/libfdisk_la-strutils.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/strutils.c' object='lib/libfdisk_la-strutils.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-strutils.lo `test -f 'lib/strutils.c' || echo '$(srcdir)/'`lib/strutils.c
++
++lib/libfdisk_la-sysfs.lo: lib/sysfs.c
++@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -MT lib/libfdisk_la-sysfs.lo -MD -MP -MF lib/$(DEPDIR)/libfdisk_la-sysfs.Tpo -c -o lib/libfdisk_la-sysfs.lo `test -f 'lib/sysfs.c' || echo '$(srcdir)/'`lib/sysfs.c
++@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libfdisk_la-sysfs.Tpo lib/$(DEPDIR)/libfdisk_la-sysfs.Plo
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/sysfs.c' object='lib/libfdisk_la-sysfs.lo' libtool=yes @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfdisk_la_CFLAGS) $(CFLAGS) -c -o lib/libfdisk_la-sysfs.lo `test -f 'lib/sysfs.c' || echo '$(srcdir)/'`lib/sysfs.c
++
+ lib/libmount_la-monotonic.lo: lib/monotonic.c
+ @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmount_la_CFLAGS) $(CFLAGS) -MT lib/libmount_la-monotonic.lo -MD -MP -MF lib/$(DEPDIR)/libmount_la-monotonic.Tpo -c -o lib/libmount_la-monotonic.lo `test -f 'lib/monotonic.c' || echo '$(srcdir)/'`lib/monotonic.c
+ @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libmount_la-monotonic.Tpo lib/$(DEPDIR)/libmount_la-monotonic.Plo
+diff --git a/libblkid/src/Makemodule.am b/libblkid/src/Makemodule.am
+index 1fa00e9..c95bf11 100644
+--- a/libblkid/src/Makemodule.am
++++ b/libblkid/src/Makemodule.am
+@@ -108,11 +108,22 @@ libblkid_la_SOURCES += \
+ 	libblkid/src/topology/sysfs.c
+ endif
+ 
++libblkid_la_SOURCES += \
++	lib/blkdev.c \
++	lib/canonicalize.c \
++	lib/crc32.c \
++	lib/env.c \
++	lib/fileutils.c \
++	lib/linux_version.c \
++	lib/md5.c \
++	lib/randutils.c \
++	lib/strutils.c \
++	lib/sysfs.c
++
+ nodist_libblkid_la_SOURCES = libblkid/src/blkid.h
+-libblkid_la_LIBADD = libcommon.la
++libblkid_la_LIBADD =
+ 
+ libblkid_la_DEPENDENCIES = \
+-	libcommon.la \
+ 	libblkid/src/libblkid.sym \
+ 	libblkid/src/blkid.h.in
+ 
+diff --git a/libfdisk/src/Makemodule.am b/libfdisk/src/Makemodule.am
+index bc7f1a3..5a46d84 100644
+--- a/libfdisk/src/Makemodule.am
++++ b/libfdisk/src/Makemodule.am
+@@ -30,9 +30,21 @@ libfdisk_la_SOURCES = \
+ 	$(nodist_fdiskinc_HEADERS)
+ 
+ 
++libfdisk_la_SOURCES += \
++	lib/blkdev.c \
++	lib/canonicalize.c \
++	lib/crc32.c \
++	lib/env.c \
++	lib/fileutils.c \
++	lib/linux_version.c \
++	lib/md5.c \
++	lib/randutils.c \
++	lib/strutils.c \
++	lib/sysfs.c
++
+ nodist_libfdisk_la_SOURCES = libfdisk/src/fdiskP.h
+ 
+-libfdisk_la_LIBADD = libcommon.la libuuid.la
++libfdisk_la_LIBADD = libuuid.la
+ 
+ libfdisk_la_CFLAGS = \
+ 	$(AM_CFLAGS) \
+@@ -42,7 +54,6 @@ libfdisk_la_CFLAGS = \
+ 	-I$(top_srcdir)/libfdisk/src
+ 
+ libfdisk_la_DEPENDENCIES = \
+-	libcommon.la \
+ 	libuuid.la \
+ 	libfdisk/src/libfdisk.sym \
+ 	libfdisk/src/libfdisk.h.in

@@ -1,0 +1,112 @@
+diff --git a/examples/inittab b/examples/inittab
+index 01ceaef..8c9a99b 100644
+--- a/examples/inittab
++++ b/examples/inittab
+@@ -39,7 +39,7 @@
+ #         ::ctrlaltdel:/sbin/reboot
+ #         ::shutdown:/sbin/swapoff -a
+ #         ::shutdown:/bin/umount -a -r
+-#         ::restart:/sbin/init
++#         ::restart:/bin/init
+ #         tty2::askfirst:/bin/sh
+ #         tty3::askfirst:/bin/sh
+ #         tty4::askfirst:/bin/sh
+@@ -75,7 +75,7 @@ tty5::respawn:/sbin/getty 38400 tty6
+ #::respawn:/sbin/getty 57600 ttyS2
+ 
+ # Stuff to do when restarting the init process
+-::restart:/sbin/init
++::restart:/bin/init
+ 
+ # Stuff to do before rebooting
+ ::ctrlaltdel:/sbin/reboot
+diff --git a/init/bootchartd.c b/init/bootchartd.c
+index 92aaade..ed5afb0 100644
+--- a/init/bootchartd.c
++++ b/init/bootchartd.c
+@@ -339,7 +339,7 @@ static void finalize(char *tempdir, const char *prog, int process_accounting)
+ //usage:     "\nstart: start background logging; with PROG, run PROG, then kill logging with USR1"
+ //usage:     "\nstop: send USR1 to all bootchartd processes"
+ //usage:     "\ninit: start background logging; stop when getty/xdm is seen (for init scripts)"
+-//usage:     "\nUnder PID 1: as init, then exec $bootchart_init, /init, /sbin/init"
++//usage:     "\nUnder PID 1: as init, then exec $bootchart_init, /init, /bin/init"
+ 
+ int bootchartd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+ int bootchartd_main(int argc UNUSED_PARAM, char **argv)
+@@ -450,8 +450,8 @@ int bootchartd_main(int argc UNUSED_PARAM, char **argv)
+ 		if (bootchart_init)
+ 			execl(bootchart_init, bootchart_init, NULL);
+ 		execl("/init", "init", NULL);
+-		execl("/sbin/init", "init", NULL);
+-		bb_perror_msg_and_die("can't execute '%s'", "/sbin/init");
++		execl("/bin/init", "init", NULL);
++		bb_perror_msg_and_die("can't execute '%s'", "/bin/init");
+ 	}
+ 
+ 	if (cmd == CMD_START && argv[2]) { /* "start PROG ARGS" */
+diff --git a/init/init.c b/init/init.c
+index 6eb76b8..c76c0bd 100644
+--- a/init/init.c
++++ b/init/init.c
+@@ -118,7 +118,7 @@
+ //config:	  The original command-line used to launch init can then be
+ //config:	  retrieved in /proc/1/cmdline on Linux, for example.
+ 
+-//applet:IF_INIT(APPLET(init, BB_DIR_SBIN, BB_SUID_DROP))
++//applet:IF_INIT(APPLET(init, BB_DIR_BIN, BB_SUID_DROP))
+ //applet:IF_LINUXRC(APPLET_ODDNAME(linuxrc, init, BB_DIR_ROOT, BB_SUID_DROP, linuxrc))
+ 
+ //kbuild:lib-$(CONFIG_INIT) += init.o
+@@ -1285,7 +1285,7 @@ int init_main(int argc UNUSED_PARAM, char **argv)
+ //usage:	"	::ctrlaltdel:/sbin/reboot\n"
+ //usage:	"	::shutdown:/sbin/swapoff -a\n"
+ //usage:	"	::shutdown:/bin/umount -a -r\n"
+-//usage:	"	::restart:/sbin/init\n"
++//usage:	"	::restart:/bin/init\n"
+ //usage:	"	tty2::askfirst:/bin/sh\n"
+ //usage:	"	tty3::askfirst:/bin/sh\n"
+ //usage:	"	tty4::askfirst:/bin/sh\n"
+@@ -1325,7 +1325,7 @@ int init_main(int argc UNUSED_PARAM, char **argv)
+ //usage:	"			the specified task completes. 'once' actions are asynchronous,\n"
+ //usage:	"			therefore, init does not wait for them to complete. 'restart' is\n"
+ //usage:	"			the action taken to restart the init process. By default this should\n"
+-//usage:	"			simply run /sbin/init, but can be a script which runs pivot_root or it\n"
++//usage:	"			simply run /bin/init, but can be a script which runs pivot_root or it\n"
+ //usage:	"			can do all sorts of other interesting things. The 'ctrlaltdel' init\n"
+ //usage:	"			actions are run when the system detects that someone on the system\n"
+ //usage:	"			console has pressed the CTRL-ALT-DEL key combination. Typically one\n"
+@@ -1383,7 +1383,7 @@ int init_main(int argc UNUSED_PARAM, char **argv)
+ //usage:	"	#::respawn:/sbin/getty 57600 ttyS2\n"
+ //usage:	"	\n"
+ //usage:	"	# Stuff to do when restarting the init process\n"
+-//usage:	"	::restart:/sbin/init\n"
++//usage:	"	::restart:/bin/init\n"
+ //usage:	"	\n"
+ //usage:	"	# Stuff to do before rebooting\n"
+ //usage:	"	::ctrlaltdel:/sbin/reboot\n"
+diff --git a/selinux/sestatus.c b/selinux/sestatus.c
+index e594318..f0d3e62 100644
+--- a/selinux/sestatus.c
++++ b/selinux/sestatus.c
+@@ -98,7 +98,7 @@ static void display_verbose(void)
+ 		if (ENABLE_FEATURE_CLEAN_UP)
+ 			freecon(con);
+ 	}
+-	/* /sbin/init context */
++	/* /bin/init context */
+ 	if (getpidcon(1, &con) == 0) {
+ 		printf(COL_FMT "%s\n", "Init context:", con);
+ 		if (ENABLE_FEATURE_CLEAN_UP)
+diff --git a/testsuite/parse.tests b/testsuite/parse.tests
+index 904e1a1..a478460 100755
+--- a/testsuite/parse.tests
++++ b/testsuite/parse.tests
+@@ -72,7 +72,7 @@ cat >$FILE.res <<EOF
+ [tty4][][askfirst][-/bin/sh]
+ [tty4][][respawn][/sbin/getty 38400 tty5]
+ [tty5][][respawn][/sbin/getty 38400 tty6]
+-[][][restart][/sbin/init]
++[][][restart][/bin/init]
+ [][][ctrlaltdel][/sbin/reboot]
+ [][][shutdown][/bin/umount -a -r]
+ [][][shutdown][/sbin/swapoff -a]

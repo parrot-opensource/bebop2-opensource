@@ -31,8 +31,6 @@
 #include <linux/types.h>
 #include <linux/netlink.h>
 
-#include <libpac.h>
-
 #include "udev.h"
 
 static int udev_exit;

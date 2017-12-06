@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>udev_enumerate</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
 <link rel="home" href="index.html" title="libudev Reference Manual">
 <link rel="up" href="ch01.html" title="libudev">
 <link rel="prev" href="libudev-udev-monitor.html" title="udev_monitor">
 <link rel="next" href="libudev-udev-queue.html" title="udev_queue">
-<meta name="generator" content="GTK-Doc V1.15 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.19 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -26,7 +26,7 @@
                   <a href="#libudev-udev-enumerate.description" class="shortcut">Description</a>
 </td></tr>
 </table>
-<div class="refentry" title="udev_enumerate">
+<div class="refentry">
 <a name="libudev-udev-enumerate"></a><div class="titlepage"></div>
 <div class="refnamediv"><table width="100%"><tr>
 <td valign="top">
@@ -35,7 +35,7 @@
 </td>
 <td valign="top" align="right"></td>
 </tr></table></div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="libudev-udev-enumerate.synopsis"></a><h2>Synopsis</h2>
 <pre class="synopsis">struct              <a class="link" href="libudev-udev-enumerate.html#udev-enumerate" title="struct udev_enumerate">udev_enumerate</a>;
 struct <a class="link" href="libudev-udev-enumerate.html#udev-enumerate" title="struct udev_enumerate"><span class="returnvalue">udev_enumerate</span></a> * <a class="link" href="libudev-udev-enumerate.html#udev-enumerate-ref" title="udev_enumerate_ref ()">udev_enumerate_ref</a>              (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>);
@@ -67,16 +67,16 @@ struct <a class="link" href="libudev-udev-enumerate.html#udev-enumerate" title="
 struct <a class="link" href="libudev-udev-list.html#udev-list-entry" title="struct udev_list_entry"><span class="returnvalue">udev_list_entry</span></a> * <a class="link" href="libudev-udev-enumerate.html#udev-enumerate-get-list-entry" title="udev_enumerate_get_list_entry ()">udev_enumerate_get_list_entry</a>  (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>);
 </pre>
 </div>
-<div class="refsect1" title="Description">
+<div class="refsect1">
 <a name="libudev-udev-enumerate.description"></a><h2>Description</h2>
 <p>
 Lookup devices in the sys filesystem, filter devices by properties,
 and return a sorted list of devices.
 </p>
 </div>
-<div class="refsect1" title="Details">
+<div class="refsect1">
 <a name="libudev-udev-enumerate.details"></a><h2>Details</h2>
-<div class="refsect2" title="struct udev_enumerate">
+<div class="refsect2">
 <a name="udev-enumerate"></a><h3>struct udev_enumerate</h3>
 <pre class="programlisting">struct udev_enumerate;</pre>
 <p>
@@ -84,7 +84,7 @@ Opaque object representing one device lookup/sort context.
 </p>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_ref ()">
+<div class="refsect2">
 <a name="udev-enumerate-ref"></a><h3>udev_enumerate_ref ()</h3>
 <pre class="programlisting">struct <a class="link" href="libudev-udev-enumerate.html#udev-enumerate" title="struct udev_enumerate"><span class="returnvalue">udev_enumerate</span></a> * udev_enumerate_ref              (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>);</pre>
 <p>
@@ -95,19 +95,17 @@ Take a reference of a enumeration context.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> the passed enumeration context
-</td>
+<td>the passed enumeration context</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_unref ()">
+<div class="refsect2">
 <a name="udev-enumerate-unref"></a><h3>udev_enumerate_unref ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>                udev_enumerate_unref                (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>);</pre>
 <p>
@@ -118,13 +116,12 @@ all resources of the enumeration context will be released.
 <col align="left" valign="top">
 <tbody><tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr></tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_get_udev ()">
+<div class="refsect2">
 <a name="udev-enumerate-get-udev"></a><h3>udev_enumerate_get_udev ()</h3>
 <pre class="programlisting">struct <a class="link" href="libudev-udev.html#udev" title="struct udev"><span class="returnvalue">udev</span></a> *       udev_enumerate_get_udev             (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>);</pre>
 <div class="variablelist"><table border="0">
@@ -132,19 +129,17 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> the udev library context.
-</td>
+<td>the udev library context.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_new ()">
+<div class="refsect2">
 <a name="udev-enumerate-new"></a><h3>udev_enumerate_new ()</h3>
 <pre class="programlisting">struct <a class="link" href="libudev-udev-enumerate.html#udev-enumerate" title="struct udev_enumerate"><span class="returnvalue">udev_enumerate</span></a> * udev_enumerate_new              (<em class="parameter"><code><span class="type">struct udev</span> *udev</code></em>);</pre>
 <div class="variablelist"><table border="0">
@@ -152,19 +147,17 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev</code></em> :</span></p></td>
-<td>udev library context
-</td>
+<td>udev library context</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> an enumeration context
-</td>
+<td>an enumeration context</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_add_match_subsystem ()">
+<div class="refsect2">
 <a name="udev-enumerate-add-match-subsystem"></a><h3>udev_enumerate_add_match_subsystem ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_add_match_subsystem  (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>,
                                                          <em class="parameter"><code>const <span class="type">char</span> *subsystem</code></em>);</pre>
@@ -173,24 +166,21 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>subsystem</code></em> :</span></p></td>
-<td>filter for a subsystem of the device to include in the list
-</td>
+<td>filter for a subsystem of the device to include in the list</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_add_nomatch_subsystem ()">
+<div class="refsect2">
 <a name="udev-enumerate-add-nomatch-subsystem"></a><h3>udev_enumerate_add_nomatch_subsystem ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_add_nomatch_subsystem
                                                         (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>,
@@ -200,24 +190,21 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>subsystem</code></em> :</span></p></td>
-<td>filter for a subsystem of the device to exclude from the list
-</td>
+<td>filter for a subsystem of the device to exclude from the list</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_add_match_sysattr ()">
+<div class="refsect2">
 <a name="udev-enumerate-add-match-sysattr"></a><h3>udev_enumerate_add_match_sysattr ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_add_match_sysattr    (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>,
                                                          <em class="parameter"><code>const <span class="type">char</span> *sysattr</code></em>,
@@ -227,29 +214,25 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>sysattr</code></em> :</span></p></td>
-<td>filter for a sys attribute at the device to include in the list
-</td>
+<td>filter for a sys attribute at the device to include in the list</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>value</code></em> :</span></p></td>
-<td>optional value of the sys attribute
-</td>
+<td>optional value of the sys attribute</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_add_nomatch_sysattr ()">
+<div class="refsect2">
 <a name="udev-enumerate-add-nomatch-sysattr"></a><h3>udev_enumerate_add_nomatch_sysattr ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_add_nomatch_sysattr  (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>,
                                                          <em class="parameter"><code>const <span class="type">char</span> *sysattr</code></em>,
@@ -259,29 +242,25 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>sysattr</code></em> :</span></p></td>
-<td>filter for a sys attribute at the device to exclude from the list
-</td>
+<td>filter for a sys attribute at the device to exclude from the list</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>value</code></em> :</span></p></td>
-<td>optional value of the sys attribute
-</td>
+<td>optional value of the sys attribute</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_add_match_property ()">
+<div class="refsect2">
 <a name="udev-enumerate-add-match-property"></a><h3>udev_enumerate_add_match_property ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_add_match_property   (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>,
                                                          <em class="parameter"><code>const <span class="type">char</span> *property</code></em>,
@@ -291,29 +270,25 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>property</code></em> :</span></p></td>
-<td>filter for a property of the device to include in the list
-</td>
+<td>filter for a property of the device to include in the list</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>value</code></em> :</span></p></td>
-<td>value of the property
-</td>
+<td>value of the property</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_add_match_tag ()">
+<div class="refsect2">
 <a name="udev-enumerate-add-match-tag"></a><h3>udev_enumerate_add_match_tag ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_add_match_tag        (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>,
                                                          <em class="parameter"><code>const <span class="type">char</span> *tag</code></em>);</pre>
@@ -322,24 +297,21 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>tag</code></em> :</span></p></td>
-<td>filter for a tag of the device to include in the list
-</td>
+<td>filter for a tag of the device to include in the list</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_add_match_sysname ()">
+<div class="refsect2">
 <a name="udev-enumerate-add-match-sysname"></a><h3>udev_enumerate_add_match_sysname ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_add_match_sysname    (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>,
                                                          <em class="parameter"><code>const <span class="type">char</span> *sysname</code></em>);</pre>
@@ -348,24 +320,21 @@ all resources of the enumeration context will be released.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>sysname</code></em> :</span></p></td>
-<td>filter for the name of the device to include in the list
-</td>
+<td>filter for the name of the device to include in the list</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_add_syspath ()">
+<div class="refsect2">
 <a name="udev-enumerate-add-syspath"></a><h3>udev_enumerate_add_syspath ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_add_syspath          (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>,
                                                          <em class="parameter"><code>const <span class="type">char</span> *syspath</code></em>);</pre>
@@ -377,24 +346,21 @@ Add a device to the list of devices, to retrieve it back sorted in dependency or
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>syspath</code></em> :</span></p></td>
-<td>path of a device
-</td>
+<td>path of a device</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_scan_devices ()">
+<div class="refsect2">
 <a name="udev-enumerate-scan-devices"></a><h3>udev_enumerate_scan_devices ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_scan_devices         (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>);</pre>
 <div class="variablelist"><table border="0">
@@ -402,19 +368,17 @@ Add a device to the list of devices, to retrieve it back sorted in dependency or
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>udev enumeration context
-</td>
+<td>udev enumeration context</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_scan_subsystems ()">
+<div class="refsect2">
 <a name="udev-enumerate-scan-subsystems"></a><h3>udev_enumerate_scan_subsystems ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>                 udev_enumerate_scan_subsystems      (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>);</pre>
 <div class="variablelist"><table border="0">
@@ -422,19 +386,17 @@ Add a device to the list of devices, to retrieve it back sorted in dependency or
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>udev enumeration context
-</td>
+<td>udev enumeration context</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> 0 on success, otherwise a negative error value.
-</td>
+<td>0 on success, otherwise a negative error value.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_enumerate_get_list_entry ()">
+<div class="refsect2">
 <a name="udev-enumerate-get-list-entry"></a><h3>udev_enumerate_get_list_entry ()</h3>
 <pre class="programlisting">struct <a class="link" href="libudev-udev-list.html#udev-list-entry" title="struct udev_list_entry"><span class="returnvalue">udev_list_entry</span></a> * udev_enumerate_get_list_entry  (<em class="parameter"><code><span class="type">struct udev_enumerate</span> *udev_enumerate</code></em>);</pre>
 <div class="variablelist"><table border="0">
@@ -442,13 +404,11 @@ Add a device to the list of devices, to retrieve it back sorted in dependency or
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>udev_enumerate</code></em> :</span></p></td>
-<td>context
-</td>
+<td>context</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> the first entry of the sorted list of device paths.
-</td>
+<td>the first entry of the sorted list of device paths.</td>
 </tr>
 </tbody>
 </table></div>
@@ -457,6 +417,6 @@ Add a device to the list of devices, to retrieve it back sorted in dependency or
 </div>
 <div class="footer">
 <hr>
-          Generated by GTK-Doc V1.15</div>
+          Generated by GTK-Doc V1.19</div>
 </body>
 </html>

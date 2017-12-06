@@ -9,12 +9,10 @@ udev
 
 </para>
 
-
 <!-- ##### SECTION See_Also ##### -->
 <para>
 
 </para>
-
 
 <!-- ##### SECTION Stability_Level ##### -->
 
@@ -60,7 +58,8 @@ udev
 </para>
 
 @udev: 
-@struct udev *udev, int priority, const char *file, int line, const char *fn, const char *format, va_list args: 
+@struct udev *udev, int priority, const char *file, int line, const char *fn, const char *format, va_list args:
+@log_fn: 
 
 
 <!-- ##### FUNCTION udev_get_log_priority ##### -->

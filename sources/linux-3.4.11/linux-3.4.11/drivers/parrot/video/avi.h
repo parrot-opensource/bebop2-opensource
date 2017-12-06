@@ -133,7 +133,8 @@ struct avi_controller {
     struct device*              dev;
     struct avi_node* const      nodes[AVI_NODE_NR];
     enum avi_revision           revision;
-    unsigned	                irq_base;
+    unsigned                    irq_base;
+    spinlock_t                  node_lck;
 };
 
 extern struct avi_controller avi_ctrl;

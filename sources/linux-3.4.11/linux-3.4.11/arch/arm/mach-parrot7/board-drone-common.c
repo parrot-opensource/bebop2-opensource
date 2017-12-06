@@ -321,7 +321,7 @@ static int cam_h_mt9f002_power_on(void)
 						       "CAMERA_H_MCLK");
 		if (IS_ERR(cam_h_mt9f002_pwm_device)) {
 			ret = PTR_ERR(cam_h_mt9f002_pwm_device);
-		goto err_alloc;
+			goto err_alloc;
 		}
 	}
 
@@ -357,8 +357,10 @@ static int cam_h_mt9f002_power_off(void)
 		gpio_set_value_cansleep(P7_GPIO_NR(cam_h_mt9f002_en), 0);
 
 	/* Disable PWM */
-	if (cam_h_mt9f002_pwm_device != NULL)
+	if (cam_h_mt9f002_pwm_device != NULL) {
 		pwm_disable(cam_h_mt9f002_pwm_device);
+		pwm_free(cam_h_mt9f002_pwm_device);
+	}
 
 	return 0;
 }
@@ -394,7 +396,8 @@ static struct avicam_subdevs cam_h_mt9f002_subdevs[] = {
 	},
 	{ NULL, 0 },
 };
-#else
+#endif /* #ifdef DRIVER_VIDEO_MT9F002 */
+
 /* MT9F002 dummy camera */
 static struct avicam_dummy_info cam_mt9f002_dummy_driver_info = {
 	.dev_id = 0,
@@ -405,7 +408,6 @@ static struct avicam_dummy_info cam_mt9f002_dummy_driver_info = {
 		.height = 3320,
 	},
 };
-#endif /* #ifdef DRIVER_VIDEO_MT9F002 */
 
 static struct avicam_platform_data cam_h_mt9f002_pdata = {
 	.interface = {
@@ -421,9 +423,8 @@ static struct avicam_platform_data cam_h_mt9f002_pdata = {
 	.bus_width	   = 16,
 #ifdef DRIVER_VIDEO_MT9F002
 	.subdevs	   = cam_h_mt9f002_subdevs,
-#else
-	.dummy_driver_info = &cam_mt9f002_dummy_driver_info,
 #endif /* #ifdef DRIVER_VIDEO_MT9F002 */
+	.dummy_driver_info = &cam_mt9f002_dummy_driver_info,
 };
 
 static u64 cam_h_mt9f002_dma_mask = DMA_BIT_MASK(32);
@@ -440,7 +441,7 @@ static struct i2c_board_info cam_h_mt9f002_info = {
 	CAMERA_H_MT9F002_I2C_INFO
 };
 
-void __init drone_common_init_cam_h_mt9f002(int gpio_pwm, int gpio_en)
+void __init drone_common_init_cam_h_mt9f002(int gpio_pwm, int gpio_en, union avi_cam_interface *cam_interface, struct pinctrl_map *cam_pins, size_t pin_cnt)
 {
 #ifdef DRIVER_VIDEO_MT9F002
 	/* Set GPIOs */
@@ -448,9 +449,15 @@ void __init drone_common_init_cam_h_mt9f002(int gpio_pwm, int gpio_en)
 	cam_h_mt9f002_en = gpio_en;
 #endif
 
+	if (cam_interface)
+		memcpy(&cam_h_mt9f002_pdata.interface, cam_interface, sizeof(*cam_interface));
+	if (!cam_pins) {
+		cam_pins = cam_h_mt9f002_pins;
+		pin_cnt = ARRAY_SIZE(cam_h_mt9f002_pins);
+	}
 	/* Add MT9F002 horizontal camera */
 	p7_init_avicam(&cam_h_mt9f002_dev, &cam_h_mt9f002_pdata,
-		       cam_h_mt9f002_pins, ARRAY_SIZE(cam_h_mt9f002_pins));
+		       cam_pins, pin_cnt);
 
 	/* Init I2C camera device */
 	p7brd_export_i2c_hw_infos(CAMERA_H_MT9F002_I2C_BUS,

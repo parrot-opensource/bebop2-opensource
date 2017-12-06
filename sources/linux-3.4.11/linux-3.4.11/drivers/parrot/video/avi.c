@@ -309,6 +309,7 @@ static AVI_DEFINE_ISP_CHAIN_YUV(1);
 struct avi_controller avi_ctrl = {
 	.cfg_lck    = __SPIN_LOCK_UNLOCKED(avi_ctrl.cfg_lck),
 	.blend_lck  = __MUTEX_INITIALIZER(avi_ctrl.blend_lck),
+	.node_lck    = __SPIN_LOCK_UNLOCKED(avi_ctrl.node_lck),
 	.nodes      = {
 		[AVI_FIFO00_NODE]           = &avi_fifo0,
 		[AVI_FIFO01_NODE]           = &avi_fifo1,
@@ -383,6 +384,8 @@ EXPORT_SYMBOL(avi_cfg_get_registers);
 
 void avi_enable_node(struct avi_node const* node)
 {
+	unsigned long flags;
+
 	if (node->type != AVI_BLENDIN_NODE_TYPE) {
 		unsigned long addr;
 
@@ -393,13 +396,17 @@ void avi_enable_node(struct avi_node const* node)
 			addr = avi_ctrl.base + AVI_CFG_ENABLE1 +
 			       (node->cfg_off * sizeof(u32));
 
+		spin_lock_irqsave(&avi_ctrl.node_lck, flags);
 		AVI_WRITE(node->cfg_mask | AVI_READ(addr), addr);
+		spin_unlock_irqrestore(&avi_ctrl.node_lck, flags);
 	}
 }
 EXPORT_SYMBOL(avi_enable_node);
 
 void avi_disable_node(struct avi_node const* node)
 {
+	unsigned long flags;
+
 	if (node->type != AVI_BLENDIN_NODE_TYPE) {
 		unsigned long addr;
 
@@ -410,13 +417,17 @@ void avi_disable_node(struct avi_node const* node)
 			addr = avi_ctrl.base + AVI_CFG_ENABLE1 +
 			       (node->cfg_off * sizeof(u32));
 
+		spin_lock_irqsave(&avi_ctrl.node_lck, flags);
 		AVI_WRITE(AVI_READ(addr) & ~node->cfg_mask, addr);
+		spin_unlock_irqrestore(&avi_ctrl.node_lck, flags);
 	}
 }
 EXPORT_SYMBOL(avi_disable_node);
 
 void avi_lock_node(struct avi_node const* node)
 {
+	unsigned long flags;
+
 	/*
 	 * Some nodes (aka AVI_BLENDIN_NODE_TYPE) are virtual nodes: they have
 	 * no assigned clock.
@@ -431,13 +442,17 @@ void avi_lock_node(struct avi_node const* node)
 			addr = avi_ctrl.base + AVI_CFG_LOCK1 +
 			       (node->cfg_off * sizeof(u32));
 
+		spin_lock_irqsave(&avi_ctrl.node_lck, flags);
 		AVI_WRITE(node->cfg_mask | AVI_READ(addr), addr);
+		spin_unlock_irqrestore(&avi_ctrl.node_lck, flags);
 	}
 }
 EXPORT_SYMBOL(avi_lock_node);
 
 void avi_unlock_node(struct avi_node const* node)
 {
+	unsigned long flags;
+
 	if (node->type != AVI_BLENDIN_NODE_TYPE) {
 		unsigned long addr;
 
@@ -448,7 +463,9 @@ void avi_unlock_node(struct avi_node const* node)
 			addr = avi_ctrl.base + AVI_CFG_LOCK1 +
 			       (node->cfg_off * sizeof(u32));
 
+		spin_lock_irqsave(&avi_ctrl.node_lck, flags);
 		AVI_WRITE(AVI_READ(addr) & ~node->cfg_mask, addr);
+		spin_unlock_irqrestore(&avi_ctrl.node_lck, flags);
 	}
 }
 EXPORT_SYMBOL(avi_unlock_node);
@@ -458,6 +475,8 @@ EXPORT_SYMBOL(avi_unlock_node);
  */
 void avi_apply_node(struct avi_node const* node)
 {
+	unsigned long flags;
+
 	if (node->type != AVI_BLENDIN_NODE_TYPE) {
 		unsigned long addr;
 
@@ -468,7 +487,9 @@ void avi_apply_node(struct avi_node const* node)
 			addr = avi_ctrl.base + AVI_CFG_APPLY1 +
 			       (node->cfg_off * sizeof(u32));
 
+		spin_lock_irqsave(&avi_ctrl.node_lck, flags);
 		AVI_WRITE(node->cfg_mask, addr);
+		spin_unlock_irqrestore(&avi_ctrl.node_lck, flags);
 	}
 }
 EXPORT_SYMBOL(avi_apply_node);
@@ -1361,6 +1382,7 @@ EXPORT_SYMBOL(avi_node_get_irq_flag);
 void avi_ack_node_irq(struct avi_node const *node)
 {
 	unsigned long addr;
+	unsigned long flags;
 
 	/* ISP modules do not follow the same register map scheme. */
 	if (node->cfg_off == 3)
@@ -1369,13 +1391,16 @@ void avi_ack_node_irq(struct avi_node const *node)
 		addr = avi_ctrl.base + AVI_CFG_ITACK1 +
 		       (node->cfg_off * sizeof(u32));
 
+	spin_lock_irqsave(&avi_ctrl.node_lck, flags);
 	AVI_WRITE(node->cfg_mask, addr);
+	spin_unlock_irqrestore(&avi_ctrl.node_lck, flags);
 }
 EXPORT_SYMBOL(avi_ack_node_irq);
 
 void avi_enable_node_irq(struct avi_node const *node)
 {
 	unsigned long addr;
+	unsigned long flags;
 
 	/* ISP modules do not follow the same register map scheme. */
 	if (node->cfg_off == 3)
@@ -1387,7 +1412,9 @@ void avi_enable_node_irq(struct avi_node const *node)
 	/* Make sure we don't have a pending IRQ */
 	avi_ack_node_irq(node);
 
+	spin_lock_irqsave(&avi_ctrl.node_lck, flags);
 	AVI_WRITE(node->cfg_mask | AVI_READ(addr), addr);
+	spin_unlock_irqrestore(&avi_ctrl.node_lck, flags);
 
 	avi_apply_node(&avi_cfg);
 }
@@ -1396,6 +1423,7 @@ EXPORT_SYMBOL(avi_enable_node_irq);
 void avi_disable_node_irq(struct avi_node const *node)
 {
 	unsigned long addr;
+	unsigned long flags;
 
 	/* ISP modules do not follow the same register map scheme. */
 	if (node->cfg_off == 3)
@@ -1404,7 +1432,9 @@ void avi_disable_node_irq(struct avi_node const *node)
 		addr = avi_ctrl.base + AVI_CFG_ITEN1 +
 		       (node->cfg_off * sizeof(u32));
 
+	spin_lock_irqsave(&avi_ctrl.node_lck, flags);
 	AVI_WRITE(~node->cfg_mask & AVI_READ(addr), addr);
+	spin_unlock_irqrestore(&avi_ctrl.node_lck, flags);
 
 	avi_apply_node(&avi_cfg);
 }

@@ -12,6 +12,8 @@ LOCAL_AUTOTOOLS_VERSION := 1.0.19
 LOCAL_AUTOTOOLS_ARCHIVE := libusb-$(LOCAL_AUTOTOOLS_VERSION).tar.bz2
 LOCAL_AUTOTOOLS_SUBDIR := libusb-$(LOCAL_AUTOTOOLS_VERSION)
 
+LOCAL_EXPORT_C_INCLUDES := $(TARGET_OUT_STAGING)/usr/include/libusb-1.0
+
 ifeq ("$(TARGET_LIBC)","bionic")
 LOCAL_AUTOTOOLS_CONFIGURE_ARGS := --disable-udev
 
@@ -45,6 +47,27 @@ endef
 else
 LOCAL_LIBRARIES := libudev
 endif
+
+include $(BUILD_AUTOTOOLS)
+
+###############################################################################
+# Host part.
+###############################################################################
+
+include $(CLEAR_VARS)
+
+LOCAL_HOST_MODULE := libusb_1_0
+LOCAL_DESCRIPTION := Userspace library for accessing USB devices version 1.0
+LOCAL_CATEGORY_PATH := libs
+LOCAL_EXPORT_LDLIBS := -lusb-1.0 -lpthread
+
+LOCAL_AUTOTOOLS_CONFIGURE_ARGS := --disable-udev
+
+LOCAL_AUTOTOOLS_VERSION := 1.0.19
+LOCAL_AUTOTOOLS_ARCHIVE := libusb-$(LOCAL_AUTOTOOLS_VERSION).tar.bz2
+LOCAL_AUTOTOOLS_SUBDIR := libusb-$(LOCAL_AUTOTOOLS_VERSION)
+
+LOCAL_EXPORT_C_INCLUDES := $(HOST_OUT_STAGING)/usr/include/libusb-1.0
 
 include $(BUILD_AUTOTOOLS)
 

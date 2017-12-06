@@ -114,3 +114,15 @@ udev_queue_get_kernel_seqnum
 udev_queue_get_udev_seqnum
 </SECTION>
 
+
+<SECTION>
+<FILE>libudev-provider</FILE>
+<TITLE>udev_provider</TITLE>
+udev_provider
+udev_provider_new
+udev_provider_add_device
+udev_provider_change_device
+udev_provider_remove_device
+udev_provider_ref
+udev_provider_unref
+</SECTION>

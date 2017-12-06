@@ -17,7 +17,8 @@ LOCAL_AUTOTOOLS_PATCHES := \
 	libusb-0.1.12-abort_and_monotonic.patch \
 	libusb-0.1.12-bus_loc_init.patch \
 	libusb-0.1.12-nocpp.patch \
-	libusb-0.1.12-raptor.patch
+	libusb-0.1.12-raptor.patch \
+	libusb-0.1.12-types.patch
 
 LOCAL_AUTOTOOLS_CONFIGURE_ENV := \
 	ac_cv_header_regex_h=no

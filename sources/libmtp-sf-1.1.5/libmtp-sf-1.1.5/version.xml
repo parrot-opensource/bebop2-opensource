@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!DOCTYPE version PUBLIC "-//IDN parrot.com//DTD SOFTWARE_VERSION 0.1//EN" "http://mallard/gitweb/?p=release;a=blob_plain;f=version.dtd;hb=HEAD">
+<!-- name attributes must be unique across instances of a given tag -->
+<version>
+	<!-- packages which need to be cloned for build to work properly, with revisions -->
+	<dependencies build_system="alchemy">
+		<!-- revisions is a list of comma separated revisions, one per compatible branch, if mor than one -->
+		<dependency project="os/os_packages/external.git" revisions="external-0.9.2-lib" />
+		<dependency project="os/os_packages/udev.git" revisions="udev-164-2-lib" />
+	</dependencies>
+
+	<!-- dependencies can differ with build system -->
+	<dependencies build_system="lucie">
+		<dependency project="os/packages.git/" revisions="linux-packages-3.0.3-lib,linux-packages-2.2.2-lib"/>
+	</dependencies>
+</version>

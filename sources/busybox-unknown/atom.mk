@@ -15,7 +15,7 @@ LOCAL_CATEGORY_PATH := system
 
 # Variables
 BUSYBOX_DIR := $(LOCAL_PATH)
-BUSYBOX_VERSION := 1.20.2
+BUSYBOX_VERSION := 1.25.0
 BUSYBOX_ARCHIVE_FILE := $(LOCAL_PATH)/busybox-$(BUSYBOX_VERSION).tar.bz2
 
 # Build directory and source sirectory inside build directory (after unpacking)
@@ -25,20 +25,15 @@ BUSYBOX_UNPACKED_FILE := $(BUSYBOX_BUILD_DIR)/busybox.unpacked
 
 # Patches
 BUSYBOX_PATCHES := \
-	busybox-1.20.2-kernel_ver.patch \
-	busybox-1.20.2-pkg-config-selinux.patch \
-	busybox-1.20.2-sys-resource.patch \
-	busybox-1.20.2-bin_init.patch \
-	init-make-the-command-line-rewrite-optional.patch
+	busybox-1.25.0-bin_init.patch \
+	busybox-1.25.0-clang.patch
 
 ifeq ("$(TARGET_LIBC)","bionic")
 BUSYBOX_PATCHES += \
-	busybox-1.20.2-bionic-mount-umount-fsck-df.patch \
-	busybox-1.20.2-bionic-route-sys-socket.patch \
-	busybox-1.20.2-bionic-link.patch \
-	busybox-1.20.2-bionic-stat.patch \
-	busybox-1.20.2-bionic-stime.patch \
-	busybox-1.20.2-bionic-force-install-bin-dir.patch
+	busybox-1.25.0-bionic-mount-umount-fsck-df.patch \
+	busybox-1.25.0-bionic-route-sys-socket.patch \
+	busybox-1.25.0-bionic-link.patch \
+	busybox-1.25.0-bionic-force-install-bin-dir.patch
 endif
 
 # Busybox configuration file
@@ -53,13 +48,15 @@ endif
 
 BUSYBOX_CFLAGS := \
 	$(TARGET_GLOBAL_CFLAGS) \
-	-Wno-sign-compare -Wno-error=format-security \
+	-Wno-sign-compare -Wno-error=format-security -Wno-unused-result \
 	$(call normalize-c-includes,$(TARGET_GLOBAL_C_INCLUDES))
 
 # Make arguments
 BUSYBOX_MAKE_ARGS := \
 	ARCH=$(TARGET_ARCH) \
 	CC="$(CCACHE) $(TARGET_CC)" \
+	AR="$(TARGET_AR)" \
+	NM="$(TARGET_NM)" \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
 	CROSS="$(TARGET_CROSS)" \
 	CONFIG_PREFIX="$(TARGET_OUT_STAGING)" \
@@ -126,9 +123,14 @@ busybox-clean:
 			|| echo "Ignoring clean errors"; \
 	fi
 
+# Copy udhcpd related files if udhcpd selected in busybox config file
+ifneq ("$(wildcard $(BUSYBOX_CONFIG_FILE))","")
+ifneq ("$(shell grep "^CONFIG_UDHCPD=y" $(BUSYBOX_CONFIG_FILE))","")
 LOCAL_COPY_FILES += \
 	20-udhcpd.rc:etc/boxinit.d/ \
 	udhcpd.leases:etc/
+endif
+endif
 
 include $(BUILD_CUSTOM)
 

@@ -65,6 +65,12 @@ udev_monitor_filter_add_match_subsystem_devtype
 udev_monitor_filter_add_match_tag
 udev_monitor_filter_update
 udev_monitor_filter_remove
+udev_provider_add_device
+udev_provider_change_device
+udev_provider_new
+udev_provider_ref
+udev_provider_remove_device
+udev_provider_unref
 udev_queue_new
 udev_queue_ref
 udev_queue_unref

@@ -837,6 +837,16 @@ static const struct net_device_ops ax88172_netdev_ops = {
 	.ndo_set_rx_mode	= ax88172_set_multicast,
 };
 
+static void asix_set_netdev_dev_addr(struct usbnet *dev, u8 *addr)
+{
+	if (is_valid_ether_addr(addr)) {
+		memcpy(dev->net->dev_addr, addr, ETH_ALEN);
+	} else {
+		netdev_info(dev->net, "invalid hw address, using random\n");
+		eth_hw_addr_random(dev->net);
+	}
+}
+
 static int ax88172_bind(struct usbnet *dev, struct usb_interface *intf)
 {
 	int ret = 0;
@@ -868,7 +878,7 @@ static int ax88172_bind(struct usbnet *dev, struct usb_interface *intf)
 		dbg("read AX_CMD_READ_NODE_ID failed: %d", ret);
 		goto out;
 	}
-	memcpy(dev->net->dev_addr, buf, ETH_ALEN);
+	asix_set_netdev_dev_addr(dev, buf);
 
 	/* Initialize MII structure */
 	dev->mii.dev = dev->net;
@@ -1063,7 +1073,7 @@ static int ax88772_bind(struct usbnet *dev, struct usb_interface *intf)
 		dbg("Failed to read MAC address: %d", ret);
 		return ret;
 	}
-	memcpy(dev->net->dev_addr, buf, ETH_ALEN);
+	asix_set_netdev_dev_addr(dev, buf);
 
 	/* Initialize MII structure */
 	dev->mii.dev = dev->net;
@@ -1417,7 +1427,7 @@ static int ax88178_bind(struct usbnet *dev, struct usb_interface *intf)
 		dbg("Failed to read MAC address: %d", ret);
 		return ret;
 	}
-	memcpy(dev->net->dev_addr, buf, ETH_ALEN);
+	asix_set_netdev_dev_addr(dev, buf);
 
 	/* Initialize MII structure */
 	dev->mii.dev = dev->net;

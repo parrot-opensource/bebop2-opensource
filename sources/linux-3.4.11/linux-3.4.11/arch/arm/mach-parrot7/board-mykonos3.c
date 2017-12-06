@@ -530,9 +530,7 @@ struct drone_common_hsis_sysfs_attr mk3_hsis_sysfs[] = {
 #ifndef DRIVER_VIDEO_MT9V117
 	MK3_HSIS_SYSFS_ATTR(camera_v_mclk),
 #endif
-#ifndef DRIVER_VIDEO_MT9F002
 	MK3_HSIS_SYSFS_ATTR(camera_h_mclk),
-#endif
 	MK3_HSIS_SYSFS_ATTR(clkin_gyro),
 	/* rev */
 	MK3_HSIS_SYSFS_ATTR(p7rev),
@@ -745,7 +743,7 @@ static void __init mykonos3x_init_mach(enum mk3_hardware_board board)
 	drone_common_init_cam_v_mt9v117(mk3_hsis.camera_v_mclk,
 					mk3_hsis.camera_v_pwdn);
 	drone_common_init_cam_h_mt9f002(mk3_hsis.camera_h_mclk,
-					mk3_hsis.camera_h_pwdn);
+					mk3_hsis.camera_h_pwdn, NULL, NULL, 0);
 
 	/* Init MEM2MEM (use default) */
 	drone_common_init_m2m(NULL);

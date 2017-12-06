@@ -1,0 +1,24 @@
+diff --git a/linux.h b/linux.h
+index 8f20ef3..8d3f500 100644
+--- a/linux.h
++++ b/linux.h
+@@ -4,6 +4,7 @@
+ #include <unistd.h>
+ #include <sys/stat.h>
+ #include <sys/ioctl.h>
++#include <sys/types.h>
+ 
+ struct usb_ctrltransfer {
+ 	/* keep in sync with usbdevice_fs.h:usbdevfs_ctrltransfer */
+diff --git a/usb.h.in b/usb.h.in
+index 443c7c0..4d41bda 100644
+--- a/usb.h.in
++++ b/usb.h.in
+@@ -14,6 +14,7 @@
+ #include <unistd.h>
+ #include <stdlib.h>
+ #include <limits.h>
++#include <sys/types.h>
+ 
+ #include <dirent.h>
+ 

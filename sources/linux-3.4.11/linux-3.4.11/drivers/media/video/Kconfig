@@ -713,6 +713,14 @@ config VIDEO_AR0330
 	  This is a V4L2 sensor-level driver for Aptina AR0330
 	  camera
 
+comment "Liquide Lens devices"
+
+config VIDEO_MAX14574
+	tristate "MAX14574 Lens driver support"
+	depends on I2C && VIDEO_V4L2 && MEDIA_CONTROLLER
+	---help---
+	  This is a driver for liquid lens.
+
 comment "Flash devices"
 
 config VIDEO_ADP1653

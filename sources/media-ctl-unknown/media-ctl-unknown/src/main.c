@@ -289,7 +289,7 @@ static void media_print_topology_text(struct media_device *media)
 	}
 }
 
-void media_print_topology(struct media_device *media, int dot)
+static void media_print_topology(struct media_device *media, int dot)
 {
 	if (dot)
 		media_print_topology_dot(media);

@@ -32,6 +32,8 @@
 #define MAX_BLK_NB 9
 #define MIN_BLK_NB 3
 
+#ifdef CONFIG_PM_SLEEP
+
 static u32 p7mpg_save_regs[] = {
 	P7MPG_CTRL,
 	P7MPG_SYNC_VAL,
@@ -43,6 +45,8 @@ static u32 p7mpg_save_regs[] = {
 	P7MPG_RXFIFO_TH,
 	P7MPG_RXCNT_TH,
 };
+
+#endif
 
 static DECLARE_WAIT_QUEUE_HEAD(poll_wait_queue);
 

@@ -24,13 +24,18 @@
 #include "mali_kernel_license.h"
 #include "mali_kernel_linux.h"
 
+#ifndef MALI_LICENSE_IS_GPL
+#undef CONFIG_MALI400_RT_WORKER
+#endif
+
 typedef struct _mali_osk_wq_work_s {
 	_mali_osk_wq_work_handler_t handler;
 	void *data;
 	mali_bool high_pri;
-	struct work_struct work_handle;
 #ifdef CONFIG_MALI400_RT_WORKER
 	struct kthread_work kwork;
+#else
+	struct work_struct work_handle;
 #endif
 } mali_osk_wq_work_object_t;
 
@@ -47,16 +52,14 @@ static struct workqueue_struct *mali_wq_high = NULL;
 #ifdef CONFIG_MALI400_RT_WORKER
 struct task_struct *mali_rt_worker_task = NULL;
 struct kthread_worker mali_rt_worker;
-
-static void mali_rt_worker_callback(struct kthread_work *kwork)
-{
-	mali_osk_wq_work_object_t *work = container_of(kwork, mali_osk_wq_work_object_t, kwork);
-	work->work_handle.func(&work->work_handle);
-}
 #endif
 #endif
 
+#ifdef CONFIG_MALI400_RT_WORKER
+static void mali_rt_worker_callback(struct kthread_work *kwork);
+#else
 static void _mali_osk_wq_work_func(struct work_struct *work);
+#endif
 
 _mali_osk_errcode_t _mali_osk_wq_init(void)
 {
@@ -159,7 +162,11 @@ _mali_osk_wq_work_t *_mali_osk_wq_create_work(_mali_osk_wq_work_handler_t handle
 	work->data = data;
 	work->high_pri = MALI_FALSE;
 
+#ifdef CONFIG_MALI400_RT_WORKER
+	init_kthread_work(&work->kwork, mali_rt_worker_callback);
+#else
 	INIT_WORK(&work->work_handle, _mali_osk_wq_work_func);
+#endif
 
 	return work;
 }
@@ -174,7 +181,11 @@ _mali_osk_wq_work_t *_mali_osk_wq_create_work_high_pri(_mali_osk_wq_work_handler
 	work->data = data;
 	work->high_pri = MALI_TRUE;
 
+#ifdef CONFIG_MALI400_RT_WORKER
+	init_kthread_work(&work->kwork, mali_rt_worker_callback);
+#else
 	INIT_WORK(&work->work_handle, _mali_osk_wq_work_func);
+#endif
 
 	return work;
 }
@@ -192,20 +203,12 @@ void _mali_osk_wq_delete_work_nonflush(_mali_osk_wq_work_t *work)
 	kfree(work_object);
 }
 
-#ifdef CONFIG_MALI400_RT_WORKER
-static void _mali_osk_rt_schedule_work(mali_osk_wq_work_object_t *work_object)
-{
-	init_kthread_work(&work_object->kwork, mali_rt_worker_callback);
-	queue_kthread_work(&mali_rt_worker, &work_object->kwork);
-}
-#endif
-
 void _mali_osk_wq_schedule_work(_mali_osk_wq_work_t *work)
 {
 	mali_osk_wq_work_object_t *work_object = (mali_osk_wq_work_object_t *)work;
 #if MALI_LICENSE_IS_GPL
 #ifdef CONFIG_MALI400_RT_WORKER
-	_mali_osk_rt_schedule_work(work_object);
+	queue_kthread_work(&mali_rt_worker, &work_object->kwork);
 #else
 	queue_work(mali_wq_normal, &work_object->work_handle);
 #endif
@@ -219,7 +222,7 @@ void _mali_osk_wq_schedule_work_high_pri(_mali_osk_wq_work_t *work)
 	mali_osk_wq_work_object_t *work_object = (mali_osk_wq_work_object_t *)work;
 #if MALI_LICENSE_IS_GPL
 #ifdef CONFIG_MALI400_RT_WORKER
-	_mali_osk_rt_schedule_work(work_object);
+	queue_kthread_work(&mali_rt_worker, &work_object->kwork);
 #else
 	queue_work(mali_wq_high, &work_object->work_handle);
 #endif
@@ -228,6 +231,13 @@ void _mali_osk_wq_schedule_work_high_pri(_mali_osk_wq_work_t *work)
 #endif
 }
 
+#ifdef CONFIG_MALI400_RT_WORKER
+static void mali_rt_worker_callback(struct kthread_work *kwork)
+{
+	mali_osk_wq_work_object_t *work_object = container_of(kwork, mali_osk_wq_work_object_t, kwork);
+	work_object->handler(work_object->data);
+}
+#else
 static void _mali_osk_wq_work_func(struct work_struct *work)
 {
 	mali_osk_wq_work_object_t *work_object;
@@ -250,6 +260,7 @@ static void _mali_osk_wq_work_func(struct work_struct *work)
 
 	work_object->handler(work_object->data);
 }
+#endif
 
 static void _mali_osk_wq_delayed_work_func(struct work_struct *work)
 {

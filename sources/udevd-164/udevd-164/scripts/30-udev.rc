@@ -1,0 +1,42 @@
+# boxinit .rc file for the udevd daemon -*- mode:conf -*-
+#
+# If you need to customize the set of subsystems triggered at startup, please
+# create file /etc/udev_trigger_args.conf, and put udevadm arguments in it (one
+# arg per line, starting with 'trigger'.
+#
+# To enable full debug messages in a running udevd process, use the following
+# command:
+# $ udevadm control --log-priority=debug
+# or
+# $ udevadm control --log-priority=info    (for less verbose messages)
+#
+# If you want to permanently enable debugging messages, add the following lines
+# in the service declaration before 'class core':
+# setenv UDEV_LOG debug
+# setenv ULOG_LEVEL D
+#
+# To enable less verbose information, just add:
+# setenv UDEV_LOG info
+
+service udevd /usr/bin/ulogwrapper /usr/bin/udevd
+    class core
+    user root
+    group inet
+    oom_score_adj -1000
+    nice -4
+    # [CHOWN] to change node ownership
+    # [MKNOD] to create node
+    # [NET_ADMIN] udev writes netlink messages and udev's helpers
+    #	may need to configure network.
+    # [SYS_MODULE] udev's helpers may need to load drivers
+    # [SYS_RAWIO] to load firmware (e.g. Wi-Fi)
+    capability  CHOWN	MKNOD	\
+                NET_ADMIN	\
+                SYS_MODULE SYS_RAWIO
+
+on init
+    write /proc/sys/kernel/hotplug ""
+
+# wait until udevd is done fixing permissions of existing devices
+on early-boot-main
+    wait /dev/.udev_perms_done

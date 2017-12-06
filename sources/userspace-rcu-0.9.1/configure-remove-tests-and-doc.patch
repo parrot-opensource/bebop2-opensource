@@ -1,0 +1,50 @@
+--- userspace-rcu-0.9.1/Makefile.am	2015-10-16 22:34:52.000000000 +0200
++++ userspace-rcu-0.9.1/Makefile.am	2015-11-23 16:01:01.543565529 +0100
+@@ -10,7 +10,7 @@
+ endif
+ AM_CFLAGS=-Wall
+ 
+-SUBDIRS = . doc tests
++SUBDIRS = .
+ 
+ include_HEADERS = urcu.h urcu-bp.h urcu-call-rcu.h urcu-defer.h \
+ 		urcu-pointer.h urcu-qsbr.h urcu-flavor.h
+
+--- userspace-rcu-0.9.1/Makefile.in	2015-10-17 00:36:13.000000000 +0200
++++ userspace-rcu-0.9.1/Makefile.in	2015-11-23 15:58:15.519570319 +0100
+@@ -478,7 +478,7 @@
+ # library that use the version-info
+ AM_LDFLAGS = -version-info $(URCU_LIBRARY_VERSION) $(am__append_1)
+ AM_CFLAGS = -Wall
+-SUBDIRS = . doc tests
++SUBDIRS = .
+ include_HEADERS = urcu.h urcu-bp.h urcu-call-rcu.h urcu-defer.h \
+ 		urcu-pointer.h urcu-qsbr.h urcu-flavor.h
+
+--- userspace-rcu-0.9.1/configure	2015-10-17 00:36:12.000000000 +0200
++++ userspace-rcu-0.9.1/configure	2015-11-23 15:33:30.647613156 +0100
+@@ -14859,7 +14859,7 @@
+ 
+ ac_config_links="$ac_config_links urcu/arch.h:$ARCHSRC urcu/uatomic.h:$UATOMICSRC"
+ 
+-ac_config_files="$ac_config_files Makefile doc/Makefile doc/examples/Makefile tests/Makefile tests/common/Makefile tests/unit/Makefile tests/benchmark/Makefile tests/regression/Makefile tests/regression/regression_tests tests/utils/Makefile liburcu.pc liburcu-bp.pc liburcu-cds.pc liburcu-qsbr.pc liburcu-mb.pc liburcu-signal.pc"
++ac_config_files="$ac_config_files Makefile liburcu.pc liburcu-bp.pc liburcu-cds.pc liburcu-qsbr.pc liburcu-mb.pc liburcu-signal.pc"
+ 
+ cat >confcache <<\_ACEOF
+ # This file is a shell script that caches the results of configure
+@@ -15911,15 +15911,6 @@
+     "urcu/arch.h") CONFIG_LINKS="$CONFIG_LINKS urcu/arch.h:$ARCHSRC" ;;
+     "urcu/uatomic.h") CONFIG_LINKS="$CONFIG_LINKS urcu/uatomic.h:$UATOMICSRC" ;;
+     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+-    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+-    "doc/examples/Makefile") CONFIG_FILES="$CONFIG_FILES doc/examples/Makefile" ;;
+-    "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
+-    "tests/common/Makefile") CONFIG_FILES="$CONFIG_FILES tests/common/Makefile" ;;
+-    "tests/unit/Makefile") CONFIG_FILES="$CONFIG_FILES tests/unit/Makefile" ;;
+-    "tests/benchmark/Makefile") CONFIG_FILES="$CONFIG_FILES tests/benchmark/Makefile" ;;
+-    "tests/regression/Makefile") CONFIG_FILES="$CONFIG_FILES tests/regression/Makefile" ;;
+-    "tests/regression/regression_tests") CONFIG_FILES="$CONFIG_FILES tests/regression/regression_tests" ;;
+-    "tests/utils/Makefile") CONFIG_FILES="$CONFIG_FILES tests/utils/Makefile" ;;
+     "liburcu.pc") CONFIG_FILES="$CONFIG_FILES liburcu.pc" ;;
+     "liburcu-bp.pc") CONFIG_FILES="$CONFIG_FILES liburcu-bp.pc" ;;
+     "liburcu-cds.pc") CONFIG_FILES="$CONFIG_FILES liburcu-cds.pc" ;;

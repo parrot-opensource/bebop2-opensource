@@ -1,0 +1,135 @@
+From be6a05204a216348832f6eac28df99bdd6d032a1 Mon Sep 17 00:00:00 2001
+From: Thomas de Beauchene <thomas.de-beauchene@parrot.com>
+Date: Fri, 3 Mar 2017 19:40:46 +0100
+Subject: [PATCH] filter denied virtual interfaces when adding addresses
+
+netlink does not send an interface change notification when setting up a virtual
+interface such as eth0:0: that information is only available in RTM_NEWADDR
+messages.
+
+It is therefore needed to check if a new address does belong to an allowed
+interface label before actually adding it to the hardware interface.
+---
+ avahi-core/iface-linux.c | 24 ++++++++++++++++++++----
+ avahi-core/iface.c       | 27 ++++++++++++++++-----------
+ avahi-core/iface.h       |  1 +
+ 3 files changed, 37 insertions(+), 15 deletions(-)
+
+diff --git a/avahi-core/iface-linux.c b/avahi-core/iface-linux.c
+index c1843dd..ed5fe06 100644
+--- a/avahi-core/iface-linux.c
++++ b/avahi-core/iface-linux.c
+@@ -183,6 +183,7 @@ static void netlink_callback(AvahiNetlink *nl, struct nlmsghdr *n, void* userdat
+         size_t l;
+         AvahiAddress raddr;
+         int raddr_valid = 0;
++        char label[IFNAMSIZ + 1];
+ 
+         /* We are only interested in IPv4 and IPv6 */
+         if (ifaddrmsg->ifa_family != AF_INET && ifaddrmsg->ifa_family != AF_INET6)
+@@ -194,6 +195,8 @@ static void netlink_callback(AvahiNetlink *nl, struct nlmsghdr *n, void* userdat
+         if (!(i = avahi_interface_monitor_get_interface(m, (AvahiIfIndex) ifaddrmsg->ifa_index, avahi_af_to_proto(ifaddrmsg->ifa_family))))
+             return;
+ 
++        memset(label, 0, IFNAMSIZ + 1);
++
+         /* Fill in address family for our new address */
+         raddr.proto = avahi_af_to_proto(ifaddrmsg->ifa_family);
+ 
+@@ -212,18 +215,31 @@ static void netlink_callback(AvahiNetlink *nl, struct nlmsghdr *n, void* userdat
+ 
+                     memcpy(raddr.data.data, RTA_DATA(a), RTA_PAYLOAD(a));
+                     raddr_valid = 1;
+-
+                     break;
+ 
++                case IFA_LABEL: {
++                    size_t label_len;
++
++                    if (RTA_PAYLOAD(a) > IFNAMSIZ) {
++                        label_len = IFNAMSIZ;
++                        avahi_log_warn("interface label longer than IFNAMSIZ !");
++                    }
++                    else
++                        label_len = RTA_PAYLOAD(a);
++                    memcpy(label, RTA_DATA(a), label_len);
++                    label[label_len] = '\0';
++                }
++                break;
++
+                 default:
+                     ;
+             }
+-
+             a = RTA_NEXT(a, l);
+         }
+ 
+-        /* If there was no adress attached to this message, let's quit. */
+-        if (!raddr_valid)
++        /* Ignore if no valid address or label denied in avahi-daemon.conf. */
++        if (!raddr_valid || (strlen(label) != 0
++                             && !avahi_interface_label_is_relevant(i, label)))
+             return;
+ 
+         if (n->nlmsg_type == RTM_NEWADDR) {
+diff --git a/avahi-core/iface.c b/avahi-core/iface.c
+index 39a860a..b4af9ba 100644
+--- a/avahi-core/iface.c
++++ b/avahi-core/iface.c
+@@ -675,25 +675,30 @@ static int avahi_interface_is_relevant_internal(AvahiInterface *i) {
+     return 0;
+ }
+ 
+-int avahi_interface_is_relevant(AvahiInterface *i) {
++int avahi_interface_label_is_relevant(AvahiInterface *i, const char *label) {
+     AvahiStringList *l;
+     assert(i);
++    assert(label);
+ 
+     for (l = i->monitor->server->config.deny_interfaces; l; l = l->next)
+-        if (strcasecmp((char*) l->text, i->hardware->name) == 0)
++        if (strcasecmp((char*) l->text, label) == 0)
+             return 0;
++    if (!i->monitor->server->config.allow_interfaces)
++        return 1;
++    for (l = i->monitor->server->config.allow_interfaces; l; l = l->next)
++        if (strcasecmp((char*)l->text, label) == 0)
++            return 1;
++    return 0;
++}
+ 
+-    if (i->monitor->server->config.allow_interfaces) {
+-
+-        for (l = i->monitor->server->config.allow_interfaces; l; l = l->next)
+-            if (strcasecmp((char*) l->text, i->hardware->name) == 0)
+-                goto good;
++int avahi_interface_is_relevant(AvahiInterface *i) {
++    AvahiStringList *l;
++    assert(i);
+ 
++    if (avahi_interface_label_is_relevant(i, i->hardware->name))
++        return avahi_interface_is_relevant_internal(i);
++    else
+         return 0;
+-    }
+-
+-good:
+-    return avahi_interface_is_relevant_internal(i);
+ }
+ 
+ int avahi_interface_address_is_relevant(AvahiInterfaceAddress *a) {
+diff --git a/avahi-core/iface.h b/avahi-core/iface.h
+index c3f24af..49f88cf 100644
+--- a/avahi-core/iface.h
++++ b/avahi-core/iface.h
+@@ -164,6 +164,7 @@ void avahi_interface_free(AvahiInterface *i, int send_goodbye);
+ 
+ void avahi_interface_update_rrs(AvahiInterface *i, int remove_rrs);
+ void avahi_interface_check_relevant(AvahiInterface *i);
++int avahi_interface_label_is_relevant(AvahiInterface *i, const char *label);
+ int avahi_interface_is_relevant(AvahiInterface *i);
+ 
+ void avahi_interface_send_packet(AvahiInterface *i, AvahiDnsPacket *p);
+-- 
+2.7.4
+

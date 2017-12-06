@@ -559,3 +559,38 @@ uint64_t util_string_bloom64(const char *str)
 
 	return bits.v;
 }
+
+/* read board name using Hardware info in /proc/cpuinfo */
+const char *util_get_board_name(void)
+{
+	int i;
+	FILE *fp;
+	char *name;
+	static char buf[128];
+	static const char *ret = NULL;
+
+	if (ret)
+		/* return cached result */
+		return ret;
+
+	ret = "native";
+
+	/* parse /proc/cpuinfo */
+	fp = fopen("/proc/cpuinfo", "r");
+	if (fp) {
+		while (fgets(buf, sizeof(buf), fp) != NULL) {
+			if (strncmp(buf, "Hardware\t: ", 11) == 0) {
+				name = &buf[11];
+				i = 0;
+				while (name[i] && !isspace(name[i]))
+					i++;
+				name[i] = '\0';
+				ret = name;
+				break;
+			}
+		}
+		fclose(fp);
+	}
+
+	return ret;
+}

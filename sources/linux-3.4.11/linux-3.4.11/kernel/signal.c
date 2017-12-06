@@ -2362,10 +2362,7 @@ relock:
 			 * first and our do_group_exit call below will use
 			 * that value and ignore the one we pass it.
 			 */
-			WARN_ON(current->last_siginfo);
-			current->last_siginfo = info;
 			do_coredump(info->si_signo, info->si_signo, regs);
-			current->last_siginfo = NULL;
 		}
 
 		/*

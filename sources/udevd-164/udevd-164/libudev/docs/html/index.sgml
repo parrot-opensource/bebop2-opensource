@@ -108,3 +108,14 @@
 <ANCHOR id="udev-queue-get-failed-list-entry" href="libudev/libudev-udev-queue.html#udev-queue-get-failed-list-entry">
 <ANCHOR id="udev-queue-get-kernel-seqnum" href="libudev/libudev-udev-queue.html#udev-queue-get-kernel-seqnum">
 <ANCHOR id="udev-queue-get-udev-seqnum" href="libudev/libudev-udev-queue.html#udev-queue-get-udev-seqnum">
+<ANCHOR id="libudev-udev-provider" href="libudev/libudev-udev-provider.html">
+<ANCHOR id="libudev-udev-provider.synopsis" href="libudev/libudev-udev-provider.html#libudev-udev-provider.synopsis">
+<ANCHOR id="libudev-udev-provider.description" href="libudev/libudev-udev-provider.html#libudev-udev-provider.description">
+<ANCHOR id="libudev-udev-provider.details" href="libudev/libudev-udev-provider.html#libudev-udev-provider.details">
+<ANCHOR id="udev-provider" href="libudev/libudev-udev-provider.html#udev-provider">
+<ANCHOR id="udev-provider-new" href="libudev/libudev-udev-provider.html#udev-provider-new">
+<ANCHOR id="udev-provider-add-device" href="libudev/libudev-udev-provider.html#udev-provider-add-device">
+<ANCHOR id="udev-provider-change-device" href="libudev/libudev-udev-provider.html#udev-provider-change-device">
+<ANCHOR id="udev-provider-remove-device" href="libudev/libudev-udev-provider.html#udev-provider-remove-device">
+<ANCHOR id="udev-provider-ref" href="libudev/libudev-udev-provider.html#udev-provider-ref">
+<ANCHOR id="udev-provider-unref" href="libudev/libudev-udev-provider.html#udev-provider-unref">

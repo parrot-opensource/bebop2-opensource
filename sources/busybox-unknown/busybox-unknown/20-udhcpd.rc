@@ -7,3 +7,6 @@ service udhcpd /usr/bin/ulogwrapper /usr/sbin/udhcpd -f -S
 	user root
 	group inet
 	disabled
+	# [NET_RAW] use socket(AF_INET, SOCK_RAW, IPPROTO_RAW), "udhcpd: socket: Operation not permitted"
+	# [NET_BIND_SERVICE] bind on standard DHCP UDP port number 67, "udhcpd: bind: Permission denied"
+	capability NET_BIND_SERVICE NET_RAW

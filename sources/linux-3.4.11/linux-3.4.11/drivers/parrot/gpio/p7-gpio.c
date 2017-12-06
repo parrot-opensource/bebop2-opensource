@@ -1041,7 +1041,7 @@ static ssize_t p7gpio_sysfs_show(struct device *device,
 	if (hw_irq < 0)
 		return 0;
 
-	return snprintf(buf, PAGE_SIZE, "0x%x:%lld",
+	return snprintf(buf, PAGE_SIZE, "0x%08x:%16lld",
 			p7gpio->irq_map[hw_irq].measure,
 			timespec_to_ns(&p7gpio->irq_map[hw_irq].ts));
 }

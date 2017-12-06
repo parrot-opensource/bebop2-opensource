@@ -267,12 +267,12 @@ static int sfx1b_pwm_power_off(struct pwm_device **dev)
 
 #if defined(CONFIG_VIDEO_GALILEO2)
 #include <media/galileo2.h>
-#define MAINCAM_GALILEO_REFCLK      10000000
+#define MAINCAM_GALILEO_REFCLK      8928571
 #define GALILEO_POWER_ON            GALILEO2_POWER_ON
 #define GALILEO_POWER_OFF           GALILEO2_POWER_OFF
 #else
 #include <media/galileo1.h>
-#define MAINCAM_GALILEO_REFCLK       9200000
+#define MAINCAM_GALILEO_REFCLK      9200000
 #define GALILEO_POWER_ON            GALILEO1_POWER_ON
 #define GALILEO_POWER_OFF           GALILEO1_POWER_OFF
 #endif
@@ -370,7 +370,11 @@ static struct avicam_subdevs sfx1b_maincam_galileo_subdevs[] = {
 #include <media/tc358746a.h>
 
 #define MAINCAM_TC358746A_NRST_GPIO       115
+#if defined(CONFIG_VIDEO_GALILEO2)
+#define MAINCAM_TC358746A_REFCLK      8928571
+#else
 #define MAINCAM_TC358746A_REFCLK      9200000
+#endif
 #define MAINCAM_TC358746A_I2C_BUS          20
 #define MAINCAM_TC358746A_MIPI_LANES MAINCAM_GALILEO_MIPI_LANES
 
@@ -414,8 +418,8 @@ static struct tc358746a_platform_data sfx1b_maincam_tc358746a_pdata = {
 	.refclk    = MAINCAM_TC358746A_REFCLK,
 	.lanes     = MAINCAM_TC358746A_MIPI_LANES,
 #if defined(CONFIG_VIDEO_GALILEO2)
-	.calibration_delay_ms = 500,
-	.phytimdly            = 39,
+	.calibration_delay_ms = 50,
+	.phytimdly            = 27,
 #else
 	.phytimdly = 9,
 #endif

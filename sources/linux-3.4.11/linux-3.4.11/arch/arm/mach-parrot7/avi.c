@@ -89,6 +89,8 @@ static int __init p7_avi_parse_param(unsigned params[][AVIFB_MAX_OVERLAYS],
 
 	filter = strsep(&options, ":");
 	param = strsep(&options, ":");
+	if (!filter)
+		return -EINVAL;
 
 	if (param == NULL) {
 		/* no instance specifier */

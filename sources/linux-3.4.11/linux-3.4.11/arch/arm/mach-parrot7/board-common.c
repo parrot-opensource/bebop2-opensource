@@ -433,6 +433,19 @@ static int p7_init_usb(struct platform_device *pdev, int (*ulpi_write)(struct pl
 			dev_err(&pdev->dev, "Unable to disable auto calibration\n");
 	}
 
+	/*  There is a known bug where the
+		USB ULPI interface on USB controller freezes when voltage on
+		Vbus crosses the Vbus valid threshold
+		http://www.xilinx.com/support/answers/61313.html
+		Since we don't use the VbusValid interrupt we deactivate it in the PHY */
+	if(ulpi_write) {
+		ret = ulpi_write(pdev, 0x0d, 0x1d); // Rising edge
+		ret = ulpi_write(pdev, 0x10, 0x1d); // Falling edge
+		dev_dbg(&pdev->dev, "disabling VbusValid interrupt (%i)\n", ret);
+	}
+	else
+		dev_err(&pdev->dev, "Unable to disable VbusValid interrupts\n");
+
 	/* deliver VBUS to connector if role is host (or dual, needed for ios in the car)*/
 	if (gpio_is_valid(pdata->gpio_vbus)) {
 		if (pdata->ci_udc.operating_mode == CI_UDC_DR_DUAL_HOST ||

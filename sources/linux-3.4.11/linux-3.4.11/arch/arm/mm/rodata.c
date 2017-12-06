@@ -89,7 +89,8 @@ static int set_page_attributes(unsigned long virt, int numpages,
 
 		if ((pmd_val(*pmd) & PMD_TYPE_MASK) != PMD_TYPE_TABLE) {
 			pr_err("%s: pmd %p=%08lx for %08lx not page table\n",
-				__func__, pmd, pmd_val(*pmd), virt);
+				__func__, pmd, (unsigned long)pmd_val(*pmd),
+				virt);
 			virt = pmd_end;
 			continue;
 		}

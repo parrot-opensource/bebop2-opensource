@@ -243,6 +243,7 @@ struct udev *udev_new(void)
 
 	if (udev->dev_path == NULL || udev->sys_path == NULL)
 		goto err;
+
 	dbg(udev, "context %p created\n", udev);
 	dbg(udev, "log_priority=%d\n", udev->log_priority);
 	dbg(udev, "config_file='%s'\n", config_file);
@@ -346,6 +347,8 @@ void udev_set_log_priority(struct udev *udev, int priority)
 	udev->log_priority = priority;
 	snprintf(num, sizeof(num), "%u", udev->log_priority);
 	udev_add_property(udev, "UDEV_LOG", num);
+	/* explicitly set syslog mask to communicate current logging priority */
+	setlogmask(LOG_UPTO(priority));
 }
 
 const char *udev_get_rules_path(struct udev *udev)

@@ -24,8 +24,6 @@
 #include <linux/netlink.h>
 #include <linux/filter.h>
 
-#include <libpac.h>
-
 #include "libudev.h"
 #include "libudev-private.h"
 
@@ -57,8 +55,7 @@ struct udev_monitor {
 enum udev_monitor_netlink_group {
 	UDEV_MONITOR_NONE,
 	UDEV_MONITOR_KERNEL,
-	/* avoid interfering with native udev monitors */
-	UDEV_MONITOR_UDEV = 4,
+	UDEV_MONITOR_UDEV,
 };
 
 #define UDEV_MONITOR_MAGIC		0xfeedcafe
@@ -186,15 +183,21 @@ struct udev_monitor *udev_monitor_new_from_socket(struct udev *udev, const char 
 struct udev_monitor *udev_monitor_new_from_netlink(struct udev *udev, const char *name)
 {
 	struct udev_monitor *udev_monitor;
-	unsigned int group;
+	unsigned int group, udev_nl_group;
 
 	if (udev == NULL)
 		return NULL;
 
+	udev_nl_group = UDEV_MONITOR_UDEV;
+
+	/* prevent conflict with native udev */
+	if (strcmp(util_get_board_name(), "native") == 0)
+		udev_nl_group <<= 1;
+
 	if (name == NULL)
 		group = UDEV_MONITOR_NONE;
 	else if (strcmp(name, "udev") == 0)
-		group = UDEV_MONITOR_UDEV;
+		group = udev_nl_group;
 	else if (strcmp(name, "kernel") == 0)
 		group = UDEV_MONITOR_KERNEL;
 	else
@@ -216,7 +219,7 @@ struct udev_monitor *udev_monitor_new_from_netlink(struct udev *udev, const char
 
 	/* default destination for sending */
 	udev_monitor->snl_destination.nl_family = AF_NETLINK;
-	udev_monitor->snl_destination.nl_groups = UDEV_MONITOR_UDEV;
+	udev_monitor->snl_destination.nl_groups = udev_nl_group;
 
 	dbg(udev, "monitor %p created with NETLINK_KOBJECT_UEVENT (%u)\n", udev_monitor, group);
 	return udev_monitor;
@@ -345,6 +348,7 @@ int udev_monitor_filter_update(struct udev_monitor *udev_monitor)
 	bpf_stmt(ins, &i, BPF_RET|BPF_K, 0xffffffff);
 
 	/* install filter */
+	memset(&filter, 0, sizeof(filter));
 	filter.len = i;
 	filter.filter = ins;
 	err = setsockopt(udev_monitor->sock, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter));
@@ -620,7 +624,7 @@ retry:
 	}
 
 	cred = (struct ucred *)CMSG_DATA(cmsg);
-	if (cred->uid != 0 && !pac_is_android_os()) {
+	if (cred->uid != 0 && !(cred->gid != getegid())) {
 		info(udev_monitor->udev, "sender uid=%d, message ignored\n", cred->uid);
 		return NULL;
 	}

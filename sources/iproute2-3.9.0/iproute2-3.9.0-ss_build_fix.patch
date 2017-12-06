@@ -1,0 +1,14 @@
+diff -Nru iproute2-3.9.0-orig/misc/ss.c iproute2-3.9.0-patched/misc/ss.c
+--- iproute2-3.9.0-orig/misc/ss.c	2013-04-30 16:47:54.000000000 +0200
++++ iproute2-3.9.0-patched/misc/ss.c	2013-05-02 15:43:30.000000000 +0200
+@@ -37,6 +37,10 @@
+ #include <linux/inet_diag.h>
+ #include <linux/unix_diag.h>
+ 
++#ifndef IPPROTO_DCCP
++# define IPPROTO_DCCP	33
++#endif
++
+ int resolve_hosts = 0;
+ int resolve_services = 1;
+ int preferred_family = AF_UNSPEC;

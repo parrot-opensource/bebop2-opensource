@@ -1,0 +1,28 @@
+diff --git a/src/Makefile.am b/src/Makefile.am
+index cc4d12d..6156329 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -26,9 +26,6 @@ AM_CFLAGS = \
+ 
+ #AM_CFLAGS += -DNDEBUG=1 -Os
+ 
+-# This cool debug trap works on i386/gcc only
+-AM_CFLAGS+='-DDEBUG_TRAP=__asm__("int $$3")'
+-
+ AM_LDFLAGS=-avoid-version -module -export-dynamic
+ 
+ lib_LTLIBRARIES = 
+diff --git a/src/Makefile.in b/src/Makefile.in
+index cee4df0..1e0045e 100644
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -409,8 +409,7 @@ EXTRA_DIST = map-file
+ # This cool debug trap works on i386/gcc only
+ AM_CFLAGS = -DMDNS_ALLOW_FILE=\"$(sysconfdir)/mdns.allow\" \
+ 	-DRESOLV_CONF_FILE=\"$(sysconfdir)/resolv.conf\" \
+-	-DAVAHI_SOCKET=\"$(localstatedir)/run/avahi-daemon/socket\" \
+-	'-DDEBUG_TRAP=__asm__("int $$3")'
++	-DAVAHI_SOCKET=\"$(localstatedir)/run/avahi-daemon/socket\"
+ AM_LDFLAGS = -avoid-version -module -export-dynamic
+ lib_LTLIBRARIES = $(am__append_1) $(am__append_2)
+ sources = util.c util.h $(am__append_3) $(am__append_5)

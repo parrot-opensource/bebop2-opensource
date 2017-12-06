@@ -1,0 +1,8 @@
+config BR2_PACKAGE_MTP_PROBE
+	bool "mtp-probe"
+	select BR2_PACKAGE_LIBUSB_1_0
+	default n
+	help
+	  Helper used to detect mtp-devices, from libmtp
+
+	  http://libmtp.sourceforge.net/

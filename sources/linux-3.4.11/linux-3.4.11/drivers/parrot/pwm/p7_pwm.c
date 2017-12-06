@@ -29,6 +29,8 @@
 #include <linux/clk.h>
 #include <linux/io.h>
 #include <linux/pwm.h>
+#include <linux/input.h>
+#include <linux/interrupt.h>
 #include <mach/hardware.h>
 #include <linux/pinctrl/consumer.h>
 #include "p7_pwm.h"
@@ -68,11 +70,25 @@ static struct clk *             clk;
 static void __iomem *           mmio_base;
 static struct p7pwm_config     config[P7PWM_NUMBER];
 static struct pinctrl *         pins;
+static struct input_dev *       input_dev;
+
+int servo_rx_no_filter = 1;
+module_param(servo_rx_no_filter, int, S_IRUGO);
+MODULE_PARM_DESC(servo_rx_no_filter, "0/1(default) : if 1 the event won't be" 
+		" filtered and repeated every 22 ms.");
 
 #define P7PWM_SPEED(i)          (0x0+0x10*(i))
 #define P7PWM_RATIO(i)          (0x4+0x10*(i))
 #define P7PWM_START             (0xFF00)
 #define P7PWM_MODE              (0xFF04)
+
+#define P7PWM_MUX(i)            (0xa00 + 4*((i)/4))
+#define P7PWM_SERVO_RX_IN(i)    (0x900 + 4*(i))
+#define P7PWM_SERVO_RX_RESYNC   (0x920)
+#define P7PWM_SERVO_RX_MODE     (0x940)
+#define P7PWM_SERVO_RX_DIV      (0x960)
+#define P7PWM_SERVO_RX_ITEN     (0x980)
+#define P7PWM_SERVO_RX_IT_CFG   (0x9c0)
 
 /******************************************************************************
  *  DRIVER HELPERS
@@ -163,7 +179,7 @@ static int      p7pwm_request(struct pwm_chip *chip, struct pwm_device *pwm)
 
 	dev_dbg(chip->dev, "%s:requesting pwm %d\n", __func__,pwm->hwpwm);
 
-	if (is_used(pwm->hwpwm)) {
+	if (is_used(pwm->hwpwm) && !is_mode(pwm->hwpwm, P7PWM_MODE_PPM_RX)) {
 		config[pwm->hwpwm].speed_regval  = -1;
 		config[pwm->hwpwm].ratio_regval  = -1;
 		config[pwm->hwpwm].min_ratio     = to_min_ratio(pdata->conf[pwm->hwpwm]->duty_precision);
@@ -532,6 +548,8 @@ static void p7_show_pwm(struct pwm_chip* chip, struct seq_file* s)
 			seq_printf(s,"                               user={period=%dns, duty=%dns}\n",
 			           config[pwm->hwpwm].period_ns,
 			           config[pwm->hwpwm].duty_ns);
+		} else if (is_mode(p, P7PWM_MODE_PPM_RX)) {
+			seq_printf(s, "servo_rx\n");
 		} else
 			seq_printf(s, "\n");
 	}
@@ -563,6 +581,109 @@ static struct pwm_chip p7pwm_chip = {
 	.base   = P7_FIRST_PWM,
 	.npwm   = P7PWM_NUMBER
 };
+
+static const signed short servo_rx_abs[] = {
+	ABS_X, ABS_Y,
+	ABS_RX, ABS_RY,
+	ABS_Z, ABS_RZ,
+	ABS_HAT0X, ABS_HAT0Y,
+};
+
+
+static irqreturn_t servo_rx_irq(int irq, void *dev_id)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(servo_rx_abs); i++) {
+		/* reading data ack irq */
+		int val = __raw_readl(mmio_base + P7PWM_SERVO_RX_IN(i));
+		/*
+		   XXX the center is 1520 on futaba RC
+		 */
+		val -= 1500;
+		/* XXX hack to not filter value */
+		if (servo_rx_no_filter)
+			input_dev->absinfo[servo_rx_abs[i]].value = val - 10;
+		input_report_abs(input_dev, servo_rx_abs[i], val);
+	}
+	input_sync(input_dev);
+	return IRQ_HANDLED;
+}
+
+static int servo_rx_open(struct input_dev *dev)
+{
+	/* start irq */
+	__raw_writel(1, mmio_base + P7PWM_SERVO_RX_ITEN);
+	return 0;
+}
+
+static void servo_rx_close(struct input_dev *dev)
+{
+	/* stop irq */
+	__raw_writel(0, mmio_base + P7PWM_SERVO_RX_ITEN);
+}
+
+static int __devinit servo_rx_probe(struct platform_device *pdev)
+{
+	unsigned int pwm;
+
+	for (pwm = 0; pwm < P7PWM_NUMBER; pwm++) {
+		if (is_used(pwm) && is_mode(pwm, P7PWM_MODE_PPM_RX)) {
+			dev_info(&pdev->dev, "servo rx on pwm %d\n", pwm);
+			break;
+		}
+	}
+
+	if (pwm != P7PWM_NUMBER) {
+		/* muxing in servo rx serial */
+		__raw_writel(7 << ((pwm % 4)*8), mmio_base + P7PWM_MUX(pwm));
+		__raw_writel(0, mmio_base + P7PWM_SERVO_RX_ITEN);
+		/* data register are 12 bits (4095).
+		   2ms (max value) fit on 11 bits)
+		   but with trim we can get 2066 on futaba rc
+		 */
+		__raw_writel(clk_freq/1000000, mmio_base + P7PWM_SERVO_RX_DIV);
+		/* servo rx sync len : 3ms */
+		__raw_writel(3000, mmio_base + P7PWM_SERVO_RX_RESYNC);
+		/* serial mode, failling mode
+		   The mode configuration rising or failling don't change the result because we are measuring the whole pulse and the low pulse is always 500 us in our case.
+		 */
+		__raw_writel(0x200, mmio_base + P7PWM_SERVO_RX_MODE);
+
+		input_dev = input_allocate_device();
+		if (input_dev) {
+			int i;
+			int ret;
+			input_dev->name = pdev->name;
+			input_dev->dev.parent = &pdev->dev;
+			__set_bit(EV_ABS, input_dev->evbit);
+			for (i = 0; i < ARRAY_SIZE(servo_rx_abs); i++) {
+				signed short abs = servo_rx_abs[i];
+				set_bit(abs, input_dev->absbit);
+				input_set_abs_params(input_dev, abs, -500, 500, 3, 0);
+			}
+			ret = request_irq(P7_PWM_SERVO_RX_IRQ, servo_rx_irq, 0, pdev->name, pdata);
+			if (ret) {
+				dev_err(&pdev->dev,"can't register pwm irq");
+				input_free_device(input_dev);
+				input_dev = NULL;
+			}
+			else {
+				__raw_writel(0xf, mmio_base + P7PWM_SERVO_RX_IT_CFG);
+				input_dev->open = servo_rx_open;
+				input_dev->close = servo_rx_close;
+			}
+		}
+	}
+	return 0;
+}
+static int __devinit servo_rx_register(void)
+{
+	int r;
+	/* we need to wait that input layer is ready : register later */
+	if (input_dev)
+		r = input_register_device(input_dev);
+	return 0;
+}
 
 static int __devinit p7pwm_probe(struct platform_device *pdev)
 {
@@ -626,6 +747,8 @@ static int __devinit p7pwm_probe(struct platform_device *pdev)
 	/*Fill pwm_chip*/
 	p7pwm_chip.dev = &pdev->dev ;
 
+	servo_rx_probe(pdev);
+
 	rc = pwmchip_add(&p7pwm_chip);
 	if (rc < 0) {
 		dev_warn(&pdev->dev,"p7pwm_probe:Failed :Cant add chip\n");
@@ -648,6 +771,11 @@ static int __devexit p7pwm_remove(struct platform_device *pdev)
 
 	dev_dbg(&pdev->dev,"p7pwm_remove:\n") ;
 
+	if (input_dev) {
+		free_irq(P7_PWM_SERVO_RX_IRQ, pdata);
+		input_unregister_device(input_dev);
+		input_free_device(input_dev);
+	}
 	rc = 0 ;
 	pinctrl_put(pins);
 
@@ -678,6 +806,7 @@ static int __init p7pwm_init(void)
 	return platform_driver_register(&p7pwm_driver);
 }
 postcore_initcall(p7pwm_init);
+module_init(servo_rx_register);
 
 
 static void __exit p7pwm_exit(void)

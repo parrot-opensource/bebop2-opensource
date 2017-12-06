@@ -317,7 +317,7 @@ int __init p7brd_export_fb_positions(void)
 	unsigned	 lcd;
 	unsigned	 overlay;
 
-	class = class_create(NULL, "lcd");
+	class = class_create(NULL, "lcdfb");
 	if (IS_ERR(class)) {
 		ret = PTR_ERR(class);
 		goto class_create_failed;

@@ -221,6 +221,7 @@ int util_run_program(struct udev *udev, const char *command, char **envp,
 		     const sigset_t *sigmask, bool reset_prio);
 int util_resolve_subsys_kernel(struct udev *udev, const char *string,
 				      char *result, size_t maxsize, int read_value);
+const char *util_get_board_name(void);
 
 /* libudev-selinux-private.c */
 #ifndef WITH_SELINUX
@@ -238,5 +239,23 @@ void udev_selinux_setfscreatecon(struct udev *udev, const char *file, unsigned i
 void udev_selinux_setfscreateconat(struct udev *udev, int dfd, const char *file, unsigned int mode);
 void udev_selinux_resetfscreatecon(struct udev *udev);
 #endif
+
+/* libudev-provider */
+#define UDEV_MAX_PROVIDERS  16
+
+struct udev_provider_server *udev_provider_server_new(struct udev *udev, struct pollfd *pfd);
+void udev_provider_server_unref(struct udev_provider_server *server);
+void udev_provider_server_accept(struct udev_provider_server *server);
+void udev_provider_server_handle_disconnect(struct udev_provider_server *server, int id,
+					    void (*pfn)(struct udev_device *dev));
+void udev_provider_server_remove_stale(struct udev_provider_server *server,
+				       void (*pfn)(struct udev_device *dev));
+struct udev_device *udev_provider_server_receive_device(struct udev_provider_server *server);
+int udev_provider_server_get_fd(struct udev_provider_server *server);
+int udev_provider_server_get_device_fd(struct udev_provider_server *server);
+int udev_provider_device_is_virtual(struct udev_device *udev_device);
+void udev_provider_enumerate(struct udev *udev,
+			     void (*pfn)(void *cookie, struct udev_device *dev),
+			     void *cookie);
 
 #endif

@@ -12,14 +12,16 @@ LOCAL_AUTOTOOLS_SUBDIR := libconfig-$(LOCAL_AUTOTOOLS_VERSION)
 
 LOCAL_AUTOTOOLS_CONFIGURE_ARGS := --disable-examples
 
+LOCAL_EXPORT_LDLIBS := -lconfig
+
 # The c++ api requires exceptions
 ifeq ("$(TARGET_USE_CXX_EXCEPTIONS)","1")
   LOCAL_AUTOTOOLS_CONFIGURE_ARGS += --enable-cxx
+  LOCAL_EXPORT_LDLIBS += -lconfig++
 else
   LOCAL_AUTOTOOLS_CONFIGURE_ARGS += --disable-cxx
 endif
 
-LOCAL_EXPORT_LDLIBS := -lconfig
 
 include $(BUILD_AUTOTOOLS)
 
@@ -38,14 +40,15 @@ LOCAL_AUTOTOOLS_SUBDIR := libconfig-$(LOCAL_AUTOTOOLS_VERSION)
 
 LOCAL_AUTOTOOLS_CONFIGURE_ARGS := --disable-examples
 
+LOCAL_EXPORT_LDLIBS := -lconfig
+
 # The c++ api requires exceptions
 ifeq ("$(TARGET_USE_CXX_EXCEPTIONS)","1")
   LOCAL_AUTOTOOLS_CONFIGURE_ARGS += --enable-cxx
+  LOCAL_EXPORT_LDLIBS += -lconfig++
 else
   LOCAL_AUTOTOOLS_CONFIGURE_ARGS += --disable-cxx
 endif
-
-LOCAL_EXPORT_LDLIBS := -lconfig
 
 include $(BUILD_AUTOTOOLS)
 

@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>udev_list</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
 <link rel="home" href="index.html" title="libudev Reference Manual">
 <link rel="up" href="ch01.html" title="libudev">
 <link rel="prev" href="libudev-udev.html" title="udev">
 <link rel="next" href="libudev-udev-device.html" title="udev_device">
-<meta name="generator" content="GTK-Doc V1.15 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.19 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -26,7 +26,7 @@
                   <a href="#libudev-udev-list.description" class="shortcut">Description</a>
 </td></tr>
 </table>
-<div class="refentry" title="udev_list">
+<div class="refentry">
 <a name="libudev-udev-list"></a><div class="titlepage"></div>
 <div class="refnamediv"><table width="100%"><tr>
 <td valign="top">
@@ -35,7 +35,7 @@
 </td>
 <td valign="top" align="right"></td>
 </tr></table></div>
-<div class="refsynopsisdiv" title="Synopsis">
+<div class="refsynopsisdiv">
 <a name="libudev-udev-list.synopsis"></a><h2>Synopsis</h2>
 <pre class="synopsis">struct              <a class="link" href="libudev-udev-list.html#udev-list-entry" title="struct udev_list_entry">udev_list_entry</a>;
 struct <a class="link" href="libudev-udev-list.html#udev-list-entry" title="struct udev_list_entry"><span class="returnvalue">udev_list_entry</span></a> * <a class="link" href="libudev-udev-list.html#udev-list-entry-get-next" title="udev_list_entry_get_next ()">udev_list_entry_get_next</a>       (<em class="parameter"><code><span class="type">struct udev_list_entry</span> *list_entry</code></em>);
@@ -47,15 +47,15 @@ const <span class="returnvalue">char</span> *        <a class="link" href="libud
                                                          first_entry)
 </pre>
 </div>
-<div class="refsect1" title="Description">
+<div class="refsect1">
 <a name="libudev-udev-list.description"></a><h2>Description</h2>
 <p>
 Libudev list operations.
 </p>
 </div>
-<div class="refsect1" title="Details">
+<div class="refsect1">
 <a name="libudev-udev-list.details"></a><h2>Details</h2>
-<div class="refsect2" title="struct udev_list_entry">
+<div class="refsect2">
 <a name="udev-list-entry"></a><h3>struct udev_list_entry</h3>
 <pre class="programlisting">struct udev_list_entry;</pre>
 <p>
@@ -64,7 +64,7 @@ contains a name, and optionally a value.
 </p>
 </div>
 <hr>
-<div class="refsect2" title="udev_list_entry_get_next ()">
+<div class="refsect2">
 <a name="udev-list-entry-get-next"></a><h3>udev_list_entry_get_next ()</h3>
 <pre class="programlisting">struct <a class="link" href="libudev-udev-list.html#udev-list-entry" title="struct udev_list_entry"><span class="returnvalue">udev_list_entry</span></a> * udev_list_entry_get_next       (<em class="parameter"><code><span class="type">struct udev_list_entry</span> *list_entry</code></em>);</pre>
 <div class="variablelist"><table border="0">
@@ -72,19 +72,17 @@ contains a name, and optionally a value.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>list_entry</code></em> :</span></p></td>
-<td>current entry
-</td>
+<td>current entry</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> the next entry from the list, <a href="http://library.gnome.org/devel/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><span class="type">NULL</span></a> is no more entries are found.
-</td>
+<td>the next entry from the list, <span class="type">NULL</span> is no more entries are found.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_list_entry_get_by_name ()">
+<div class="refsect2">
 <a name="udev-list-entry-get-by-name"></a><h3>udev_list_entry_get_by_name ()</h3>
 <pre class="programlisting">struct <a class="link" href="libudev-udev-list.html#udev-list-entry" title="struct udev_list_entry"><span class="returnvalue">udev_list_entry</span></a> * udev_list_entry_get_by_name    (<em class="parameter"><code><span class="type">struct udev_list_entry</span> *list_entry</code></em>,
                                                          <em class="parameter"><code>const <span class="type">char</span> *name</code></em>);</pre>
@@ -93,24 +91,21 @@ contains a name, and optionally a value.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>list_entry</code></em> :</span></p></td>
-<td>current entry
-</td>
+<td>current entry</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>name</code></em> :</span></p></td>
-<td>name string to match
-</td>
+<td>name string to match</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> the entry where <em class="parameter"><code>name</code></em> matched, <a href="http://library.gnome.org/devel/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><span class="type">NULL</span></a> if no matching entry is found.
-</td>
+<td>the entry where <em class="parameter"><code>name</code></em> matched, <span class="type">NULL</span> if no matching entry is found.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_list_entry_get_name ()">
+<div class="refsect2">
 <a name="udev-list-entry-get-name"></a><h3>udev_list_entry_get_name ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *        udev_list_entry_get_name            (<em class="parameter"><code><span class="type">struct udev_list_entry</span> *list_entry</code></em>);</pre>
 <div class="variablelist"><table border="0">
@@ -118,19 +113,17 @@ contains a name, and optionally a value.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>list_entry</code></em> :</span></p></td>
-<td>current entry
-</td>
+<td>current entry</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> the name string of this entry.
-</td>
+<td>the name string of this entry.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_list_entry_get_value ()">
+<div class="refsect2">
 <a name="udev-list-entry-get-value"></a><h3>udev_list_entry_get_value ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *        udev_list_entry_get_value           (<em class="parameter"><code><span class="type">struct udev_list_entry</span> *list_entry</code></em>);</pre>
 <div class="variablelist"><table border="0">
@@ -138,19 +131,17 @@ contains a name, and optionally a value.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>list_entry</code></em> :</span></p></td>
-<td>current entry
-</td>
+<td>current entry</td>
 </tr>
 <tr>
 <td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
-<td> the value string of this entry.
-</td>
+<td>the value string of this entry.</td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <hr>
-<div class="refsect2" title="udev_list_entry_foreach()">
+<div class="refsect2">
 <a name="udev-list-entry-foreach"></a><h3>udev_list_entry_foreach()</h3>
 <pre class="programlisting">#define             udev_list_entry_foreach(list_entry, first_entry)</pre>
 <p>
@@ -161,13 +152,11 @@ Helper to iterate over all entries of a list.
 <tbody>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>list_entry</code></em> :</span></p></td>
-<td>entry to store the current position
-</td>
+<td>entry to store the current position</td>
 </tr>
 <tr>
 <td><p><span class="term"><em class="parameter"><code>first_entry</code></em> :</span></p></td>
-<td>first entry to start with
-</td>
+<td>first entry to start with</td>
 </tr>
 </tbody>
 </table></div>
@@ -176,6 +165,6 @@ Helper to iterate over all entries of a list.
 </div>
 <div class="footer">
 <hr>
-          Generated by GTK-Doc V1.15</div>
+          Generated by GTK-Doc V1.19</div>
 </body>
 </html>

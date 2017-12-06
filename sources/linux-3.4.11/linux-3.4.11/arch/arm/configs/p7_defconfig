@@ -2094,6 +2094,11 @@ CONFIG_VIDEO_MT9V117=y
 # CONFIG_VIDEO_AR0330 is not set
 
 #
+# Liquide Lens devices
+#
+# CONFIG_VIDEO_MAX14574 is not set
+
+#
 # Flash devices
 #
 # CONFIG_VIDEO_ADP1653 is not set

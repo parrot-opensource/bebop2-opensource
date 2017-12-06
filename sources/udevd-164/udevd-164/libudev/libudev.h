@@ -15,6 +15,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <poll.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -176,6 +177,21 @@ int udev_queue_get_seqnum_sequence_is_finished(struct udev_queue *udev_queue,
 					       unsigned long long int start, unsigned long long int end);
 struct udev_list_entry *udev_queue_get_queued_list_entry(struct udev_queue *udev_queue);
 struct udev_list_entry *udev_queue_get_failed_list_entry(struct udev_queue *udev_queue);
+
+/*
+ * udev_provider
+ *
+ * generate virtual device events from external providers
+ */
+struct udev_provider;
+struct udev_provider *udev_provider_new(struct udev *udev);
+int udev_provider_add_device(struct udev_provider *udev_provider, const char *sysname,
+			     const char **properties);
+int udev_provider_remove_device(struct udev_provider *udev_provider, const char *sysname);
+int udev_provider_change_device(struct udev_provider *udev_provider, const char *sysname,
+				const char **properties);
+struct udev_provider *udev_provider_ref(struct udev_provider *udev_provider);
+void udev_provider_unref(struct udev_provider *udev_provider);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -953,11 +953,9 @@ static int parrot5_i2cm_master_start(struct parrot5_i2cm_data *drv_data,
 	}
 
 	if (irq_on(drv_data)) {
-		int timeout;
-		timeout = msecs_to_jiffies(drv_data->adapter.timeout);
 		time_left = wait_event_timeout(drv_data->wait,
 				drv_data->wait_up,
-				timeout);
+				drv_data->adapter.timeout);
 	}
 	else {
 		/* polling mode no fifo */
@@ -1247,7 +1245,7 @@ int parrot5_i2cm_probe(struct platform_device *pdev)
 	drv_data->adapter.algo_data = drv_data;
 	drv_data->adapter.dev.parent = &pdev->dev;
 	drv_data->adapter.owner = THIS_MODULE;
-	drv_data->adapter.timeout = PARROT5_I2CM_TIMEOUT;
+	drv_data->adapter.timeout = msecs_to_jiffies(PARROT5_I2CM_TIMEOUT);
 
 	/* we don't use i2c_add_adapter to allow
 	   board config to use i2c_register_board_info

@@ -1,0 +1,12 @@
+diff -ru avahi-0.6.29_orig/avahi-core/netlink.c avahi-0.6.29/avahi-core/netlink.c
+--- avahi-0.6.29_orig/avahi-core/netlink.c	2010-06-29 05:30:34.000000000 +0200
++++ avahi-0.6.29/avahi-core/netlink.c	2016-02-11 16:19:51.252346017 +0100
+@@ -128,7 +128,7 @@
+     memset(&addr, 0, sizeof(addr));
+     addr.nl_family = AF_NETLINK;
+     addr.nl_groups = groups;
+-    addr.nl_pid = getpid();
++    addr.nl_pid = 0;
+ 
+     if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+         avahi_log_error(__FILE__": bind(): %s", strerror(errno));

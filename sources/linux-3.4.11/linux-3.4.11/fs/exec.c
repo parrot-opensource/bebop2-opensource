@@ -1753,11 +1753,6 @@ static int format_corename(struct core_name *cn, long signr)
 				err = cn_printf(cn, "%d",
 					      task_tgid_vnr(current));
 				break;
-			/* tid */
-			case 'T':
-				err = cn_printf(cn, "%d",
-					      task_pid_vnr(current));
-				break;
 			/* uid */
 			case 'u':
 				err = cn_printf(cn, "%d", cred->uid);

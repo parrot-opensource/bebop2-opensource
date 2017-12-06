@@ -85,7 +85,7 @@ struct buffer
 	unsigned int idx;
 	unsigned int padding[VIDEO_MAX_PLANES];
 	unsigned int size[VIDEO_MAX_PLANES];
-	void *mem[VIDEO_MAX_PLANES];
+	uint8_t *mem[VIDEO_MAX_PLANES];
 };
 
 struct device
@@ -834,7 +834,7 @@ static int video_buffer_alloc_userptr(struct device *dev, struct buffer *buffer,
 		else
 			length = v4l2buf->length;
 
-		ret = posix_memalign(&buffer->mem[i], page_size,
+		ret = posix_memalign((void**)&buffer->mem[i], page_size,
 				     length + offset + padding);
 		if (ret < 0) {
 			printf("Unable to allocate buffer %u/%u (%d)\n",
@@ -1550,7 +1550,7 @@ static void video_verify_buffer(struct device *dev, struct v4l2_buffer *buf)
 	unsigned int i;
 
 	for (plane = 0; plane < dev->num_planes; ++plane) {
-		const uint8_t *data = buffer->mem[plane] + buffer->size[plane];
+		const uint8_t *data = (const uint8_t *)(buffer->mem[plane] + buffer->size[plane]);
 		unsigned int errors = 0;
 		unsigned int dirty = 0;
 		unsigned int length;
@@ -1624,7 +1624,7 @@ static void video_save_image(struct device *dev, struct v4l2_buffer *buf,
 		return;
 
 	for (i = 0; i < dev->num_planes; i++) {
-		void *data = dev->buffers[buf->index].mem[i];
+		uint8_t *data = dev->buffers[buf->index].mem[i];
 		unsigned int length;
 
 		if (video_is_mplane(dev)) {
@@ -1650,7 +1650,7 @@ static void video_save_image(struct device *dev, struct v4l2_buffer *buf,
 	close(fd);
 }
 
-unsigned int video_buffer_bytes_used(struct device *dev, struct v4l2_buffer *buf)
+static unsigned int video_buffer_bytes_used(struct device *dev, struct v4l2_buffer *buf)
 {
 	unsigned int bytesused = 0;
 	unsigned int i;
@@ -1796,7 +1796,7 @@ done:
 	return video_free_buffers(dev);
 }
 
-void *server_fct(void *priv)
+static void *server_fct(void *priv)
 {
 	unsigned char *data;
 	int len;
@@ -1906,7 +1906,7 @@ int server_queue(server_t *server, void *data, int len)
 	return 0;
 }
 
-server_t *server_init(struct sockaddr_in *dst)
+static server_t *server_init(struct sockaddr_in *dst)
 {
 	server_t *server;
 	int sock;

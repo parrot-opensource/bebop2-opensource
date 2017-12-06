@@ -90,6 +90,12 @@ int udev_device_update_db(struct udev_device *udev_device)
 	struct udev_list_entry *list_entry;
 	int ret;
 
+	/* make sure JUBA properties are flagged and stored into db */
+	udev_list_entry_foreach(list_entry, udev_device_get_properties_list_entry(udev_device)) {
+		if (strncmp(udev_list_entry_get_name(list_entry), "JUBA_", 5) == 0)
+			udev_list_entry_set_flags(list_entry, 1);
+	}
+
 	util_strscpyl(filename, sizeof(filename), udev_get_dev_path(udev), "/.udev/db/",
 		      udev_device_get_subsystem(udev_device), ":", udev_device_get_sysname(udev_device), NULL);
 	util_strscpyl(filename_tmp, sizeof(filename_tmp), filename, ".tmp", NULL);

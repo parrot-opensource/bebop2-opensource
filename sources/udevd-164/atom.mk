@@ -10,15 +10,9 @@ LOCAL_MODULE := udev
 LOCAL_DESCRIPTION := Meta-package which selects all udev components
 LOCAL_CATEGORY_PATH := devman/udev
 
-LOCAL_DEPENDS_MODULES := \
-	libudev \
-	libudev-private \
-	udevd \
-	udevadm \
-	udevd_init \
+LOCAL_REQUIRED_MODULES := libudev libudev-private udevd udevadm
 
-# TODO change the BUILD_CUSTOM to the definitive name of BUILD_META_PACKAGE
-include $(BUILD_CUSTOM)
+include $(BUILD_META_PACKAGE)
 
 ################################################################################
 # libudev
@@ -33,11 +27,12 @@ LOCAL_CATEGORY_PATH := devman/udev
 LOCAL_CFLAGS := \
 	-include "include/config.h"
 
+LOCAL_CFLAGS += -Wno-unused-result
 ifeq ("$(TARGET_CC_VERSION)","4.3.3")
 LOCAL_CFLAGS += \
 	-DSOCK_CLOEXEC=02000000
 endif
-	
+
 LOCAL_EXPORT_C_INCLUDES := \
 	$(LOCAL_PATH)/libudev/
 
@@ -48,10 +43,8 @@ LOCAL_SRC_FILES := \
 	libudev/libudev-device.c \
 	libudev/libudev-enumerate.c \
 	libudev/libudev-monitor.c \
-	libudev/libudev-queue.c
-
-LOCAL_LIBRARIES := \
-	libpac
+	libudev/libudev-queue.c \
+	libudev/libudev-provider.c
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -66,8 +59,9 @@ LOCAL_DESCRIPTION := Private library for udev executables
 LOCAL_CATEGORY_PATH := devman/udev
 
 LOCAL_CFLAGS := \
+	-Wno-unused-result \
 	-include "include/config.h"
-	
+
 LOCAL_EXPORT_C_INCLUDES := \
 	$(LOCAL_PATH)/libudev/
 
@@ -77,9 +71,7 @@ LOCAL_SRC_FILES := \
 	libudev/libudev-device-private.c \
 	libudev/libudev-queue-private.c
 
-LOCAL_LIBRARIES := \
-	libpac \
-	libudev
+LOCAL_LIBRARIES := libudev
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -92,9 +84,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := udevd
 LOCAL_DESCRIPTION := Daemon monitoring kernel events concerning hardware
 LOCAL_CATEGORY_PATH := devman/udev
-LOCAL_DEPENDS_MODULES := udevd_init
 
 LOCAL_CFLAGS := \
+	-Wno-unused-result \
 	-include "include/config.h"
 
 ifeq ("$(TARGET_CC_VERSION)","4.3.3")
@@ -108,22 +100,17 @@ LOCAL_SRC_FILES := \
 	udev/udev-watch.c \
 	udev/udev-node.c \
 	udev/udev-rules.c \
+	udev/udev-perms.c \
 	\
 	udev/udevd.c \
-	udev/sd-daemon.c
+	udev/sd-daemon.c \
+	udev/udevd_init.c \
+	udev/udevadm-trigger.c
 
-LOCAL_LIBRARIES := \
-	libudev \
-	libudev-private \
-	libpac
+LOCAL_LIBRARIES := libudev libudev-private
 
 LOCAL_COPY_FILES := \
-	scripts/udevd.sh:sbin/
-
-ifdef UDEVD_NATIVE_SCRIPT
-LOCAL_COPY_FILES += \
-	scripts/udevd_native.sh:sbin/
-endif
+	scripts/30-udev.rc:etc/boxinit.d/
 
 include $(BUILD_EXECUTABLE)
 
@@ -136,11 +123,12 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := udevadm
 LOCAL_DESCRIPTION := Configuration and monitoring for udev
 LOCAL_CATEGORY_PATH := devman/udev
-LOCAL_DEPENDS_MODULES := udevd
+LOCAL_REQUIRED_MODULES := udevd
 
 LOCAL_CFLAGS := \
 	-include "include/config.h"
 
+LOCAL_CFLAGS += -Wno-unused-result
 ifeq ("$(TARGET_CC_VERSION)","4.3.3")
 LOCAL_CFLAGS += \
 	-DIN_CLOEXEC=02000000
@@ -151,6 +139,7 @@ LOCAL_SRC_FILES := \
 	udev/udev-watch.c \
 	udev/udev-node.c \
 	udev/udev-rules.c \
+	udev/udev-perms.c \
 	\
 	udev/udevadm.c \
 	udev/udevadm-info.c \
@@ -160,35 +149,6 @@ LOCAL_SRC_FILES := \
 	udev/udevadm-settle.c \
 	udev/udevadm-trigger.c
 
-LOCAL_LIBRARIES := \
-	libudev \
-	libudev-private \
-	libpac
+LOCAL_LIBRARIES := libudev libudev-private
 
 include $(BUILD_EXECUTABLE)
-
-################################################################################
-# udevd_init
-################################################################################
-
-include $(CLEAR_VARS)
-
-LOCAL_MODULE := udevd_init
-LOCAL_DESCRIPTION := Launcher for the udevd daemon
-LOCAL_CATEGORY_PATH := devman/udev
-
-LOCAL_CFLAGS := \
-	-include "include/config.h"
-
-LOCAL_SRC_FILES := \
-	udev/udevadm-settle.c \
-	udev/udevadm-trigger.c \
-	udev/udevd_init.c
-
-LOCAL_LIBRARIES := \
-	libudev \
-	libudev-private \
-	libpac
-
-include $(BUILD_EXECUTABLE)
-

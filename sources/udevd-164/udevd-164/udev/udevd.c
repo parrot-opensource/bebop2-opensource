@@ -45,8 +45,6 @@
 #include <sys/utsname.h>
 #include <sys/resource.h>
 
-#include <libpac.h>
-
 #include "udev.h"
 #include "sd-daemon.h"
 
@@ -55,31 +53,10 @@
 
 static bool debug;
 
-static inline int priority_to_pac_log_level(int priority)
-{
-	switch(priority) {
-		case LOG_INFO :
-			return PAC_LOG_INFO;
-
-		case LOG_DEBUG :
-			return PAC_LOG_DEBUG;
-
-		case LOG_WARNING :
-			return PAC_LOG_WARN;
-
-		case LOG_ERR :
-			return PAC_LOG_ERROR;
-	}
-
-	return PAC_LOG_DEFAULT;
-}
-
 static void log_fn(struct udev *udev, int priority,
 		   const char *file, int line, const char *fn,
 		   const char *format, va_list args)
 {
-	int level = priority_to_pac_log_level(priority);
-
 	if (debug) {
 		char buf[1024];
 		struct timeval tv;
@@ -88,29 +65,19 @@ static void log_fn(struct udev *udev, int priority,
 		vsnprintf(buf, sizeof(buf), format, args);
 		gettimeofday(&tv, &tz);
 
-
-		if (pac_is_android_os())
-			pac_log(level, "udevd",
-				"%llu.%06u [%u] %s: %s",
-				(unsigned long long) tv.tv_sec,
-				(unsigned int) tv.tv_usec, (int) getpid(), fn,
-				buf);
-		else
-			fprintf(stderr, "%llu.%06u [%u] %s: %s",
-				(unsigned long long) tv.tv_sec,
-				(unsigned int) tv.tv_usec, (int) getpid(), fn,
-				buf);
+		fprintf(stderr, "%llu.%06u [%u] %s: %s",
+			(unsigned long long) tv.tv_sec,
+			(unsigned int) tv.tv_usec, (int) getpid(), fn,
+			buf);
 	} else {
-		if (pac_is_android_os())
-			pac_vlog(level, "udevd", format, args);
-		else
-			vsyslog(priority, format, args);
+		vsyslog(priority, format, args);
 	}
 }
 
 static struct udev_rules *rules;
 static struct udev_queue_export *udev_queue_export;
 static struct udev_ctrl *udev_ctrl;
+static struct udev_provider_server *udev_provider_server;
 static struct udev_monitor *monitor;
 static int worker_watch[2];
 static pid_t settle_pid;
@@ -131,14 +98,19 @@ enum poll_fd {
 	FD_INOTIFY,
 	FD_SIGNAL,
 	FD_WORKER,
+	FD_PROVIDER_DEVICE,
+	FD_PROVIDER_SERVER,
+	FD_PROVIDER_BASE,
 };
 
-static struct pollfd pfd[] = {
+static struct pollfd pfd[FD_PROVIDER_BASE + UDEV_MAX_PROVIDERS] = {
 	[FD_NETLINK] = { .events = POLLIN },
 	[FD_WORKER] =  { .events = POLLIN },
 	[FD_SIGNAL] =  { .events = POLLIN },
 	[FD_INOTIFY] = { .events = POLLIN },
 	[FD_CONTROL] = { .events = POLLIN },
+	[FD_PROVIDER_SERVER] = { .events = POLLIN },
+	[FD_PROVIDER_DEVICE] = { .events = POLLIN },
 };
 
 enum event_state {
@@ -208,11 +180,14 @@ static void event_queue_delete(struct event *event)
 {
 	udev_list_node_remove(&event->node);
 
-	/* mark as failed, if "add" event returns non-zero */
-	if (event->exitcode != 0 && strcmp(udev_device_get_action(event->dev), "remove") != 0)
-		udev_queue_export_device_failed(udev_queue_export, event->dev);
-	else
-		udev_queue_export_device_finished(udev_queue_export, event->dev);
+	/* skip export of provider events */
+	if (!udev_provider_device_is_virtual(event->dev)) {
+		/* mark as failed, if "add" event returns non-zero */
+		if (event->exitcode != 0 && strcmp(udev_device_get_action(event->dev), "remove") != 0)
+			udev_queue_export_device_failed(udev_queue_export, event->dev);
+		else
+			udev_queue_export_device_finished(udev_queue_export, event->dev);
+	}
 
 	info(event->udev, "seq %llu done with %i\n", udev_device_get_seqnum(event->dev), event->exitcode);
 	udev_device_unref(event->dev);
@@ -309,7 +284,7 @@ static void worker_new(struct event *event)
 		sigdelset(&sigmask, SIGTERM);
 
 		/* request TERM signal if parent exits */
-		prctl(PR_SET_PDEATHSIG, SIGTERM);
+		prctl(PR_SET_PDEATHSIG, SIGTERM, 0,0,0);
 
 		/* initial device */
 		dev = event->dev;
@@ -333,12 +308,6 @@ static void worker_new(struct event *event)
 
 			/* apply rules, create node, symlinks */
 			err = udev_event_execute_rules(udev_event, rules);
-			if (udev_event_is_device_removed(udev_event)) {
-				info(udev_event->udev, "device %s removed: skipping event broadcast !", udev_device_get_syspath(dev));
-				failed = 0;
-				alarm(0);
-				goto skip_removed_device;
-			}
 
 			/* rules may change/disable the timeout */
 			if (udev_device_get_event_timeout(dev) >= 0)
@@ -358,7 +327,6 @@ static void worker_new(struct event *event)
 			/* send processed event back to libudev listeners */
 			udev_monitor_send_device(worker_monitor, NULL, dev);
 
-skip_removed_device:
 			/* send udevd the result of the event execution */
 			if (err != 0)
 				msg.exitcode = err;
@@ -466,7 +434,9 @@ static int event_queue_insert(struct udev_device *dev)
 	event->is_block = (strcmp("block", udev_device_get_subsystem(dev)) == 0);
 	event->ifindex = udev_device_get_ifindex(dev);
 
-	udev_queue_export_device_queued(udev_queue_export, dev);
+	/* do not export provider events */
+	if (!udev_provider_device_is_virtual(dev))
+		udev_queue_export_device_queued(udev_queue_export, dev);
 	info(event->udev, "seq %llu queued, '%s' '%s'\n", udev_device_get_seqnum(dev),
 	     udev_device_get_action(dev), udev_device_get_subsystem(dev));
 
@@ -506,15 +476,57 @@ static void worker_kill(struct udev *udev, int retain)
 	}
 }
 
+static bool is_devpath_busy_virtual(struct event *event)
+{
+	struct udev_list_node *loop;
+
+	/* check if queue contains events we depend on */
+	udev_list_node_foreach(loop, &event_list) {
+		struct event *loop_event = node_to_event(loop);
+
+		/* keep only provider events */
+		if (!udev_provider_device_is_virtual(loop_event->dev))
+			continue;
+
+		/* we already found a later event, earlier can not block us, no need to check again */
+		if (loop_event->seqnum < event->delaying_seqnum)
+			continue;
+
+		/* event we checked earlier still exists, no need to check again */
+		if (loop_event->seqnum == event->delaying_seqnum)
+			return true;
+
+		/* found ourself, no later event can block us */
+		if (loop_event->seqnum >= event->seqnum)
+			break;
+
+		/* are there devices from the same provider connection ? */
+		if (strcmp(udev_device_get_subsystem(loop_event->dev),
+			   udev_device_get_subsystem(event->dev)) == 0) {
+			event->delaying_seqnum = loop_event->seqnum;
+			return true;
+		}
+	}
+	return false;
+}
+
 /* lookup event for identical, parent, child device */
 static bool is_devpath_busy(struct event *event)
 {
 	struct udev_list_node *loop;
 	size_t common;
 
+	/* check provider events separately */
+	if (udev_provider_device_is_virtual(event->dev))
+		return is_devpath_busy_virtual(event);
+
 	/* check if queue contains events we depend on */
 	udev_list_node_foreach(loop, &event_list) {
 		struct event *loop_event = node_to_event(loop);
+
+		/* ignore provider events */
+		if (udev_provider_device_is_virtual(loop_event->dev))
+			continue;
 
 		/* we already found a later event, earlier can not block us, no need to check again */
 		if (loop_event->seqnum < event->delaying_seqnum)
@@ -1015,6 +1027,12 @@ static int mem_size_mb(void)
 	return memsize;
 }
 
+static void insert_event(struct udev_device *dev)
+{
+	if (event_queue_insert(dev) < 0)
+		udev_device_unref(dev);
+}
+
 int main(int argc, char *argv[])
 {
 	struct udev *udev;
@@ -1132,7 +1150,7 @@ int main(int argc, char *argv[])
 		fclose(f);
 	}
 
-	if (getuid() != 0 && !pac_is_android_os()) {
+	if (getuid() != 0) {
 		fprintf(stderr, "root privileges required\n");
 		err(udev, "root privileges required\n");
 		goto exit;
@@ -1141,6 +1159,14 @@ int main(int argc, char *argv[])
 	/* set umask before creating any file/directory */
 	chdir("/");
 	umask(022);
+
+	/* sanity check */
+	if (udev_check_dev_path(udev) < 0)
+		goto exit;
+
+	/* fix static devices permissions very early */
+	udev_perms_load(udev);
+	udev_perms_fix_static_devices(udev);
 
 	/* before opening new files, make sure std{in,out,err} fds are in a sane state */
 	fd = open("/dev/null", O_RDWR);
@@ -1177,6 +1203,16 @@ int main(int argc, char *argv[])
 	}
 	udev_monitor_set_receive_buffer_size(monitor, 128*1024*1024);
 	pfd[FD_NETLINK].fd = udev_monitor_get_fd(monitor);
+
+	udev_provider_server = udev_provider_server_new(udev, &pfd[FD_PROVIDER_BASE]);
+	if (udev_provider_server == NULL) {
+		fprintf(stderr, "cannot initialize provider server\n");
+		err(udev, "cannot initialize provider server\n");
+		rc = 1;
+		goto exit;
+	}
+	pfd[FD_PROVIDER_SERVER].fd = udev_provider_server_get_fd(udev_provider_server);
+	pfd[FD_PROVIDER_DEVICE].fd = udev_provider_server_get_device_fd(udev_provider_server);
 
 	pfd[FD_INOTIFY].fd = udev_watch_init(udev);
 	if (pfd[FD_INOTIFY].fd < 0) {
@@ -1302,11 +1338,14 @@ int main(int argc, char *argv[])
 
 		/* set value depending on the amount of RAM */
 		if (memsize > 0)
-			children_max = 128 + (memsize / 8);
+			children_max = 16 + (memsize / 64);
 		else
-			children_max = 128;
+			children_max = 16;
 	}
 	info(udev, "set children_max to %u\n", children_max);
+
+	/* set board name, useful to trigger HW-specific rules */
+	udev_add_property(udev, "JUBA_STR_BOARD", util_get_board_name());
 
 	static_dev_create(udev);
 	static_dev_create_from_modules(udev);
@@ -1315,9 +1354,18 @@ int main(int argc, char *argv[])
 	udev_list_init(&event_list);
 	udev_list_init(&worker_list);
 
+	/* trigger kernel uevents */
+	udev_spawn_trigger(udev);
+
+	/* remove stale provider devices */
+	udev_provider_server_remove_stale(udev_provider_server, insert_event);
+	if (!udev_list_is_empty(&event_list))
+		events_start(udev);
+
 	while (!udev_exit) {
 		int fdcount;
 		int timeout;
+		int i;
 
 		/* set timeout to kill idle workers */
 		if (udev_list_is_empty(&event_list) && children > 2)
@@ -1345,6 +1393,26 @@ int main(int argc, char *argv[])
 			if (dev != NULL)
 				if (event_queue_insert(dev) < 0)
 					udev_device_unref(dev);
+		}
+
+		/* get provider event */
+		if (pfd[FD_PROVIDER_DEVICE].revents & POLLIN) {
+			struct udev_device *dev;
+
+			dev = udev_provider_server_receive_device(udev_provider_server);
+			if (dev != NULL)
+				if (event_queue_insert(dev) < 0)
+					udev_device_unref(dev);
+		}
+
+		/* accept provider connections */
+		if (pfd[FD_PROVIDER_SERVER].revents & POLLIN)
+			udev_provider_server_accept(udev_provider_server);
+
+		/* handle provider disconnections */
+		for (i = 0; i < UDEV_MAX_PROVIDERS; i++) {
+			if ((pfd[FD_PROVIDER_BASE+i].fd >= 0) && (pfd[FD_PROVIDER_BASE+i].revents & POLLHUP))
+				udev_provider_server_handle_disconnect(udev_provider_server, i, insert_event);
 		}
 
 		/* start new events */
@@ -1401,8 +1469,10 @@ exit:
 		close(worker_watch[READ_END]);
 	if (worker_watch[WRITE_END] >= 0)
 		close(worker_watch[WRITE_END]);
+	udev_provider_server_unref(udev_provider_server);
 	udev_monitor_unref(monitor);
 	udev_selinux_exit(udev);
+	udev_perms_unload(udev);
 	udev_unref(udev);
 	udev_log_close();
 	return rc;

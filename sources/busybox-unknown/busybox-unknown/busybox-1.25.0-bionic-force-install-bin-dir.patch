@@ -1,0 +1,34 @@
+diff --git a/include/applets.src.h b/include/applets.src.h
+index 6e1b02f..9d993b1 100644
+--- a/include/applets.src.h
++++ b/include/applets.src.h
+@@ -47,10 +47,10 @@ s     - suid type:
+ # define APPLET_NOFORK(name,main,l,s,help)   MAKE_USAGE(#name, help##_trivial_usage)
+ 
+ #elif defined(MAKE_LINKS)
+-# define APPLET(name,l,c)                    LINK l name
+-# define APPLET_ODDNAME(name,main,l,s,help)  LINK l name
+-# define APPLET_NOEXEC(name,main,l,s,help)   LINK l name
+-# define APPLET_NOFORK(name,main,l,s,help)   LINK l name
++# define APPLET(name,l,c)                    LINK BB_DIR_BIN name
++# define APPLET_ODDNAME(name,main,l,s,help)  LINK BB_DIR_BIN name
++# define APPLET_NOEXEC(name,main,l,s,help)   LINK BB_DIR_BIN name
++# define APPLET_NOFORK(name,main,l,s,help)   LINK BB_DIR_BIN name
+ 
+ #elif defined(MAKE_SUID)
+ # define APPLET(name,l,s)                    SUID s l name
+@@ -60,10 +60,10 @@ s     - suid type:
+ 
+ #else
+   static struct bb_applet applets[] = { /*    name, main, location, need_suid */
+-# define APPLET(name,l,s)                    { #name, #name, l, s },
+-# define APPLET_ODDNAME(name,main,l,s,help)  { #name, #main, l, s },
+-# define APPLET_NOEXEC(name,main,l,s,help)   { #name, #main, l, s, 1 },
+-# define APPLET_NOFORK(name,main,l,s,help)   { #name, #main, l, s, 1, 1 },
++# define APPLET(name,l,s)                    { #name, #name, BB_DIR_BIN, s },
++# define APPLET_ODDNAME(name,main,l,s,help)  { #name, #main, BB_DIR_BIN, s },
++# define APPLET_NOEXEC(name,main,l,s,help)   { #name, #main, BB_DIR_BIN, s, 1 },
++# define APPLET_NOFORK(name,main,l,s,help)   { #name, #main, BB_DIR_BIN, s, 1, 1 },
+ #endif
+ 
+ #if ENABLE_INSTALL_NO_USR

@@ -1,0 +1,278 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>udev_provider</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
+<link rel="home" href="index.html" title="libudev Reference Manual">
+<link rel="up" href="ch01.html" title="libudev">
+<link rel="prev" href="libudev-udev-queue.html" title="udev_queue">
+<link rel="next" href="api-index-full.html" title="API Index">
+<meta name="generator" content="GTK-Doc V1.19 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="libudev-udev-queue.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="ch01.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">libudev Reference Manual</th>
+<td><a accesskey="n" href="api-index-full.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#libudev-udev-provider.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#libudev-udev-provider.description" class="shortcut">Description</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="libudev-udev-provider"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="libudev-udev-provider.top_of_page"></a>udev_provider</span></h2>
+<p>udev_provider — external device event source</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="libudev-udev-provider.synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">struct              <a class="link" href="libudev-udev-provider.html#udev-provider" title="struct udev_provider">udev_provider</a>;
+struct <a class="link" href="libudev-udev-provider.html#udev-provider" title="struct udev_provider"><span class="returnvalue">udev_provider</span></a> * <a class="link" href="libudev-udev-provider.html#udev-provider-new" title="udev_provider_new ()">udev_provider_new</a>                (<em class="parameter"><code><span class="type">struct udev</span> *udev</code></em>);
+<span class="returnvalue">int</span>                 <a class="link" href="libudev-udev-provider.html#udev-provider-add-device" title="udev_provider_add_device ()">udev_provider_add_device</a>            (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> *sysname</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> **properties</code></em>);
+<span class="returnvalue">int</span>                 <a class="link" href="libudev-udev-provider.html#udev-provider-change-device" title="udev_provider_change_device ()">udev_provider_change_device</a>         (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> *sysname</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> **properties</code></em>);
+<span class="returnvalue">int</span>                 <a class="link" href="libudev-udev-provider.html#udev-provider-remove-device" title="udev_provider_remove_device ()">udev_provider_remove_device</a>         (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> *sysname</code></em>);
+struct <a class="link" href="libudev-udev-provider.html#udev-provider" title="struct udev_provider"><span class="returnvalue">udev_provider</span></a> * <a class="link" href="libudev-udev-provider.html#udev-provider-ref" title="udev_provider_ref ()">udev_provider_ref</a>                (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>);
+<span class="returnvalue">void</span>                <a class="link" href="libudev-udev-provider.html#udev-provider-unref" title="udev_provider_unref ()">udev_provider_unref</a>                 (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="libudev-udev-provider.description"></a><h2>Description</h2>
+<p>
+Allows to asynchronously send device events to udev from an external process.
+</p>
+</div>
+<div class="refsect1">
+<a name="libudev-udev-provider.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="udev-provider"></a><h3>struct udev_provider</h3>
+<pre class="programlisting">struct udev_provider;</pre>
+<p>
+Opaque object handling one event provider.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="udev-provider-new"></a><h3>udev_provider_new ()</h3>
+<pre class="programlisting">struct <a class="link" href="libudev-udev-provider.html#udev-provider" title="struct udev_provider"><span class="returnvalue">udev_provider</span></a> * udev_provider_new                (<em class="parameter"><code><span class="type">struct udev</span> *udev</code></em>);</pre>
+<p>
+Create a new device provider, and connect to provider server.
+You should have proper credentials for this call to succeed: either uid 0,
+or the same group membership as udevd.
+</p>
+<p>
+Once the provider has been successfully created, you can immediately
+start sending 'add', 'remove' or 'change' device events.
+</p>
+<p>
+Before releasing your provider, you should send 'remove' events for all
+your currently attached virtual devices. If you fail to do so, or if your
+process crashes, udevd will automatically generate the remove events.
+</p>
+<p>
+The initial refcount is 1, and needs to be decremented to
+release the resources of the udev provider.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>udev</code></em> :</span></p></td>
+<td>udev library context</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>a new udev provider, or <span class="type">NULL</span>, in case of an error</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="udev-provider-add-device"></a><h3>udev_provider_add_device ()</h3>
+<pre class="programlisting"><span class="returnvalue">int</span>                 udev_provider_add_device            (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> *sysname</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> **properties</code></em>);</pre>
+<p>
+Add a virtual device to the system. This will generate a fake 'add' uevent
+in the udev daemon, with the following properties:
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" type="disc">
+<li class="listitem"><p>DEVPATH=/juba-&lt;pid&gt;-&lt;id&gt;/juba-<em class="parameter"><code>sysname</code></em></p></li>
+<li class="listitem"><p>SUBSYSTEM=juba-&lt;pid&gt;-&lt;id&gt;</p></li>
+<li class="listitem"><p>DEVTYPE=juba</p></li>
+<li class="listitem"><p><em class="parameter"><code>properties</code></em> (your properties)</p></li>
+</ul></div>
+<p>
+</p>
+<p>
+Where &lt;pid&gt; is the PID of the client process, &lt;id&gt; identifies
+the client connection.
+</p>
+<p>
+<em class="parameter"><code>sysname</code></em> must uniquely identify your device in the system, it can contain
+only the following characters: "a-zA-Z0-9.-_:". Example: "ipod0".
+Note that <em class="parameter"><code>sysname</code></em> will be prepended with the string "juba-" to avoid any
+clash with kernel namespace.
+</p>
+<p>
+<em class="parameter"><code>properties</code></em> is a list of "key=values" properties. Each 'key' name should
+start with "JUBA_", otherwise the device will be rejected. Again this is to
+protect against kernel namespace collisions (including wrong matches in
+rules, etc).
+</p>
+<p>
+The virtual device event will be processed as usual, with rules processing,
+tagging, broadcasting to libudev listeners, db storage, etc. The device
+will be included in enumeration scans like a regular device. No device node
+will be created, and it will not support sysfs attributes or uevent triggers.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>udev_provider</code></em> :</span></p></td>
+<td>udev provider</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>sysname</code></em> :</span></p></td>
+<td>unique device name</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>properties</code></em> :</span></p></td>
+<td>
+<span class="type">NULL</span> terminated list of 'key=value' property strings</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>0 upon success, a negative errno value is case of error</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="udev-provider-change-device"></a><h3>udev_provider_change_device ()</h3>
+<pre class="programlisting"><span class="returnvalue">int</span>                 udev_provider_change_device         (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> *sysname</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> **properties</code></em>);</pre>
+<p>
+Change the properties of a virtual device. This will generate a fake 'change'
+uevent in the udev daemon. <em class="parameter"><code>sysname</code></em> should match a device previously added
+with <a class="link" href="libudev-udev-provider.html#udev-provider-add-device" title="udev_provider_add_device ()"><code class="function">udev_provider_add_device()</code></a>. No verification is done that this is the
+case.
+Note that you should provide the entire set of properties, not just the ones
+that need an update, as all properties are wiped out during a 'change' event.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>udev_provider</code></em> :</span></p></td>
+<td>udev provider</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>sysname</code></em> :</span></p></td>
+<td>unique device name</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>properties</code></em> :</span></p></td>
+<td>
+<span class="type">NULL</span> terminated list of 'key=value' property strings</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>0 upon success, a negative errno value is case of error</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="udev-provider-remove-device"></a><h3>udev_provider_remove_device ()</h3>
+<pre class="programlisting"><span class="returnvalue">int</span>                 udev_provider_remove_device         (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> *sysname</code></em>);</pre>
+<p>
+Remove a virtual device from the system. This will generate a fake 'remove'
+uevent in the udev daemon. <em class="parameter"><code>sysname</code></em> should match a device previously
+added with <a class="link" href="libudev-udev-provider.html#udev-provider-add-device" title="udev_provider_add_device ()"><code class="function">udev_provider_add_device()</code></a>. No verification is done that this is
+the case.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>udev_provider</code></em> :</span></p></td>
+<td>udev provider</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>sysname</code></em> :</span></p></td>
+<td>unique device name</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>0 upon success, a negative errno value is case of error</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="udev-provider-ref"></a><h3>udev_provider_ref ()</h3>
+<pre class="programlisting">struct <a class="link" href="libudev-udev-provider.html#udev-provider" title="struct udev_provider"><span class="returnvalue">udev_provider</span></a> * udev_provider_ref                (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>);</pre>
+<p>
+Take a reference of a udev provider.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>udev_provider</code></em> :</span></p></td>
+<td>udev provider</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>the passed udev provider</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="udev-provider-unref"></a><h3>udev_provider_unref ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                udev_provider_unref                 (<em class="parameter"><code><span class="type">struct udev_provider</span> *udev_provider</code></em>);</pre>
+<p>
+Drop a reference of a udev provider. If the refcount reaches zero,
+the bound sockets will be closed, and the resources of the provider
+will be released.
+</p>
+<div class="variablelist"><table border="0">
+<col align="left" valign="top">
+<tbody><tr>
+<td><p><span class="term"><em class="parameter"><code>udev_provider</code></em> :</span></p></td>
+<td>udev provider</td>
+</tr></tbody>
+</table></div>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.19</div>
+</body>
+</html>

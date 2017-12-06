@@ -683,6 +683,15 @@ int udev_enumerate_add_syspath(struct udev_enumerate *udev_enumerate, const char
 	return 0;
 }
 
+static void add_provider_device(void *cookie, struct udev_device *dev)
+{
+	struct udev_enumerate *udev_enumerate = (struct udev_enumerate *)cookie;
+
+	if (match_subsystem(udev_enumerate, udev_device_get_subsystem(dev)))
+		syspath_add(udev_enumerate, udev_device_get_syspath(dev));
+	udev_device_unref(dev);
+}
+
 /**
  * udev_enumerate_scan_devices:
  * @udev_enumerate: udev enumeration context
@@ -749,6 +758,7 @@ int udev_enumerate_scan_devices(struct udev_enumerate *udev_enumerate)
 			dbg(udev, "searching '/class/*' dir\n");
 			scan_dir(udev_enumerate, "class", NULL, NULL);
 		}
+		udev_provider_enumerate(udev, add_provider_device, udev_enumerate);
 	}
 
 	return 0;

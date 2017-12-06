@@ -341,6 +341,12 @@ int udev_device_read_uevent_file(struct udev_device *udev_device)
 	if (udev_device->uevent_loaded)
 		return 0;
 
+	/* skip provider virtual devices */
+	if (udev_provider_device_is_virtual(udev_device)) {
+		udev_device->uevent_loaded = true;
+		return 0;
+	}
+
 	util_strscpyl(filename, sizeof(filename), udev_device->syspath, "/uevent", NULL);
 	f = fopen(filename, "re");
 	if (f == NULL)
@@ -454,7 +460,9 @@ struct udev_device *udev_device_new_from_syspath(struct udev *udev, const char *
 	util_strscpy(path, sizeof(path), syspath);
 	util_resolve_sys_link(udev, path, sizeof(path));
 
-	if (strncmp(&path[len], "/devices/", 9) == 0) {
+	if (strncmp(&path[len], "/juba-", 6) == 0) {
+		/* skip patch checks on provider virtual devices */
+	} else if (strncmp(&path[len], "/devices/", 9) == 0) {
 		char file[UTIL_PATH_SIZE];
 
 		/* all "devices" require a "uevent" file */
@@ -928,6 +936,17 @@ const char *udev_device_get_subsystem(struct udev_device *udev_device)
 		    strncmp(udev_device->devpath, "/bus/", 5) == 0) {
 			udev_device_set_subsystem(udev_device, "subsystem");
 			return udev_device->subsystem;
+		}
+		/* virtual devices */
+		if (strncmp(udev_device->devpath, "/juba-provider", 14) == 0) {
+			char *p;
+			util_strscpy(subsystem, sizeof(subsystem), udev_device->devpath+1);
+			p = strchr(subsystem, '/');
+			if (p) {
+				*p = '\0';
+				udev_device_set_subsystem(udev_device, subsystem);
+				return udev_device->subsystem;
+			}
 		}
 	}
 	return udev_device->subsystem;

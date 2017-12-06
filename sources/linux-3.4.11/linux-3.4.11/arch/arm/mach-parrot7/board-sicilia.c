@@ -309,6 +309,7 @@ static struct pinctrl_map_size sicilia_multispec_cam_map_size[] __initdata = {
 
 #define MULTISPEC_CAM_WIDTH          1280
 #define MULTISPEC_CAM_HEIGHT          960
+#define MULTISPEC_CAM_EXTRA_DATA       10
 #define MULTISPEC_CAM_PIXEL_SIZE        2
 #define MULTISPEC_CAM_N_BUFFERS         4
 #define MULTISPEC_CAM_REFCLK     26000000
@@ -316,7 +317,8 @@ static struct pinctrl_map_size sicilia_multispec_cam_map_size[] __initdata = {
 #define MULTISPEC_CAM_I2C_BUS           2
 
 #define MULTISPEC_CAM_RAM_SIZE PAGE_ALIGN(MULTISPEC_CAM_WIDTH *      \
-					  MULTISPEC_CAM_HEIGHT *     \
+					  (MULTISPEC_CAM_HEIGHT + \
+					  MULTISPEC_CAM_EXTRA_DATA) * \
 					  MULTISPEC_CAM_PIXEL_SIZE * \
 					  MULTISPEC_CAM_N_BUFFERS)
 
@@ -528,12 +530,6 @@ static void __init sicilia_init_multispec_cams(void)
 		info    = &cam->subdev_info;
 		pdata   = &cam->cam_pdata;
 
-		/* Camera device */
-		dev->id                    = cam_id;
-		dev->name                  = "avicam";
-		dev->dev.dma_mask          = &sicilia_multispec_cam_dma_mask;
-		dev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
-
 		/* AVI subdev */
 		cam->subdev_pdata.set_power     = cam->set_power;
 		cam->subdev_pdata.ext_clock     = MULTISPEC_CAM_REFCLK;
@@ -556,15 +552,35 @@ static void __init sicilia_init_multispec_cams(void)
 		pdata->interface         = sicilia_multispec_cam_interface;
 		pdata->bus_width         = 16;
 		pdata->subdevs           = subdevs;
-		pdata->vb2_cache_flags   = VB2_CACHE_DMA_CONTIG | VB2_CACHE_WRITETHROUGH;
-
-		p7_reserve_avicammem(dev, MULTISPEC_CAM_RAM_SIZE);
+		pdata->vb2_cache_flags   = VB2_CACHE_DMA_CONTIG;
 
 		p7_init_avicam(dev, pdata,
 			       sicilia_multispec_cam_map_size[i].p_map,
 			       sicilia_multispec_cam_map_size[i].size);
 	power_off:
 		sicilia_multispec_cam_power_off(cam);
+	}
+}
+
+
+static void __init sicilia_multispec_cams_reserve_mem(void)
+{
+	struct platform_device      *dev;
+	int                          i;
+
+	for (i = 0; i < ARRAY_SIZE(sicilia_multispec_cams); i++) {
+		struct sicilia_multispec_cam *cam = &sicilia_multispec_cams[i];
+		int                           cam_id = i + 2;
+
+		dev     = &cam->cam_dev;
+
+		/* Camera device */
+		dev->id                    = cam_id;
+		dev->name                  = "avicam";
+		dev->dev.dma_mask          = &sicilia_multispec_cam_dma_mask;
+		dev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+
+		p7_reserve_avicammem(dev, MULTISPEC_CAM_RAM_SIZE);
 	}
 }
 
@@ -818,7 +834,7 @@ static struct tc358746a_platform_data sicilia_maincam_tc358746a_subdev_pdata = {
 	.force_subdev_pixcode = V4L2_MBUS_FMT_SBGGR10_1X10,
 	.lanes                = MAINCAM_LANES_NB,
 	.calibration_delay_ms = 300,
-	.phytimdly            = 16,
+	.phytimdly            = 10,
 };
 
 static struct i2c_board_info sicilia_maincam_tc358746a_i2c_device = {
@@ -851,7 +867,15 @@ static struct avicam_platform_data sicilia_maincam_pdata = {
 	.subdevs	   = sicilia_maincam_tc358746a_subdevs,
 };
 
-#define MAINCAM_AVI_RAM_SIZE PAGE_ALIGN(4608 * 3456 * 2 * 6)
+#define MAINCAM_WIDTH           4608
+#define MAINCAM_HEIGHT          3456
+#define MAINCAM_PIXEL_SIZE         2
+#define MAINCAM_N_BUFFERS          4
+
+#define MAINCAM_AVI_RAM_SIZE PAGE_ALIGN(MAINCAM_WIDTH * \
+					MAINCAM_HEIGHT * \
+					MAINCAM_PIXEL_SIZE * \
+					MAINCAM_N_BUFFERS)
 
 static u64 sicilia_maincam_dma_mask = DMA_BIT_MASK(32);
 
@@ -1105,25 +1129,22 @@ static void __init sicilia_init_wl18xx(void)
 		    ARRAY_SIZE(sicilia_sdhci1_pins));
 }
 
-
-static void __init sicilia_reserve_mem(void)
-{
-    drone_common_reserve_mem_ramoops();
-
-#define SICILIA_HX280_SIZE (CONFIG_ARCH_PARROT7_SICILIA_HX280_SIZE * SZ_1M)
-	p7_reserve_avicammem(&sicilia_maincam_dev, MAINCAM_AVI_RAM_SIZE);
-
-	p7_reserve_vencmem(SICILIA_HX280_SIZE);
-
-	p7_reserve_usb_mem(0);
-	p7_reserve_usb_mem(1);
-
-	p7_reserve_dmamem();
-}
-
 /******
  * Ram2Ram Scaler/ISP
  ******/
+
+/* buffers in NV12 (4:2:0) */
+#define M2M_STAT_DUMMY_BUFFER	(MAINCAM_WIDTH * \
+				MAINCAM_HEIGHT * 3 / 2)
+#define M2M_STAT_RAM_SIZE	((64 * 50 * 6 * MAINCAM_N_BUFFERS) + \
+				M2M_STAT_DUMMY_BUFFER)
+
+#define M2M_ISP_RAM_SIZE	(MAINCAM_WIDTH * \
+				MAINCAM_HEIGHT * \
+				MAINCAM_N_BUFFERS * 3 / 2)
+
+#define SICILIA_AVI_M2M_SIZE	PAGE_ALIGN(M2M_ISP_RAM_SIZE + \
+					   M2M_STAT_RAM_SIZE)
 
 static struct avi_m2m_platform_data sicilia_avi_m2m_pdata[] = {
 	{
@@ -1135,11 +1156,11 @@ static struct avi_m2m_platform_data sicilia_avi_m2m_pdata[] = {
 	{
 		.caps = AVI_CAPS_ISP,
 		.enable_stats = 0,
-		.vb2_cache_flags = VB2_CACHE_DMA_CONTIG |
-				   VB2_CACHE_FLUSH,
+		.vb2_cache_flags = VB2_CACHE_DMA_CONTIG,
 	},
 	{ .caps = 0 },
 };
+
 
 static void sicilia_configure_leds(void)
 {
@@ -1168,6 +1189,24 @@ static void sicilia_configure_leds(void)
 		pwm_enable(pwm);
 		pwm_free(pwm);
 	}
+}
+
+static void __init sicilia_reserve_mem(void)
+{
+	drone_common_reserve_mem_ramoops();
+
+	p7_reserve_avicammem(&sicilia_maincam_dev, MAINCAM_AVI_RAM_SIZE);
+	sicilia_multispec_cams_reserve_mem();
+
+	p7_reserve_avi_m2m_mem(SICILIA_AVI_M2M_SIZE);
+
+#define SICILIA_HX280_SIZE (CONFIG_ARCH_PARROT7_SICILIA_HX280_SIZE * SZ_1M)
+	p7_reserve_vencmem(SICILIA_HX280_SIZE);
+
+	p7_reserve_usb_mem(0);
+	p7_reserve_usb_mem(1);
+
+	p7_reserve_dmamem();
 }
 
 static void __init sicilia_init_mach(void)

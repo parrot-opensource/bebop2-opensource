@@ -150,6 +150,8 @@
 
 #define P7_AAI_IRQ          P7_SPIRQ(79)
 
+#define P7_PWM_SERVO_RX_IRQ        P7_SPIRQ(82)
+
 #define P7_CCAN0_IRQ        P7_SPIRQ(83)
 #define P7_CCAN1_IRQ        P7_SPIRQ(84)
 

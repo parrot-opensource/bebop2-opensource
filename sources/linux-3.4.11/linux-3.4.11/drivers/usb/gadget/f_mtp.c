@@ -50,6 +50,10 @@
 #define STATE_ERROR                 4   /* error from completion routine */
 
 /* number of tx and rx requests to allocate */
+#ifdef TX_REQ_MAX
+#undef TX_REQ_MAX
+#endif
+
 #define TX_REQ_MAX 4
 #define RX_REQ_MAX 2
 #define INTR_REQ_MAX 5

@@ -1,0 +1,16 @@
+--- wireless_tools.29.PATCHED/iwconfig.c	2016-08-24 15:07:22.035202938 +0200
++++ wireless_tools.29/iwconfig.c	2016-08-24 15:10:56.631341507 +0200
+@@ -222,12 +222,11 @@
+   if(info->b.has_freq)
+     {
+       double		freq = info->b.freq;	/* Frequency/channel */
+-      int		channel = -1;		/* Converted to channel */
+       /* Some drivers insist of returning channel instead of frequency.
+        * This fixes them up. Note that, driver should still return
+        * frequency, because other tools depend on it. */
+       if(info->has_range && (freq < KILO))
+-	channel = iw_channel_to_freq((int) freq, &freq, &info->range);
++	iw_channel_to_freq((int) freq, &freq, &info->range);
+       /* Display */
+       iw_print_freq(buffer, sizeof(buffer), freq, -1, info->b.freq_flags);
+       printf("%s  ", buffer);

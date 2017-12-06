@@ -32,8 +32,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <libpac.h>
-
 #include "udev.h"
 
 #define DEFAULT_TIMEOUT			180
@@ -165,7 +163,7 @@ int udevadm_settle(struct udev *udev, int argc, char *argv[])
 	}
 
 	/* guarantee that the udev daemon isn't pre-processing */
-	if (getuid() == 0 || pac_is_android_os()) {
+	if (getuid() == 0) {
 		struct udev_ctrl *uctrl;
 
 		uctrl = udev_ctrl_new_from_socket(udev, UDEV_CTRL_SOCK_PATH);

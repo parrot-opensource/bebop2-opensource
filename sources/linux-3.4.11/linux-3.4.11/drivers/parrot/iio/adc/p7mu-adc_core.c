@@ -70,8 +70,8 @@ static void p7mu_adc_stop(struct p7mu_adc_chip_info* st)
 {
 	/* Disable all channels */
 	p7mu_write16(st->p7mu_adc_res->start + P7MU_ADC_CH_EN_REG, 0);
-	/* Disable ADC */
-	p7mu_write16(st->p7mu_adc_res->start + P7MU_ADC_CTRL_REG, 0);
+	/* Disable ADC and reset */
+	p7mu_write16(st->p7mu_adc_res->start + P7MU_ADC_CTRL_REG, 0x20);
 }
 
 static void p7mu_adc_config(struct p7mu_adc_chip_info* st)
@@ -482,6 +482,8 @@ spi_skip:
 		p7mu_adc_configure_ring(&p7mu_adc);
 
 	/* Setup and start ADC */
+	p7mu_adc_stop(&p7mu_adc);
+	msleep(1);
 	p7mu_adc.state_mask |= P7MU_ADC_STATE_RUNNING;
 	p7mu_adc_config(&p7mu_adc);
 
@@ -616,6 +618,9 @@ static int p7mu_adc_spi_probe(struct spi_device *spi)
 
 	if (p7mu_adc.state_mask & P7MU_ADC_STATE_FAULT_SPI)
 		return -ENOTSUPP;
+
+	/* Disable SPI */
+	p7mu_write16(p7mu_adc.p7mu_spi_res->start + P7MU_SPI_CTRL_REG, 0);
 
 	p7mu_adc.spi = spi;
 	p7mu_adc_spi_setup(&p7mu_adc);

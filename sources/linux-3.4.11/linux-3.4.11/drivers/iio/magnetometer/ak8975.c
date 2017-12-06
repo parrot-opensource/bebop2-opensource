@@ -90,6 +90,16 @@
 #define AK8975_MAX_REGS			AK8975_REG_ASAZ
 
 /*
+ * AK8963 Register definitions
+ */
+
+#define AK8963_REG_CNTL2		0x0B
+#define AK8963_REG_CNTL2_SRST_SHIFT	0
+#define AK8963_REG_CNTL2_SRST_MASK	(0x1 << AK8963_REG_CNTL2_SRST_SHIFT)
+#define AK8963_REG_CNTL2_SRST_NORMAL	0x00
+#define AK8963_REG_CNTL2_SRST_RESET	0x01
+
+/*
  * AK09912 Register definitions
  */
 #define AK09912_REG_WIA1		0x00
@@ -458,6 +468,32 @@ static int ak8975_who_i_am(struct i2c_client *client,
 	}
 	return -ENODEV;
 }
+
+static int ak8975_soft_reset(struct i2c_client *client)
+{
+	struct iio_dev *indio_dev = i2c_get_clientdata(client);
+	struct ak8975_data *data = iio_priv(indio_dev);
+	int ret;
+
+	/* only AK8963 support SRST */
+	if (data->def->type != AK8963)
+		return 0;
+
+	ret = i2c_smbus_write_byte_data(data->client, AK8963_REG_CNTL2,
+					AK8963_REG_CNTL2_SRST_RESET);
+	if (ret < 0) {
+		dev_err(&client->dev, "Error in writing CNTL2\n");
+		return ret;
+	}
+
+	/**
+	 * AK8963 datasheet do not specify SRST timing
+	 * wait at least 50us (empirical value) */
+	usleep_range(50, 500);
+
+	return 0;
+}
+
 
 /*
  * Helper function to write to CNTL register.
@@ -965,6 +1001,12 @@ static int ak8975_probe(struct i2c_client *client,
 	err = ak8975_power_on(client);
 	if (err)
 		return err;
+
+	err = ak8975_soft_reset(client);
+	if (err < 0) {
+		dev_err(&client->dev, "Software reset error\n");
+		goto power_off;
+	}
 
 	err = ak8975_who_i_am(client, data->def->type);
 	if (err < 0) {

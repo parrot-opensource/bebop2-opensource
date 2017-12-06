@@ -861,10 +861,34 @@ static DEVICE_ATTR(authorized_default, 0644,
 	    usb_host_authorized_default_show,
 	    usb_host_authorized_default_store);
 
+/*
+ * Show if usb controller is running or dead
+ */
+static ssize_t usb_host_status_show(struct device *dev,
+						struct device_attribute *attr,
+						char *buf)
+{
+	struct usb_device *rh_usb_dev = to_usb_device(dev);
+	struct usb_bus *usb_bus = rh_usb_dev->bus;
+	struct usb_hcd *usb_hcd;
+
+	if (usb_bus == NULL)	/* FIXME: not sure if this case is possible */
+		return -ENODEV;
+	usb_hcd = bus_to_hcd(usb_bus);
+
+	return snprintf(buf, PAGE_SIZE, "%s\n",
+		HCD_DEAD(usb_hcd) ? "dead" :
+		(HCD_RH_RUNNING(usb_hcd) ? "running" : "unknown") );
+}
+
+static DEVICE_ATTR(status, 0444,
+	    usb_host_status_show,
+	    NULL);
 
 /* Group all the USB bus attributes */
 static struct attribute *usb_bus_attrs[] = {
 		&dev_attr_authorized_default.attr,
+		&dev_attr_status.attr,
 		NULL,
 };
 
@@ -2178,6 +2202,7 @@ void usb_hc_died (struct usb_hcd *hcd)
 	spin_lock_irqsave (&hcd_root_hub_lock, flags);
 	clear_bit(HCD_FLAG_RH_RUNNING, &hcd->flags);
 	set_bit(HCD_FLAG_DEAD, &hcd->flags);
+	sysfs_notify_dirent(hcd->sysfs_status_dirent);
 	if (hcd->rh_registered) {
 		clear_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 
@@ -2486,6 +2511,10 @@ int usb_add_hcd(struct usb_hcd *hcd,
 		       retval);
 		goto error_create_attr_group;
 	}
+	hcd->sysfs_status_dirent = sysfs_get_dirent(rhdev->dev.kobj.sd, NULL, "status");
+	if (!hcd->sysfs_status_dirent)
+		goto error_status_dirent;
+
 	if (hcd->uses_new_polling && HCD_POLL_RH(hcd))
 		usb_hcd_poll_rh_status(hcd);
 
@@ -2497,6 +2526,8 @@ int usb_add_hcd(struct usb_hcd *hcd,
 	device_wakeup_enable(hcd->self.controller);
 	return retval;
 
+error_status_dirent:
+	sysfs_remove_group(&rhdev->dev.kobj, &usb_bus_attr_group);
 error_create_attr_group:
 	clear_bit(HCD_FLAG_RH_RUNNING, &hcd->flags);
 	if (HC_IS_RUNNING(hcd->state))

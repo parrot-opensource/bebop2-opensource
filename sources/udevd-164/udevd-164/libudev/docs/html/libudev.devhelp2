@@ -9,6 +9,7 @@
       <sub name="udev_monitor" link="libudev-udev-monitor.html"/>
       <sub name="udev_enumerate" link="libudev-udev-enumerate.html"/>
       <sub name="udev_queue" link="libudev-udev-queue.html"/>
+      <sub name="udev_provider" link="libudev-udev-provider.html"/>
     </sub>
     <sub name="API Index" link="api-index-full.html"/>
   </chapters>
@@ -99,5 +100,12 @@
     <keyword type="function" name="udev_queue_get_failed_list_entry ()" link="libudev-udev-queue.html#udev-queue-get-failed-list-entry"/>
     <keyword type="function" name="udev_queue_get_kernel_seqnum ()" link="libudev-udev-queue.html#udev-queue-get-kernel-seqnum"/>
     <keyword type="function" name="udev_queue_get_udev_seqnum ()" link="libudev-udev-queue.html#udev-queue-get-udev-seqnum"/>
+    <keyword type="struct" name="struct udev_provider" link="libudev-udev-provider.html#udev-provider"/>
+    <keyword type="function" name="udev_provider_new ()" link="libudev-udev-provider.html#udev-provider-new"/>
+    <keyword type="function" name="udev_provider_add_device ()" link="libudev-udev-provider.html#udev-provider-add-device"/>
+    <keyword type="function" name="udev_provider_change_device ()" link="libudev-udev-provider.html#udev-provider-change-device"/>
+    <keyword type="function" name="udev_provider_remove_device ()" link="libudev-udev-provider.html#udev-provider-remove-device"/>
+    <keyword type="function" name="udev_provider_ref ()" link="libudev-udev-provider.html#udev-provider-ref"/>
+    <keyword type="function" name="udev_provider_unref ()" link="libudev-udev-provider.html#udev-provider-unref"/>
   </functions>
 </book>

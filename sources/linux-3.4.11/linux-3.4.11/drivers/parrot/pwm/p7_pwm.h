@@ -21,6 +21,7 @@
 
 #define P7PWM_MODE_NORMAL       0
 #define P7PWM_MODE_CLOCK        1
+#define P7PWM_MODE_PPM_RX       2
 
 /* period_precision :   a per cent value for the max error rate accepted on
  *                      frequency

@@ -740,6 +740,10 @@ static void cast_init_timings(struct mtd_info *mtd, int mode, int syn, u16 tccs)
 	pll = clk_get_rate(host->clk_phy);
 	dev_info(mtd->dev.parent, "pll_nand: %dHz (wanted=%dHz mode=%d)\n",
 			pll, temp, mode);
+	if (pll < 1000) {
+		dev_err(mtd->dev.parent, "pll_nand is too low\n");
+		return;
+	}
 
 	period = (4000000000UL / (pll / 1000));
 	dev_dbg(mtd->dev.parent, "period %d\n", period);

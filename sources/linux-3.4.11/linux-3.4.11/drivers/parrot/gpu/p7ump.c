@@ -35,6 +35,8 @@ struct p7ump_map {
 struct p7ump_record {
 	struct list_head	list;
 	u32			id;
+	u32			addr;
+	size_t			size;
 	ump_dd_handle 		ump_h;
 };
 
@@ -120,6 +122,11 @@ static struct p7ump_token* p7ump_record_get(struct list_head* rlist,
 	u32 end = token->bus + size;
 
 	token->id = 0;
+
+#ifdef CONFIG_UMP_PARROT7_AUTOLOAD
+	if (p7ump_add_map(addr, size) < 0)
+		return token;
+#endif
 	
 	/* Look for a valid registered mapping */
 	mutex_lock(&p7ump_lock);
@@ -131,14 +138,14 @@ static struct p7ump_token* p7ump_record_get(struct list_head* rlist,
 	}
 	mutex_unlock(&p7ump_lock);
 	if (!valid_map) 
-		return token;
+		goto failed;
 
 	ump_memory_description.addr = token->bus;
 	ump_memory_description.size = size;
 	ump_h = 
 		ump_dd_handle_create_from_phys_blocks(&ump_memory_description, 1);
 	if (UMP_DD_HANDLE_INVALID == ump_h)
-		return token;
+		goto failed;
 	token->id = ump_dd_secure_id_get(ump_h);
 	token->size = size;
 
@@ -148,23 +155,36 @@ static struct p7ump_token* p7ump_record_get(struct list_head* rlist,
 	 */
 	record = kmalloc(sizeof(*record), GFP_KERNEL);
 	if (unlikely(! record)) {
-		return token;
+		goto failed;
 	}	
 	record->ump_h = ump_h;
 	record->id = token->id;
+	record->addr = addr;
+	record->size = size;
 
 	mutex_lock(&p7ump_lock);
 	list_add(&record->list, rlist);
 	mutex_unlock(&p7ump_lock);
 
+	/* Success */
+	return token;
+
+/* Failed */
+failed:
+#ifdef CONFIG_UMP_PARROT7_AUTOLOAD
+	p7ump_remove_map(addr, size);
+#endif
 	return token;
 }
 
 static int p7ump_record_put(struct list_head* rlist, int secure_id)
 {
+	int ret = 0;
 	struct p7ump_record* record;
 	struct list_head *pos, *q;
 	ump_dd_handle ump_h;
+	size_t size = 0;
+	u32 addr = 0;
 
 	ump_h = ump_dd_handle_create_from_secure_id(secure_id);
 	if (ump_h == UMP_DD_HANDLE_INVALID) {
@@ -180,6 +200,8 @@ static int p7ump_record_put(struct list_head* rlist, int secure_id)
 		record = list_entry(pos, struct p7ump_record, list);
 		if (record->ump_h == ump_h)
 		{
+			addr = record->addr;
+			size = record->size;
 			list_del(pos);
 			ump_dd_reference_release(record->ump_h);
 			kfree(record);
@@ -188,7 +210,11 @@ static int p7ump_record_put(struct list_head* rlist, int secure_id)
 	}
 	mutex_unlock(&p7ump_lock);
 
-	return 0;
+#ifdef CONFIG_UMP_PARROT7_AUTOLOAD
+	ret = p7ump_remove_map(addr, size);
+#endif
+
+	return ret;
 }
 
 static long p7ump_ioctl(struct file* filep, unsigned int cmd, unsigned long arg)
@@ -210,7 +236,8 @@ static long p7ump_ioctl(struct file* filep, unsigned int cmd, unsigned long arg)
 		return copy_to_user( ptoken, &token, sizeof(token));
 	case P7UMP_REL_ID:
 		pid = (int __user *) arg;
-		get_user(id, pid);
+		if (get_user(id, pid))
+			return -EFAULT;
 		return p7ump_record_put(rlist, id);
 	default:
 		return -EOPNOTSUPP;
@@ -224,12 +251,30 @@ static int p7ump_release(struct inode* inode, struct file* filep)
 	struct list_head* rlist = filep->private_data;
 	struct p7ump_record* record;
 	struct list_head *pos, *q;
+#ifdef CONFIG_UMP_PARROT7_AUTOLOAD
+	struct p7ump_map* map;
+	struct list_head *mpos, *k;
+#endif
 
 	/* cleanup records and list */
 	mutex_lock(&p7ump_lock);
 	list_for_each_safe(pos, q, rlist) {
 		record = list_entry(pos, struct p7ump_record, list);
 		list_del(pos);
+
+#ifdef CONFIG_UMP_PARROT7_AUTOLOAD
+		list_for_each_safe(mpos, k, &p7ump_maps) {
+			map = list_entry(mpos, struct p7ump_map, list);
+			if ((map->addr == record->addr) &&
+			    (map->size == record->size) &&
+			     atomic_dec_and_test(&map->cnt)) {
+				list_del(mpos);
+				kfree(map);
+				break;
+			}
+		}
+#endif
+
 		ump_dd_reference_release(record->ump_h);
 		kfree(record);
 	}

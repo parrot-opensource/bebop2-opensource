@@ -324,7 +324,7 @@ subst:
 			dev_parent = udev_device_get_parent(event->dev);
 			if (dev_parent == NULL)
 				break;
-				devnode = udev_device_get_devnode(dev_parent);
+			devnode = udev_device_get_devnode(dev_parent);
 			if (devnode != NULL) {
 				size_t devlen = strlen(udev_get_dev_path(event->udev))+1;
 
@@ -530,36 +530,12 @@ out:
 	return err;
 }
 
-static int device_removed = -1;
-static void udev_event_set_device_removed(struct udev_event *event,
-					  int removed)
-{
-	device_removed = removed;
-}
-
-int udev_event_is_device_removed(struct udev_event *event)
-{
-	struct stat statbuf;
-	const char *syspath;
-
-	if (!event || !event->dev)
-		return 1;
-
-	if (device_removed == -1) {
-		syspath = udev_device_get_syspath(event->dev);
-		device_removed = (stat(syspath, &statbuf) == 0) ? 0 : 1;
-	}
-
-	return device_removed;
-}
-
 int udev_event_execute_rules(struct udev_event *event, struct udev_rules *rules)
 {
 	struct udev_device *dev = event->dev;
 	int err = 0;
 
 	if (strcmp(udev_device_get_action(dev), "remove") == 0) {
-		udev_event_set_device_removed(event, 0);
 		udev_device_read_db(dev);
 		udev_device_delete_db(dev);
 		udev_device_tag_index(dev, NULL, false);
@@ -572,7 +548,6 @@ int udev_event_execute_rules(struct udev_event *event, struct udev_rules *rules)
 		if (major(udev_device_get_devnum(dev)) != 0)
 			err = udev_node_remove(dev);
 	} else {
-		udev_event_set_device_removed(event, -1);
 		event->dev_db = udev_device_new_from_syspath(event->udev, udev_device_get_syspath(dev));
 		if (event->dev_db != NULL) {
 			udev_device_read_db(event->dev_db);
@@ -582,6 +557,9 @@ int udev_event_execute_rules(struct udev_event *event, struct udev_rules *rules)
 			if (major(udev_device_get_devnum(dev)) != 0)
 				udev_watch_end(event->udev, event->dev_db);
 		}
+
+		/* apply default permissions first */
+		udev_perms_apply_to_event(event);
 
 		udev_rules_apply_to_event(rules, event);
 
@@ -655,15 +633,6 @@ int udev_event_execute_rules(struct udev_event *event, struct udev_rules *rules)
 			udev_device_set_devnode(dev, filename);
 		}
 
-		/**
-		 * on add/change events, check if device is still present after executing rules
-		 * if not, do not update device database otherwise old properties will be lost !
-		 * a remove event will be triggered close to this one */
-		if (udev_event_is_device_removed(event)) {
-			info(event->udev, "device %s removed: skipping database update !", udev_device_get_syspath(dev));
-			goto skip_update;
-		}
-
 		udev_device_update_db(dev);
 		udev_device_tag_index(dev, event->dev_db, true);
 
@@ -678,7 +647,6 @@ int udev_event_execute_rules(struct udev_event *event, struct udev_rules *rules)
 
 			err = udev_node_add(dev, event->mode, event->uid, event->gid);
 		}
-skip_update:
 
 		udev_device_unref(event->dev_db);
 		event->dev_db = NULL;

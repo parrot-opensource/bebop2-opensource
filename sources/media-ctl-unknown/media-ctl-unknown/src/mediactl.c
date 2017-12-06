@@ -94,7 +94,7 @@ int media_setup_link(struct media_device *media,
 		     struct media_pad *sink,
 		     __u32 flags)
 {
-	struct media_link *link;
+	struct media_link *link = NULL;
 	struct media_link_desc ulink;
 	unsigned int i;
 	int ret;
@@ -109,7 +109,7 @@ int media_setup_link(struct media_device *media,
 			break;
 	}
 
-	if (i == source->entity->num_links) {
+	if (link == NULL || i == source->entity->num_links) {
 		media_dbg(media, "%s: Link not found\n", __func__);
 		return -ENOENT;
 	}
@@ -346,8 +346,8 @@ static int media_get_devname_sysfs(struct media_entity *entity)
 	 * Make sure the major/minor match. We should really use
 	 * libudev.
 	 */
-	if (major(devstat.st_rdev) == entity->info.v4l.major &&
-	    minor(devstat.st_rdev) == entity->info.v4l.minor)
+	if ((unsigned int) major(devstat.st_rdev) == entity->info.v4l.major &&
+	    (unsigned int) minor(devstat.st_rdev) == entity->info.v4l.minor)
 		strcpy(entity->devname, devname);
 
 	return 0;

@@ -166,9 +166,9 @@ static void p7spim_adjust_clk(struct p7spim_core* ctrl,
 
 	/* Compute timings according to above frequency. */
 	ns = ctrl->base_hz / ((div_reg + 1) * 2);
-	dev_info(p7spi_core_dev(core),
-	         "bus clock frequency set to %uHz",
-	         ns);
+	dev_dbg(p7spi_core_dev(core),
+		"bus clock frequency set to %uHz",
+	        ns);
 	ns = NSEC_PER_SEC / ns;
 	tim_reg = (p7spim_delay_ticks(ctrl,
 	                              cdata->tsetup_ss_ns,
@@ -1247,7 +1247,7 @@ static int p7spim_setup(struct spi_device* slave)
 	p7spi_enable_core(core, slave, ctrl_reg);
 
 
-	dev_info(p7spi_core_dev(core),
+	dev_dbg(p7spi_core_dev(core),
 			 "enabled device %s on master core:\n"
 			 "\t%s duplex/%sread/%swrite\n"
 			 "\tmode: %s\n"

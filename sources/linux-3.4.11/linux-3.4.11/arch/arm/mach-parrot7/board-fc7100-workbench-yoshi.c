@@ -188,11 +188,13 @@ void __init yoshi_lcd_mem(void)
 
 void __init yoshi_init_lcd(void)
 {
+#if defined(CONFIG_GPU_PARROT7) || \
+    defined(CONFIG_GPU_PARROT7_MODULE)
 	/* Fb mem is contiguous and goes from fb2 to fb0 */
 	unsigned int fb_nr = ARRAY_SIZE(yoshi_avi_lcd1_overlays);
 	unsigned long fb_start = yoshi_avi_lcd1_overlays[fb_nr - 1].dma_memory.start;
 	unsigned long fb_size = yoshi_avi_lcd1_overlays[0].dma_memory.end - fb_start + 1;
-
+#endif
 	/* downscale kiocera lcd pixel clock for P7R3 on FC7100 HW06 & HW07.
 	 * TODO: On p7dev board with P7R3, this patch is not needed so
 	 * FC7100 Hardware investigation must be performed ...  by someone !

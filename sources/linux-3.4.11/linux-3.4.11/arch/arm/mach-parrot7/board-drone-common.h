@@ -92,7 +92,7 @@ void __init drone_common_init_us_tx(void);
  *  -> drone_common_init_cam_v_mt9v117() for mt9v117 has vertical camera
  * The AVI must be initialized first with p7_init_avi().
  */
-void __init drone_common_init_cam_h_mt9f002(int gpio_pwm, int gpio_en);
+void __init drone_common_init_cam_h_mt9f002(int gpio_pwm, int gpio_en, union avi_cam_interface *cam_interface, struct pinctrl_map *cam_pins, size_t pin_cnt);
 void __init drone_common_init_cam_v_mt9v117(int gpio_pwm, int gpio_en);
 
 /* Initialize MEM2MEM.

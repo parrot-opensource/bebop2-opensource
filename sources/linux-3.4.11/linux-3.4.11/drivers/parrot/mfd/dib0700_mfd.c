@@ -1604,7 +1604,7 @@ static int dib0700_download_firmware(struct usb_device *udev, const struct firmw
 	if (ret == 0) {
 		/* start the firmware */
 		if ((ret = dib0700_jumpram(udev, 0x70000000)) == 0) {
-			dev_err(&udev->dev, "Firware started successfully\n");
+			dev_info(&udev->dev, "Firmware started successfully\n");
 			msleep(200);
 		}
 	} else

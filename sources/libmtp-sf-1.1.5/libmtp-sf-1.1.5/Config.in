@@ -1,0 +1,53 @@
+config LIBMTP_SUPPORT_VENDOR_IRIVER
+	bool "Support for IRiver devices"
+	default n
+	help
+		Workarounds in USB packets handling to support IRiver MTP devices.
+
+config LIBMTP_SUPPORT_VENDOR_CANON
+	bool "Support for Canon devices"
+	default n
+	help
+		Support the custom MTP commands to control Canon EOS cameras.
+
+config LIBMTP_SUPPORT_VENDOR_NIKON
+	bool "Support for Nikon devices"
+	default n
+	help
+		Support the custom MTP commands to control Nikon cameras.
+
+config LIBMTP_SUPPORT_VENDOR_OLYMPUS
+	bool "Support for Olympus devices"
+	default n
+	help
+		Support the custom MTP commands to control Olympus cameras.
+
+config LIBMTP_SUPPORT_VENDOR_EASTMAN_KOKAK
+	bool "Support for Kodak devices"
+	default n
+	help
+		Support the custom MTP commands to control Kodak cameras.
+
+config LIBMTP_SUPPORT_VENDOR_SONY
+	bool "Support for Sony devices"
+	default n
+	help
+		Support the custom MTP commands to control Sony cameras.
+
+config LIBMTP_SUPPORT_VENDOR_FUJI
+	bool "Support for Fujifilm devices"
+	default n
+	help
+		Support the custom MTP commands to control Fujifilm cameras.
+
+config LIBMTP_SUPPORT_VENDOR_CASIO
+	bool "Support for Casio devices"
+	default n
+	help
+		Support the custom MTP commands to control Casio cameras.
+
+config LIBMTP_SUPPORT_VENDOR_PARROT
+	bool "Support for Parrot/senseFly devices"
+	default n
+	help
+		Support the custom MTP commands to control Parrot/senseFly cameras.

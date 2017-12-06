@@ -19,8 +19,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include <libpac.h>
-
 #include "libudev.h"
 #include "libudev-private.h"
 
@@ -234,7 +232,7 @@ struct udev_ctrl_msg *udev_ctrl_receive_msg(struct udev_ctrl *uctrl)
 		goto err;
 	}
 
-	if (cred->uid != 0 && !pac_is_android_os()) {
+	if (cred->uid != 0) {
 		err(uctrl->udev, "sender uid=%i, message ignored\n", cred->uid);
 		goto err;
 	}

@@ -80,6 +80,7 @@ static int irradiance_probe(struct usb_interface *intf,
 	int i, j;
 	struct i2c_msg msg = {0};
 	char temp = 0;
+	unsigned gps_power_en_gpio;
 
 	ret = dib0700_probe(intf, &dib0700_gpio_base);
 	if (ret) {
@@ -133,10 +134,13 @@ static int irradiance_probe(struct usb_interface *intf,
 		}
 	}
 
-	/* Power up gps */
-	gpio_request_one(dib0700_gpio_base + GPIO_GNSS_POWER_EN,
+	/* Export gps power enable gpio */
+	gps_power_en_gpio = dib0700_gpio_base + GPIO_GNSS_POWER_EN;
+	gpio_request_one(gps_power_en_gpio,
 	                 GPIOF_OUT_INIT_HIGH,
 	                 "gps_power_en");
+	gpio_export(gps_power_en_gpio, 0);
+
 
 	return 0;
 

@@ -25,8 +25,6 @@
 #include <sys/wait.h>
 #include <sys/un.h>
 
-#include <libpac.h>
-
 #include "udev.h"
 
 static void print_help(void)
@@ -59,7 +57,7 @@ int udevadm_control(struct udev *udev, int argc, char *argv[])
 		{ NULL, 0, NULL, 0}
 	};
 
-	if (getuid() != 0 && !pac_is_android_os()) {
+	if (getuid() != 0) {
 		fprintf(stderr, "root privileges required\n");
 		return 1;
 	}

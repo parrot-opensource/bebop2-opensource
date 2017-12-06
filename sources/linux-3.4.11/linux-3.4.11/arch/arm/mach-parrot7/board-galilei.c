@@ -431,10 +431,10 @@ static struct pinctrl_map galileo2_avicam_pins[] __initdata = {
  * megaherz */
 static struct pwm_device *galileo2_pwm_clock(int pwm,
 					     const char *label,
-					     unsigned freq_khz)
+					     unsigned freq_hz)
 {
 	struct pwm_device *pwm_dev;
-	unsigned period_ns = (1000000 + freq_khz / 2) / freq_khz;
+	unsigned period_ns = 1000000000/freq_hz;
 	int ret;
 
 	pwm_dev = pwm_request(pwm, label);
@@ -469,7 +469,7 @@ static void galileo2_pwm_free(struct pwm_device *pwm_dev)
 }
 
 
-#define GALILEO2_TC358746A_MCLK_KHZ 9200
+#define GALILEO2_TC358746A_MCLK_HZ 8928571
 
 static struct pwm_device *galileo2_tc358746a_pwm = NULL;
 
@@ -479,7 +479,7 @@ static int galileo2_tc358746a_set_power(int on)
 		galileo2_tc358746a_pwm =
 			galileo2_pwm_clock(P7_PWM_NR(galilei_hsis.tosh_mclk),
 					   "bridge mclk",
-					   GALILEO2_TC358746A_MCLK_KHZ);
+					   GALILEO2_TC358746A_MCLK_HZ);
 	} else {
 		galileo2_pwm_free(galileo2_tc358746a_pwm);
 	}
@@ -493,7 +493,7 @@ static int galileo2_tc358746a_set_power(int on)
 	return 0;
 }
 
-#define GALILEO2_CAM_MCLK_KHZ 10000
+#define GALILEO2_CAM_MCLK_HZ 8928571
 static struct pwm_device *galileo2_cam_pwm = NULL;
 
 static int galileo2_cam_set_power(int on)
@@ -502,7 +502,7 @@ static int galileo2_cam_set_power(int on)
 		galileo2_cam_pwm =
 			galileo2_pwm_clock(P7_PWM_NR(galilei_hsis.galileo_mclk),
 					   "galileo2 mclk",
-					   GALILEO2_CAM_MCLK_KHZ);
+					   GALILEO2_CAM_MCLK_HZ);
 	} else {
 		galileo2_pwm_free(galileo2_cam_pwm);
 	}
@@ -520,7 +520,7 @@ static int galileo2_cam_set_power(int on)
 
 struct galileo2_platform_data galileo2_cam_pdata = {
 	.set_power = galileo2_cam_set_power,
-	.refclk = GALILEO2_CAM_MCLK_KHZ * 1000,
+	.refclk = GALILEO2_CAM_MCLK_HZ,
 	.lanes = GALILEO2_NB_LANES,
 };
 
@@ -538,14 +538,36 @@ static struct avicam_subdevs galileo2_cam_subdevs[] = {
 	{ NULL, 0 },
 };
 
+#if CONFIG_VIDEO_MAX14574
+/*****************************
+ * LENS Driver
+ *****************************/
+
+#include <media/max14574.h>
+
+static struct max14574_platform_data galileo2_max14574_subdev_pdata = {
+	.set_power = NULL,
+	/* normal operation */
+	.mode = (USERMODE_ACTIVE | USERMODE_SM),
+	/* Check if chip is OK before initialization */
+	.control =  CMND_CHK_FAIL,
+	.voltage = CHARGE_MAX_VOLT_MIN,
+};
+
+static struct i2c_board_info galileo2_max14574_i2c_device = {
+	I2C_BOARD_INFO(MAX14574_NAME, MAX14574_I2C_ADDR),
+	.platform_data = &galileo2_max14574_subdev_pdata,
+};
+#endif
+
 static struct tc358746a_platform_data galileo2_tc358746a_subdev_pdata = {
 	.set_power            = &galileo2_tc358746a_set_power,
-	.refclk               = GALILEO2_TC358746A_MCLK_KHZ * 1000,
+	.refclk               = GALILEO2_TC358746A_MCLK_HZ,
 	/* Do we need that? */
 	/*.force_subdev_pixcode = V4L2_MBUS_FMT_SBGGR10_1X10,*/
 	.lanes                = GALILEO2_NB_LANES,
-	.calibration_delay_ms = 500,
-	.phytimdly            = 39,
+	.calibration_delay_ms = 50,
+	.phytimdly            = 27,
 };
 
 static struct i2c_board_info galileo2_tc358746a_i2c_device = {
@@ -559,6 +581,13 @@ static struct avicam_subdevs galileo2_tc358746a_subdevs[] = {
 		.i2c_adapter_id = 1,
 		.subdevs = galileo2_cam_subdevs,
 	},
+#if CONFIG_VIDEO_MAX14574
+	{
+		.board_info     = &galileo2_max14574_i2c_device,
+		.i2c_adapter_id = 2,
+		.subdevs = NULL,
+	},
+#endif
 	{ NULL, 0 },
 };
 

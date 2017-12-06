@@ -29,7 +29,7 @@
 #define DEFAULT_FAKE_PARTITIONS_COUNT		15
 #define UDEV_EVENT_TIMEOUT			180
 
-#define UDEV_CTRL_SOCK_PATH			"@/org/kernel/udev/udevd-ujuba"
+#define UDEV_CTRL_SOCK_PATH			"@/org/kernel/udev/udevd-juba"
 
 struct udev_event {
 	struct udev *udev;
@@ -75,7 +75,6 @@ int udev_event_execute_run(struct udev_event *event, const sigset_t *sigset);
 size_t udev_event_apply_format(struct udev_event *event, const char *src, char *dest, size_t size);
 int udev_event_apply_subsys_kernel(struct udev_event *event, const char *string,
 				   char *result, size_t maxsize, int read_value);
-int udev_event_is_device_removed(struct udev_event *event);
 
 /* udev-watch.c */
 int udev_watch_init(struct udev *udev);
@@ -97,4 +96,15 @@ int udevadm_control(struct udev *udev, int argc, char *argv[]);
 int udevadm_trigger(struct udev *udev, int argc, char *argv[]);
 int udevadm_settle(struct udev *udev, int argc, char *argv[]);
 int udevadm_test(struct udev *udev, int argc, char *argv[]);
+
+/* udevd_init.c */
+int udev_check_dev_path(struct udev *udev);
+void udev_spawn_trigger(struct udev *udev);
+
+/* udev-perms.c */
+void udev_perms_load(struct udev *udev);
+void udev_perms_unload(struct udev *udev);
+void udev_perms_apply_to_event(struct udev_event *event);
+void udev_perms_fix_static_devices(struct udev *udev);
+
 #endif
