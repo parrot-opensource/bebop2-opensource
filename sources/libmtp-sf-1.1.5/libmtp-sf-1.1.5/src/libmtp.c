@@ -59,6 +59,11 @@
 #include <io.h>
 #endif
 
+#ifdef BUILD_LIBULOG
+#define ULOG_TAG libmtp
+#include <ulog.h>
+ULOG_DECLARE_TAG(ULOG_TAG);
+#endif
 
 /**
  * Global debug level
@@ -1693,11 +1698,15 @@ __attribute__((__format__(printf,2,0)))
 #endif
 LIBMTP_ptp_debug(void *data, const char *format, va_list args)
 {
+#ifdef BUILD_LIBULOG
+  ULOG_PRI_VA(ULOG_DEBUG, format, args);
+#else
   if ((LIBMTP_debug & LIBMTP_DEBUG_PTP) != 0) {
     vfprintf (stderr, format, args);
     fprintf (stderr, "\n");
     fflush (stderr);
   }
+#endif
 }
 
 /**
@@ -1710,6 +1719,9 @@ __attribute__((__format__(printf,2,0)))
 #endif
 LIBMTP_ptp_error(void *data, const char *format, va_list args)
 {
+#ifdef BUILD_LIBULOG
+  ULOG_PRI_VA(ULOG_ERR, format, args);
+#else
   // if (data == NULL) {
     vfprintf (stderr, format, args);
     fflush (stderr);
@@ -1726,6 +1738,7 @@ LIBMTP_ptp_error(void *data, const char *format, va_list args)
 			    buf);
   }
   */
+#endif
 }
 
 /**

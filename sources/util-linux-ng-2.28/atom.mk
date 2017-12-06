@@ -44,7 +44,8 @@ LOCAL_AUTOTOOLS_CONFIGURE_ARGS := \
         --disable-mount \
         --disable-losetup \
         --disable-cytune \
-        --disable-fsck \
+	--enable-fsck \
+	--enable-sfdisk \
         --disable-partx \
         --disable-uuidd \
         --disable-mountpoint \
@@ -101,6 +102,7 @@ LOCAL_AUTOTOOLS_MAKE_INSTALL_ARGS := \
 
 define LOCAL_AUTOTOOLS_CMD_POST_INSTALL
 	$(Q) install -p -m755 -d $(TARGET_OUT_STAGING)/sbin
+	$(Q) install -p -m755 -d $(TARGET_OUT_STAGING)/usr/sbin
 	$(Q) install -p -m755 -d $(TARGET_OUT_STAGING)/lib
 	$(Q) install -p -m755 -d $(TARGET_OUT_STAGING)/lib/pkgconfig
 	$(Q) install -p -m755 -d $(TARGET_OUT_STAGING)/usr
@@ -134,6 +136,8 @@ define LOCAL_AUTOTOOLS_CMD_POST_INSTALL
 	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/sbin/fstrim $(TARGET_OUT_STAGING)/sbin/fstrim-ng
 	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/sbin/fdisk $(TARGET_OUT_STAGING)/sbin/fdisk-ng
 	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/bin/nsenter $(TARGET_OUT_STAGING)/usr/bin/nsenter-ng
+	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/sbin/fsck $(TARGET_OUT_STAGING)/usr/sbin/fsck-ng
+	$(Q) install -p -m755 $(PRIVATE_SRC_DIR)/install/sbin/sfdisk $(TARGET_OUT_STAGING)/usr/sbin/sfdisk-ng
 endef
 
 # Clean what we manually installed

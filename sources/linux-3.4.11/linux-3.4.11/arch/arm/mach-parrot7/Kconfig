@@ -394,6 +394,10 @@ menuconfig MACH_PARROT_EVINRUDE
 	bool "Evinrude board"
 	select MACH_PARROT_DRONE_COMMON
 
+menuconfig MACH_PARROT_CHIMERA
+	bool "Chimera board"
+	select MACH_PARROT_EVINRUDE
+
 menuconfig MACH_PARROT_PAROS
 	bool "Paros board"
 	select ARCH_PARROT7_COMMON

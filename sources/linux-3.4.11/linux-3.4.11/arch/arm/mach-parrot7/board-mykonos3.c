@@ -38,6 +38,7 @@
 #include "board-common.h"
 #include "common.h"
 #include "p7_pwm.h"
+#include "vdec.h"
 #include "venc.h"
 #include "gpio.h"
 #include "gpu.h"
@@ -753,6 +754,13 @@ static void __init mykonos3x_init_mach(enum mk3_hardware_board board)
 
 	/* Init video encoder */
 	p7_init_venc();
+
+	/* Init video decoder
+	 * As the decoder is used only when streaming thermal data,
+	 * the front camera is shut down when using the decoder.
+	 * That's why we don't need to allocate extra memory for the decoder.
+	 */
+	p7_init_vdec();
 
 	/* Init USB */
 	drone_common_init_usb(mk3_hsis.host_mode_on, mk3_hsis.host_mode_3v3,

@@ -13,6 +13,6 @@ LOCAL_AUTOTOOLS_SUBDIR := nss-mdns-$(LOCAL_AUTOTOOLS_VERSION)
 # Remove unused debug feature which might prevent building
 LOCAL_ARCHIVE_PATCHES := remove_debug_trap.patch
 
-LOCAL_EXPORT_LDLIBS := -lnss-mdns
+LOCAL_EXPORT_LDLIBS := -lnss_dns
 
 include $(BUILD_AUTOTOOLS)

@@ -856,6 +856,11 @@ static void __init evinrude_init_mach(void)
 	pr_info("Evinrude board : init done\n");
 }
 
+P7_MACHINE_START(PARROT_CHIMERA, "Chimera board")
+	.reserve        = &evinrude_reserve_mem,
+	.init_machine   = &evinrude_init_mach,
+P7_MACHINE_END
+
 P7_MACHINE_START(PARROT_EVINRUDE, "Evinrude board")
 	.reserve        = &evinrude_reserve_mem,
 	.init_machine   = &evinrude_init_mach,

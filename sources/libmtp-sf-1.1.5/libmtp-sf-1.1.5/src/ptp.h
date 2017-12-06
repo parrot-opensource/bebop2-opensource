@@ -881,6 +881,7 @@ typedef struct _PTPIPHeader PTPIPHeader;
 /* Parrot Sequoia device event codes */
 #define PTP_EC_PARROT_SEQUOIA_Status			0xC201
 #define PTP_EC_PARROT_SEQUOIA_MagnetoCalibrationStatus	0xC202
+#define PTP_EC_PARROT_SEQUOIA_PictureTime		0xC203
 #endif
 
 
