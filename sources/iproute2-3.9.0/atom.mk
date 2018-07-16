@@ -35,7 +35,8 @@ endif
 
 LOCAL_AUTOTOOLS_PATCHES := \
 	iproute2-3.9.0-ss_build_fix.patch \
-	append_to_environment_cflags.patch
+	append_to_environment_cflags.patch \
+	include-stdint.h-explicitly-for-UINT16_MAX.patch
 
 define LOCAL_AUTOTOOLS_CMD_POST_CONFIGURE
 	sed -i "s/-Werror//g" $(PRIVATE_SRC_DIR)/Makefile

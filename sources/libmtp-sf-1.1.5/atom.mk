@@ -12,8 +12,6 @@ LOCAL_CATEGORY_PATH := multimedia/mtp
 
 LOCAL_LIBRARIES := libusb_1_0 libmtp-sf
 
-LOCAL_DEPENDS_MODULES := udev
-
 LOCAL_SRC_FILES := \
 	util/mtp-probe.c
 
@@ -42,8 +40,6 @@ $(call load-config)
 LOCAL_LIBRARIES := libusb_1_0
 LOCAL_CONDITIONAL_LIBRARIES := OPTIONAL:libcutils
 LOCAL_CONDITIONAL_LIBRARIES += OPTIONAL:libulog
-
-LOCAL_DEPENDS_MODULES := udev
 
 LOCAL_SRC_FILES := \
 	src/util.c \

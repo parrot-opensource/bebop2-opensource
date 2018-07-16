@@ -2539,4 +2539,30 @@ ptp_pack_Parrot_Geotag(
 	return sizeof(*geotagData);
 }
 
+/* RelativeAttitude pack/unpack */
+
+static inline uint32_t
+ptp_pack_Parrot_RelativeAttitude(
+	PTPParams *params, PTPRelativeAttitude *relat, unsigned char** relatDataPtr)
+{
+	PTPRelativeAttitude* relatData;
+
+	relatData = calloc(1, sizeof(*relatData));
+	/* The caller should free it after use! */
+	if (!relatData)
+		return 0;
+
+	htod32a((unsigned char *) &relatData->BodyRoll, relat->BodyRoll);
+	htod32a((unsigned char *) &relatData->BodyPitch, relat->BodyPitch);
+	htod32a((unsigned char *) &relatData->BodyYaw, relat->BodyYaw);
+	htod32a((unsigned char *) &relatData->IrrRoll, relat->IrrRoll);
+	htod32a((unsigned char *) &relatData->IrrPitch, relat->IrrPitch);
+	htod32a((unsigned char *) &relatData->IrrYaw, relat->IrrYaw);
+
+	*relatDataPtr = (unsigned char *) relatData;
+
+	/* This function should return dataset length */
+	return sizeof(*relatData);
+}
+
 #endif /* LIBMTP_SUPPORT_VENDOR_PARROT */

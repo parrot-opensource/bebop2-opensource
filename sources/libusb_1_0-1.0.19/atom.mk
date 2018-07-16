@@ -8,6 +8,9 @@ LOCAL_DESCRIPTION := Userspace library for accessing USB devices version 1.0
 LOCAL_CATEGORY_PATH := libs
 LOCAL_EXPORT_LDLIBS := -lusb-1.0
 
+LOCAL_CONFIG_FILES := Config.in
+$(call load-config)
+
 LOCAL_AUTOTOOLS_VERSION := 1.0.19
 LOCAL_AUTOTOOLS_ARCHIVE := libusb-$(LOCAL_AUTOTOOLS_VERSION).tar.bz2
 LOCAL_AUTOTOOLS_SUBDIR := libusb-$(LOCAL_AUTOTOOLS_VERSION)
@@ -44,8 +47,11 @@ define LOCAL_AUTOTOOLS_CMD_POST_CLEAN
 	$(Q) rm -f $(TARGET_OUT_STAGING)/usr/include/libusb-1.0/libusb.h
 endef
 
+else ifeq ("$(CONFIG_LIBUSB_USE_KERNEL_UEVENT)","y")
+LOCAL_AUTOTOOLS_CONFIGURE_ARGS := --disable-udev
 else
 LOCAL_LIBRARIES := libudev
+LOCAL_DEPENDS_MODULES := udev
 endif
 
 include $(BUILD_AUTOTOOLS)

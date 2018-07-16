@@ -165,6 +165,9 @@ struct ci13xxx {
 	int				vbus_active;
 	struct usb_phy			*transceiver;
 	struct usb_hcd			*hcd;
+
+/* forced vbus to remains on */
+       u8 vbus_always_on;
 };
 
 static inline struct ci_role_driver *ci_role(struct ci13xxx *ci)

@@ -7026,4 +7026,31 @@ ptp_parrot_set_geotag(PTPParams* params, PTPGeotag* geotag)
 	return ret;
 }
 
+uint16_t
+ptp_parrot_set_relativeattitude(PTPParams* params, PTPRelativeAttitude* relat)
+{
+	uint16_t ret;
+	PTPContainer ptp;
+	unsigned char* relativeattitudeData = NULL;
+	uint32_t size;
+
+	if (!ptp_operation_issupported(params,
+				       PTP_OC_PARROT_SEQUOIA_SetRelativeAttitude))
+		return PTP_RC_OperationNotSupported;
+
+	PTP_CNT_INIT(ptp);
+	ptp.Code = PTP_OC_PARROT_SEQUOIA_SetRelativeAttitude;
+	ptp.Nparam = 0;
+
+	size = ptp_pack_Parrot_RelativeAttitude(params, relat, &relativeattitudeData);
+	if (size == 0)
+		return PTP_RC_GeneralError;
+
+	ret = ptp_transaction(
+		params, &ptp, PTP_DP_SENDDATA, size, &relativeattitudeData, NULL);
+	free(relativeattitudeData);
+
+	return ret;
+}
+
 #endif /* LIBMTP_SUPPORT_VENDOR_PARROT */

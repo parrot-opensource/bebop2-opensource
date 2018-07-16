@@ -11,10 +11,12 @@ config WEXT_PROC
 	depends on WEXT_CORE
 
 config WEXT_SPY
-	bool
+	bool "wireless extension spy API"
+	default n
 
 config WEXT_PRIV
-	bool
+	bool "wireless extension priv API"
+	default n
 
 config CFG80211
 	tristate "cfg80211 - wireless configuration API"

@@ -317,7 +317,9 @@ static ssize_t store_role(struct device *dev, struct device_attribute *attr,
 
 	// Apple role switch don't like power to be cut down between
 	// role_stop & start so do ithere, it will not cause much harm
-	ci->udc_driver->set_vbus(pdev, role == CI_ROLE_HOST ? 1 : 0);
+	// take note that vbus will not be disabled if vbus_always_on = 1
+	ci->udc_driver->set_vbus(pdev,
+		((role == CI_ROLE_HOST) || ci->vbus_always_on) ? 1 : 0);
 
 	return count;
 }
@@ -333,12 +335,41 @@ static ssize_t store_vbus(struct device *dev, struct device_attribute *attr,
 	if(buf[0] != '0' && buf[0] != '1')
 		return -EINVAL;
 
+	if (ci->vbus_always_on && (buf[0] == '0'))
+		return -EINVAL;
+
 	ci->udc_driver->set_vbus(pdev, buf[0] - '0');
 
 	return count;
 }
 
 static DEVICE_ATTR(vbus, S_IWUSR, NULL, store_vbus);
+
+static ssize_t show_vbus_always_on(struct device *dev,
+			       struct device_attribute *attr, char *buf)
+{
+	struct ci13xxx *ci = dev_get_drvdata(dev);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", ci->vbus_always_on);
+}
+
+static ssize_t store_vbus_always_on(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct ci13xxx *ci = dev_get_drvdata(dev);
+
+	if (buf[0] == '0')
+		ci->vbus_always_on = 0;
+	else if (buf[0] == '1')
+		ci->vbus_always_on = 1;
+	else
+		return -EINVAL;
+
+	return count;
+}
+
+static DEVICE_ATTR(vbus_always_on, S_IRUGO | S_IWUSR,
+		show_vbus_always_on, store_vbus_always_on);
 
 static irqreturn_t ci_irq(int irq, void *data)
 {
@@ -532,9 +563,13 @@ static int __devinit ci_hdrc_probe(struct platform_device *pdev)
 
 	ret = device_create_file(dev, &dev_attr_role);
 	if (ret)
-		goto rm_attr;
+		goto de_init;
 
 	ret = device_create_file(dev, &dev_attr_vbus);
+	if (ret)
+		goto rm_attr;
+
+	ret = device_create_file(dev, &dev_attr_vbus_always_on);
 	if (ret)
 		goto rm_attr2;
 
@@ -568,6 +603,7 @@ static int __devexit ci_hdrc_remove(struct platform_device *pdev)
 	ci->udc_driver->exit(pdev);
 	device_remove_file(ci->dev, &dev_attr_role);
 	device_remove_file(ci->dev, &dev_attr_vbus);
+	device_remove_file(ci->dev, &dev_attr_vbus_always_on);
 	free_irq(ci->irq, ci);
 
 	{

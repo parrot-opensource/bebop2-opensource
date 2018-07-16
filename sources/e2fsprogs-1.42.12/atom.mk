@@ -10,6 +10,9 @@ LOCAL_MODULE := e2fsprogs
 LOCAL_DESCRIPTION := Filesystem utilities for use with the extX filesystems
 LOCAL_CATEGORY_PATH := fs
 
+LOCAL_CONFIG_FILES := Confige2fsprogs.in
+$(call load-config)
+
 LOCAL_AUTOTOOLS_PATCHES := \
 	noinline_getclock_toolchain_2010.patch \
 
@@ -44,6 +47,19 @@ endef
 
 LOCAL_AUTOTOOLS_CONFIGURE_ARGS := \
 --enable-symlink-install
+
+ifneq ($(CONFIG_E2FS_DEBUGFS),y)
+LOCAL_AUTOTOOLS_CONFIGURE_ARGS += --disable-debugfs
+endif
+ifneq ($(CONFIG_E2FS_E2IMAGE),y)
+LOCAL_AUTOTOOLS_CONFIGURE_ARGS += --disable-imager
+endif
+ifneq ($(CONFIG_E2FS_RESIZE2FS),y)
+LOCAL_AUTOTOOLS_CONFIGURE_ARGS += --disable-resizer
+endif
+ifneq ($(CONFIG_E2FS_E4DEFRAG),y)
+LOCAL_AUTOTOOLS_CONFIGURE_ARGS += --disable-defrag
+endif
 
 include $(BUILD_AUTOTOOLS)
 

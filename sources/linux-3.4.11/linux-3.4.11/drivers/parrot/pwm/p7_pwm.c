@@ -13,7 +13,7 @@
 #define DEBUG
 #define P7PWM_ASSERT(_chip, _pwm)      \
     BUG_ON(! _chip);                    \
-    BUG_ON(! _pwm);                     
+    BUG_ON(! _pwm);
 
 #else /*Empty debug macro if debug is OFF*/
 #define P7PWM_ASSERT(_chip, _pwm)
@@ -74,7 +74,7 @@ static struct input_dev *       input_dev;
 
 int servo_rx_no_filter = 1;
 module_param(servo_rx_no_filter, int, S_IRUGO);
-MODULE_PARM_DESC(servo_rx_no_filter, "0/1(default) : if 1 the event won't be" 
+MODULE_PARM_DESC(servo_rx_no_filter, "0/1(default) : if 1 the event won't be"
 		" filtered and repeated every 22 ms.");
 
 #define P7PWM_SPEED(i)          (0x0+0x10*(i))
@@ -243,7 +243,7 @@ static void     p7pwm_free(struct pwm_chip *chip, struct pwm_device *pwm)
  *
  *      Speed2 = ((Speed1 + 1) / 2^n) -1
  *
- *      4) If needed set Speed2 as new speed and minimal ratio as ratio. 
+ *      4) If needed set Speed2 as new speed and minimal ratio as ratio.
  *
  *
  * Duty cycle computations steps
@@ -300,7 +300,7 @@ static int p7pwm_configure(struct pwm_chip *chip,
 	if (0 == divider)
 		divider = 1;
 
-	/* Step 2 : Compute initial ratio */ 
+	/* Step 2 : Compute initial ratio */
 	if (is_mode(pwm->hwpwm,P7PWM_MODE_NORMAL)) {
 		ratio = ilog2((divider >> 16 ) & 0xFFFF) + 1;
 	} else {
@@ -376,7 +376,7 @@ static int p7pwm_configure(struct pwm_chip *chip,
 	/* Write the values in registers */
 	speed = speed & 0xFFFF;
 	ratio = ((ratio & 0x1F) << 16) | (hratio & 0xFFFF);
-	
+
 	dev_dbg(chip->dev,"%s: computed values: period=0x%x, ratio=0x%x\n",
 		__func__,
 		speed,
@@ -398,11 +398,12 @@ static int p7pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 {
 	uint32_t start;
 	int rc = 0;
-	
+	unsigned long flags;
+
 	P7PWM_ASSERT(chip, pwm) ;
 	dev_dbg(chip->dev,"%s: PWM_%d\n",__func__,
 		pwm->hwpwm);
-	spin_lock(&p7pwm_spinlock);
+	spin_lock_irqsave(&p7pwm_spinlock, flags);
 	/* start of MPW1 workaround */
 	/* restore configure overwritten in disable */
 	if (config[pwm->hwpwm].speed_regval != -1 && config[pwm->hwpwm].ratio_regval != -1) {
@@ -415,7 +416,6 @@ static int p7pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 	}
 	/* end of MPW1 workaround */
 
-	
 	if (is_mode(pwm->hwpwm,P7PWM_MODE_CLOCK)) {
 		uint32_t mode ;
 		mode = __raw_readl(mmio_base + P7PWM_MODE);
@@ -427,7 +427,7 @@ static int p7pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 	start = __raw_readl(mmio_base + P7PWM_START);
 	start = start | (0x1 << pwm->hwpwm);
 	__raw_writel(start, mmio_base + P7PWM_START);
-	spin_unlock(&p7pwm_spinlock);
+	spin_unlock_irqrestore(&p7pwm_spinlock, flags);
 
 	return rc ;
 }
@@ -436,11 +436,12 @@ static int p7pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 static void p7pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 {
 	uint32_t start;
+	unsigned long flags;
 
 	P7PWM_ASSERT(chip, pwm);
 	dev_dbg(chip->dev,"p7pwm_disable: P7 pwm %d\n",pwm->hwpwm);
 
-	spin_lock(&p7pwm_spinlock);
+	spin_lock_irqsave(&p7pwm_spinlock, flags);
 
 	start = __raw_readl(mmio_base + P7PWM_START);
 	dev_dbg(chip->dev,"%s: start init = 0x%x\n",__func__,start);
@@ -449,7 +450,7 @@ static void p7pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 	start = start & ~(0x1 << pwm->hwpwm);
 	dev_dbg(chip->dev,"%s: start modified = 0x%x\n",__func__,start);
 	__raw_writel(start, mmio_base + P7PWM_START);
-	
+
 	/* If clock mode, switch on normal mode */
 	if (is_mode(pwm->hwpwm,P7PWM_MODE_CLOCK)) {
 		uint32_t mode;
@@ -471,7 +472,7 @@ static void p7pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 	/* end of MPW1 workaround */
 
 
-	spin_unlock(&p7pwm_spinlock);
+	spin_unlock_irqrestore(&p7pwm_spinlock, flags);
 }
 
 /******************************************************************************
@@ -516,7 +517,6 @@ static void p7_show_pwm(struct pwm_chip* chip, struct seq_file* s)
 		int clock ;
 
 		P7PWM_ASSERT(chip, pwm);
-	
 
 		/* Get CLOCK MODE infos*/
 		if (is_mode(p,P7PWM_MODE_CLOCK))
@@ -689,9 +689,8 @@ static int __devinit p7pwm_probe(struct platform_device *pdev)
 {
 	struct resource * r ;
 	int rc;
-	
+
 	dev_dbg(&pdev->dev,"p7pwm_probe:\n") ;
-	
 	rc = 0 ;
 
 	/* get the platform_data */
@@ -735,7 +734,7 @@ static int __devinit p7pwm_probe(struct platform_device *pdev)
 		rc = -EADDRNOTAVAIL;
 		goto err_disclk ;
 	}
-	
+
 	/*Get Pins*/
 	pins = pinctrl_get_select_default(&pdev->dev) ;
 	if (IS_ERR(pins)) {
